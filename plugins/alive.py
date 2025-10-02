@@ -89,7 +89,7 @@ async def alive_handler(event):
 {main_emoji} **Vz ASSISTANT** {nyala_emoji}
 
 
-{owner_emoji} **Founder**         : Vzoel Fox's/t.me/VZLfxs
+{dev_emoji} **Founder**         : Vzoel Fox's/t.me/VZLfxs
 {owner_emoji} **Owner**            : @{owner_username}
 {gear_emoji} **Versi**              : {config.BOT_VERSION}
 {dev_emoji} **Telethon × Python 3+**
