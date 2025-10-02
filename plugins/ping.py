@@ -48,18 +48,21 @@ async def ping_handler(event):
     else:
         status_emoji = vz_emoji.getemoji('merah')  # 👎 MERAH
 
-    # Get signature emojis
+    # Get varied emojis
     main_emoji = vz_emoji.getemoji('utama')
     petir_emoji = vz_emoji.getemoji('petir')
+    nyala_emoji = vz_emoji.getemoji('nyala')
+    owner_emoji = vz_emoji.getemoji('owner')
+    dev_emoji = vz_emoji.getemoji('developer')
 
-    # Build response
+    # Build response with varied emojis
     response = f"""
 {main_emoji}{status_emoji} **VZ ASSISTANT - PING**
 
-⚡ **Latency:** `{latency_ms}ms`
-⏰ **Uptime:** `{uptime}`
-👤 **Owner:** @{event.sender.username if event.sender.username else 'Unknown'}
-🌟 **Founder:** {config.FOUNDER_USERNAME}
+{petir_emoji} **Latency:** `{latency_ms}ms`
+{nyala_emoji} **Uptime:** `{uptime}`
+{owner_emoji} **Owner:** @{event.sender.username if event.sender.username else 'Unknown'}
+{dev_emoji} **Founder:** {config.FOUNDER_USERNAME}
 
 {petir_emoji} {config.BRANDING_FOOTER}
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
@@ -99,14 +102,15 @@ async def pink_handler(event):
         status_emoji = vz_emoji.getemoji('merah')  # 👎 MERAH (200+ms)
         status_text = "Slow"
 
-    # Get signature emoji
+    # Get varied emojis
     petir_emoji = vz_emoji.getemoji('petir')
+    main_emoji = vz_emoji.getemoji('utama')
 
-    # Build response
+    # Build response with varied emojis
     response = f"""
 {status_emoji} **{latency_ms}ms** - {status_text}
 
-{petir_emoji} {config.BRANDING_FOOTER}
+{petir_emoji} {main_emoji} {config.BRANDING_FOOTER}
 """
 
     await vz_client.edit_with_premium_emoji(msg, response)
