@@ -65,7 +65,7 @@ async def ping_handler(event):
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 """
 
-    await msg.edit(response)
+    await vz_client.edit_with_premium_emoji(msg, response)
 
 # ============================================================================
 # PINK COMMAND (with color emoji)
@@ -110,7 +110,7 @@ async def pink_handler(event):
 {petir_emoji} {config.BRANDING_FOOTER}
 """
 
-    await msg.edit(response)
+    await vz_client.edit_with_premium_emoji(msg, response)
 
 # ============================================================================
 # PONG COMMAND (shows uptime)
