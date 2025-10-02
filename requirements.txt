@@ -3,36 +3,28 @@
 # 2025© Vzoel Fox's Lutpan
 
 # ============================================================================
-# CORE TELEGRAM
+# CORE REQUIREMENTS (Required for basic bot functionality)
 # ============================================================================
 telethon>=1.28.0
 python-dotenv>=1.0.0
-cryptg>=0.4.0
-
-# ============================================================================
-# DATABASE
-# ============================================================================
 sqlalchemy>=2.0.0
 aiosqlite>=0.19.0
-
-# ============================================================================
-# VOICE CHAT (pytgcalls)
-# ============================================================================
-pytgcalls>=3.0.0
-tgcrypto>=1.2.5
-
-# ============================================================================
-# UTILITIES
-# ============================================================================
 aiofiles>=23.0.0
 python-dateutil>=2.8.2
 requests>=2.31.0
+qrcode>=7.4.2
 
 # ============================================================================
-# ADDITIONAL
+# OPTIONAL: VOICE CHAT SUPPORT (Install when needed)
 # ============================================================================
-# QR Code generation (for payment plugin)
-qrcode>=7.4.2
-Pillow>=10.0.0
+# Uncomment these lines to enable voice chat features:
+# pytgcalls==2.1.0
+# tgcrypto>=1.2.5
+# cryptg>=0.4.0
+# Pillow>=10.0.0
+
+# Installation instructions:
+# Core only: pip install -r requirements.txt
+# With voice chat: pip install pytgcalls==2.1.0 tgcrypto cryptg Pillow
 
 # Note: asyncio is built-in with Python 3.9+
