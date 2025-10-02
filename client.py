@@ -18,6 +18,8 @@ from datetime import datetime
 # Import config and database
 import config
 from database.models import DatabaseManager, MultiUserDatabaseManager
+from helpers.vz_emoji_manager import VZEmojiManager
+from utils.emoji import build_premium_emoji_entities
 
 # ============================================================================
 # VZ CLIENT CLASS
@@ -58,6 +60,9 @@ class VZClient:
         self.me = None
         self.is_developer = False
 
+        # Emoji manager
+        self.emoji = VZEmojiManager()
+
     async def start(self):
         """Start the client."""
         await self.client.start()
@@ -92,25 +97,11 @@ class VZClient:
 
     async def send_with_premium_emoji(self, chat_id, text: str, **kwargs):
         """Send message with premium emoji conversion."""
-        emoji_mapping = config.load_emoji_mapping()
-
-        # Check if we need to convert emojis
-        if not emoji_mapping:
+        if not self.emoji.available:
             return await self.client.send_message(chat_id, text, **kwargs)
 
-        # Parse text and convert emojis
-        entities = []
-        offset = 0
-
-        for char in text:
-            if char in emoji_mapping.get('emoji_mapping', {}):
-                emoji_id = emoji_mapping['emoji_mapping'][char]
-                entities.append(MessageEntityCustomEmoji(
-                    offset=offset,
-                    length=len(char.encode('utf-16-le')) // 2,
-                    document_id=int(emoji_id)
-                ))
-            offset += len(char.encode('utf-16-le')) // 2
+        # Build entities using the new utility
+        entities = build_premium_emoji_entities(text)
 
         # Send with custom emoji entities if any
         if entities:
@@ -125,25 +116,11 @@ class VZClient:
 
     async def edit_with_premium_emoji(self, message, text: str, **kwargs):
         """Edit message with premium emoji conversion."""
-        emoji_mapping = config.load_emoji_mapping()
-
-        # Check if we need to convert emojis
-        if not emoji_mapping:
+        if not self.emoji.available:
             return await message.edit(text, **kwargs)
 
-        # Parse text and convert emojis
-        entities = []
-        offset = 0
-
-        for char in text:
-            if char in emoji_mapping.get('emoji_mapping', {}):
-                emoji_id = emoji_mapping['emoji_mapping'][char]
-                entities.append(MessageEntityCustomEmoji(
-                    offset=offset,
-                    length=len(char.encode('utf-16-le')) // 2,
-                    document_id=int(emoji_id)
-                ))
-            offset += len(char.encode('utf-16-le')) // 2
+        # Build entities using the new utility
+        entities = build_premium_emoji_entities(text)
 
         # Edit with custom emoji entities if any
         if entities:

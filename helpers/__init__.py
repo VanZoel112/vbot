@@ -22,6 +22,7 @@ from .inline import (
 
 from .loader import load_plugins, get_all_handlers
 from .logger import logger, debug, info, warning, error, critical, log_command, log_event, log_exception
+from .vz_emoji_manager import VZEmojiManager
 
 __all__ = [
     'InlineManager',
@@ -45,5 +46,6 @@ __all__ = [
     'critical',
     'log_command',
     'log_event',
-    'log_exception'
+    'log_exception',
+    'VZEmojiManager'
 ]

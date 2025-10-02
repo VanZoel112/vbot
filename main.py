@@ -153,6 +153,12 @@ async def main():
         main_client = await manager.add_client(session_string)
         logger.info(f"Connected as: {main_client.me.first_name} (@{main_client.me.username})")
 
+        # Set global variables for plugins
+        import builtins
+        builtins.vz_client = main_client
+        builtins.vz_emoji = main_client.emoji
+        logger.info("Global variables set: vz_client, vz_emoji")
+
         # Setup log handler
         print("\n📋 Configuring Logging...")
         await setup_log_handler(main_client)
