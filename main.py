@@ -153,7 +153,7 @@ async def main():
         main_client = await manager.add_client(session_string)
         logger.info(f"Connected as: {main_client.me.first_name} (@{main_client.me.username})")
 
-        # Set global variables for plugins
+        # Set global variables for plugins BEFORE loading them
         import builtins
         builtins.vz_client = main_client
         builtins.vz_emoji = main_client.emoji
@@ -167,6 +167,17 @@ async def main():
         print("\n📦 Loading Plugins...")
         logger.info("Loading plugins...")
         plugin_count = load_plugins(main_client)
+
+        # Inject globals into all loaded plugin modules
+        import sys
+        for module_name in list(sys.modules.keys()):
+            if module_name.startswith('plugins.'):
+                module = sys.modules[module_name]
+                if hasattr(module, 'vz_client'):
+                    module.vz_client = main_client
+                if hasattr(module, 'vz_emoji'):
+                    module.vz_emoji = main_client.emoji
+        logger.info("Injected globals into all plugin modules")
 
         print("\n" + "="*60)
         print("✅ VZ ASSISTANT Started Successfully!")
