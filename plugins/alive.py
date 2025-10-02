@@ -66,35 +66,41 @@ async def alive_handler(event):
     """
     global vz_client, vz_emoji
 
+    # Run 12-phase animation
+    msg = await animate_loading(vz_client, vz_emoji, event)
+
     # Get data
     uptime = vz_client.get_uptime() if vz_client else "0s"
     plugin_count = count_plugins()
     owner_username = get_owner_username(event)
 
-    # Get premium emojis
+    # Get premium emojis - more variety!
     main_emoji = vz_emoji.getemoji('utama')
     nyala_emoji = vz_emoji.getemoji('nyala')
-    checklist_emoji = vz_emoji.getemoji('centang')
+    owner_emoji = vz_emoji.getemoji('owner')
+    dev_emoji = vz_emoji.getemoji('developer')
+    robot_emoji = vz_emoji.getemoji('robot')
+    gear_emoji = vz_emoji.getemoji('gear')
+    loading_emoji = vz_emoji.getemoji('loading')
     petir_emoji = vz_emoji.getemoji('petir')
 
-    # Build alive message with premium emojis
+    # Build alive message with varied premium emojis
     alive_text = f"""
 {main_emoji} **Vz ASSISTANT** {nyala_emoji}
 
 
-{checklist_emoji} **Founder**         : Vzoel Fox's/t.me/VZLfxs
-{checklist_emoji} **Owner**            : @{owner_username}
-{checklist_emoji} **Versi**              : {config.BOT_VERSION}
-{checklist_emoji} **Telethon × Python 3+**
-{checklist_emoji} **Total Plugin**  : {plugin_count}
-{checklist_emoji} **Waktu Nyala** : {uptime}
+{owner_emoji} **Founder**         : Vzoel Fox's/t.me/VZLfxs
+{robot_emoji} **Owner**            : @{owner_username} {owner_emoji}
+{gear_emoji} **Versi**              : {config.BOT_VERSION}
+{dev_emoji} **Telethon × Python 3+**
+{loading_emoji} **Total Plugin**  : {plugin_count}
+{nyala_emoji} **Waktu Nyala** : {uptime}
 
 {petir_emoji} ~Vzoel Fox's Lutpan
 """
 
     # Create inline buttons with premium emojis
     telegram_emoji = vz_emoji.getemoji('telegram')
-    dev_emoji = vz_emoji.getemoji('developer')
 
     buttons = [
         [
@@ -105,10 +111,10 @@ async def alive_handler(event):
 
     # Send or edit message with buttons using premium emoji method
     try:
-        await vz_client.edit_with_premium_emoji(event, alive_text, buttons=buttons)
+        await vz_client.edit_with_premium_emoji(msg, alive_text, buttons=buttons)
     except Exception as e:
         # If inline buttons not supported, send without buttons
-        await vz_client.edit_with_premium_emoji(event, alive_text)
+        await vz_client.edit_with_premium_emoji(msg, alive_text)
         print(f"⚠️  Inline buttons not available: {e}")
 
 # ============================================================================
