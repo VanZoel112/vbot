@@ -5,7 +5,14 @@
 *.session
 *.session-journal
 sessions/
-database/
+
+# Database files (but keep Python code)
+database/*.db
+database/*.sqlite
+database/*.sqlite3
+database/developer/
+database/sudoers/
+database/shared/
 
 # Python
 __pycache__/
