@@ -10,6 +10,10 @@ from telethon import events
 from telethon.tl.types import MessageMediaPhoto, MessageMediaDocument
 import config
 
+# Global variables (set by main.py)
+vz_client = None
+vz_emoji = None
+
 # ============================================================================
 # ID COMMAND
 # ============================================================================
@@ -26,6 +30,8 @@ async def id_handler(event):
 
     Shows: ID, name, username, group count
     """
+    global vz_client, vz_emoji
+
     # Get target
     reply = await event.get_reply_message()
     username = event.pattern_match.group(1)
@@ -39,14 +45,16 @@ async def id_handler(event):
             target = await event.client.get_entity(username)
             is_user = True
         except Exception as e:
-            await event.edit(f"❌ Failed to get user: {str(e)}")
+            error_emoji = vz_emoji.getemoji('merah')
+            await event.edit(f"{error_emoji} Failed to get user: {str(e)}")
             return
     else:
         # Get current chat info
         target = await event.get_chat()
         is_user = False
 
-    await event.edit("🔍 Fetching information...")
+    loading_emoji = vz_emoji.getemoji('loading')
+    await event.edit(f"{loading_emoji} Fetching information...")
 
     # Build info text
     if is_user:
@@ -59,15 +67,19 @@ async def id_handler(event):
             except:
                 group_count = "Unknown"
 
+            main_emoji = vz_emoji.getemoji('utama')
+            success_emoji = vz_emoji.getemoji('centang')
+            petir_emoji = vz_emoji.getemoji('petir')
+
             info_text = f"""
-👤 **USER INFORMATION**
+{main_emoji} **USER INFORMATION**
 
 **📋 Basic Info:**
 ├ **Name:** {target.first_name} {target.last_name if target.last_name else ''}
 ├ **Username:** @{target.username if target.username else 'None'}
 ├ **User ID:** `{target.id}`
 ├ **Bot:** {'✅ Yes' if target.bot else '❌ No'}
-└ **Premium:** {'✅ Yes' if hasattr(target, 'premium') and target.premium else '❌ No'}
+└ **Premium:** {success_emoji if hasattr(target, 'premium') and target.premium else '❌'} {'Yes' if hasattr(target, 'premium') and target.premium else 'No'}
 
 **📊 Statistics:**
 ├ **Common Groups:** {group_count}
@@ -76,16 +88,20 @@ async def id_handler(event):
 **🔗 Permanent Link:**
 [Click here](tg://user?id={target.id})
 
-{config.BRANDING_FOOTER} INFO
+{petir_emoji} {config.BRANDING_FOOTER} INFO
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 """
         except Exception as e:
-            await event.edit(f"❌ Error getting user info: {str(e)}")
+            error_emoji = vz_emoji.getemoji('merah')
+            await event.edit(f"{error_emoji} Error getting user info: {str(e)}")
             return
     else:
         # Chat/Group info
+        telegram_emoji = vz_emoji.getemoji('telegram')
+        petir_emoji = vz_emoji.getemoji('petir')
+
         info_text = f"""
-💬 **CHAT INFORMATION**
+{telegram_emoji} **CHAT INFORMATION**
 
 **📋 Basic Info:**
 ├ **Title:** {target.title if hasattr(target, 'title') else 'Private Chat'}
@@ -97,7 +113,7 @@ Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 ├ **Members:** {target.participants_count if hasattr(target, 'participants_count') else 'Unknown'}
 └ **Photo:** {'✅ Yes' if target.photo else '❌ No'}
 
-{config.BRANDING_FOOTER} INFO
+{petir_emoji} {config.BRANDING_FOOTER} INFO
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 """
 
@@ -118,18 +134,23 @@ async def getfileid_handler(event):
     Supported: Photos, Videos, Documents, Stickers, etc.
     Returns file_id for use in other commands.
     """
+    global vz_client, vz_emoji
+
     # Check if replying to media
     reply = await event.get_reply_message()
 
     if not reply:
-        await event.edit("❌ Reply to a media message to get file ID!")
+        error_emoji = vz_emoji.getemoji('merah')
+        await event.edit(f"{error_emoji} Reply to a media message to get file ID!")
         return
 
     if not reply.media:
-        await event.edit("❌ Replied message doesn't contain media!")
+        error_emoji = vz_emoji.getemoji('merah')
+        await event.edit(f"{error_emoji} Replied message doesn't contain media!")
         return
 
-    await event.edit("🔍 Extracting file ID...")
+    loading_emoji = vz_emoji.getemoji('loading')
+    await event.edit(f"{loading_emoji} Extracting file ID...")
 
     # Get media info
     media = reply.media
@@ -173,7 +194,8 @@ async def getfileid_handler(event):
             media_type = "Other"
 
     except Exception as e:
-        await event.edit(f"❌ Failed to extract file ID: {str(e)}")
+        error_emoji = vz_emoji.getemoji('merah')
+        await event.edit(f"{error_emoji} Failed to extract file ID: {str(e)}")
         return
 
     # Format file size
@@ -190,8 +212,12 @@ async def getfileid_handler(event):
         size_str = "Unknown"
 
     # Build result
+    camera_emoji = vz_emoji.getemoji('camera')
+    success_emoji = vz_emoji.getemoji('centang')
+    petir_emoji = vz_emoji.getemoji('petir')
+
     result_text = f"""
-📄 **FILE INFORMATION**
+{camera_emoji} **FILE INFORMATION**
 
 **📋 Details:**
 ├ **Type:** {media_type}
@@ -203,7 +229,7 @@ async def getfileid_handler(event):
 **💡 Usage:**
 Use this file_id to send or manipulate this file.
 
-{config.BRANDING_FOOTER} INFO
+{petir_emoji} {config.BRANDING_FOOTER} INFO
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 """
 
@@ -221,7 +247,10 @@ async def limit_handler(event):
     Connects to @SpamBot to check if account is limited.
     Auto-presses start button and returns response.
     """
-    await event.edit("🔍 Checking spam limit...")
+    global vz_client, vz_emoji
+
+    loading_emoji = vz_emoji.getemoji('loading')
+    await event.edit(f"{loading_emoji} Checking spam limit...")
 
     try:
         # Send /start to @SpamBot
@@ -234,8 +263,11 @@ async def limit_handler(event):
 
             # Get response text
             if response.text:
+                robot_emoji = vz_emoji.getemoji('robot')
+                petir_emoji = vz_emoji.getemoji('petir')
+
                 limit_text = f"""
-📊 **SPAM LIMIT CHECK**
+{robot_emoji} **SPAM LIMIT CHECK**
 
 **🤖 @SpamBot Response:**
 
@@ -244,15 +276,17 @@ async def limit_handler(event):
 **ℹ️ Info:**
 This shows your current Telegram limits status.
 
-{config.BRANDING_FOOTER} LIMIT
+{petir_emoji} {config.BRANDING_FOOTER} LIMIT
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 """
             else:
-                limit_text = "❌ No response from @SpamBot"
+                error_emoji = vz_emoji.getemoji('merah')
+                limit_text = f"{error_emoji} No response from @SpamBot"
 
             await event.edit(limit_text)
 
     except Exception as e:
-        await event.edit(f"❌ Failed to check limit: {str(e)}\n\nTry messaging @SpamBot manually.")
+        error_emoji = vz_emoji.getemoji('merah')
+        await event.edit(f"{error_emoji} Failed to check limit: {str(e)}\n\nTry messaging @SpamBot manually.")
 
 print("✅ Plugin loaded: info.py")

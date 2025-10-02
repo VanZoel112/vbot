@@ -11,6 +11,10 @@ from telethon.tl.functions.channels import EditAdminRequest
 from telethon.tl.types import ChatAdminRights
 import config
 
+# Global variables (set by main.py)
+vz_client = None
+vz_emoji = None
+
 # ============================================================================
 # ADMIN COMMAND
 # ============================================================================

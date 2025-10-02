@@ -9,6 +9,10 @@ Founder & DEVELOPER : @VZLfxs
 from telethon import events
 import config
 
+# Global variables (set by main.py)
+vz_client = None
+vz_emoji = None
+
 # Note: pytgcalls integration requires additional setup
 # This is a placeholder implementation
 

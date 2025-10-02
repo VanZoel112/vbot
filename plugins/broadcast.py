@@ -13,6 +13,10 @@ import json
 import os
 import config
 
+# Global variables (set by main.py)
+vz_client = None
+vz_emoji = None
+
 # ============================================================================
 # BLACKLIST MANAGEMENT
 # ============================================================================

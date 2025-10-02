@@ -10,6 +10,10 @@ from telethon import events, Button
 import config
 from database.models import DatabaseManager
 
+# Global variables (set by main.py)
+vz_client = None
+vz_emoji = None
+
 # ============================================================================
 # GET PAYMENT INFO COMMAND
 # ============================================================================

@@ -12,6 +12,10 @@ import os
 import config
 from helpers.inline import get_showjson_buttons
 
+# Global variables (set by main.py)
+vz_client = None
+vz_emoji = None
+
 # ============================================================================
 # SHOWJSON COMMAND
 # ============================================================================

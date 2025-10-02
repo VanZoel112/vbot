@@ -16,6 +16,10 @@ import random
 import time
 import config
 
+# Global variables (set by main.py)
+vz_client = None
+vz_emoji = None
+
 # ============================================================================
 # TAG ALL MANAGEMENT
 # ============================================================================

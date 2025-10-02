@@ -10,6 +10,10 @@ from telethon import events, Button
 import config
 from helpers.inline import KeyboardBuilder
 
+# Global variables (set by main.py)
+vz_client = None
+vz_emoji = None
+
 # ============================================================================
 # COMMAND DATABASE
 # ============================================================================
