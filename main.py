@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import config
 from client import VZClient, MultiClientManager
 from database.models import DatabaseManager
-from helpers import load_plugins
+from helpers import load_plugins, logger, log_event, log_exception
 from telethon import events
 
 # ============================================================================
@@ -46,7 +46,10 @@ BANNER = f"""
 
 async def setup_log_handler(client: VZClient):
     """Setup log handler to send logs to LOG_GROUP_ID."""
+    logger.info("Setting up log handler...")
+
     if not config.LOG_GROUP_ID:
+        logger.warning("LOG_GROUP_ID not configured - logs will only be in local files")
         print("⚠️  LOG_GROUP_ID not configured - logs will only be in terminal")
         return
 
@@ -70,6 +73,9 @@ async def setup_log_handler(client: VZClient):
             chat = await event.get_chat()
             chat_name = getattr(chat, 'title', None) or getattr(chat, 'first_name', 'Unknown')
 
+            # Log to local file
+            logger.info(f"Command: {event.text} | User: {client.me.username} | Chat: {chat_name}")
+
             # Build log message
             log_msg = f"""
 📝 **Command Log**
@@ -82,12 +88,15 @@ async def setup_log_handler(client: VZClient):
 
             # Send to log group
             await client.client.send_message(config.LOG_GROUP_ID, log_msg)
+            logger.debug(f"Sent log to group {config.LOG_GROUP_ID}")
 
         except Exception as e:
+            logger.error(f"Log handler error: {e}", exc_info=True)
             print(f"❌ Log handler error: {e}")
 
     # Add handler to client
     client.client.add_event_handler(log_handler)
+    logger.info(f"Log handler configured - sending to group {config.LOG_GROUP_ID}")
     print(f"✅ Log handler configured - sending to group {config.LOG_GROUP_ID}")
 
 # ============================================================================
@@ -97,14 +106,25 @@ async def setup_log_handler(client: VZClient):
 async def main():
     """Main application function."""
     print(BANNER)
+    logger.info("="*60)
+    logger.info("VZ ASSISTANT Starting...")
+    logger.info("="*60)
+
+    # Print log file location
+    print(f"\n📁 Logs Directory: {logger.log_dir}")
+    print(f"📄 Main Log: {logger.get_log_path()}")
+    print(f"❌ Error Log: {logger.get_error_log_path()}")
+    print(f"⚡ Command Log: {logger.get_command_log_path()}\n")
 
     # Check for session string
     print("🔐 Session Configuration")
     print("="*60)
+    logger.info("Checking session configuration...")
 
     session_string = os.getenv("SESSION_STRING")
 
     if not session_string:
+        logger.warning("No SESSION_STRING found in environment variables")
         print("⚠️  No SESSION_STRING found in environment variables")
         print("\nOptions:")
         print("  1. Run stringgenerator.py to create a session")
@@ -115,6 +135,7 @@ async def main():
         session_input = input("Enter session string (or press Enter to exit): ").strip()
 
         if not session_input:
+            logger.info("No session string provided. Exiting...")
             print("\n❌ No session string provided. Exiting...")
             return
 
@@ -122,12 +143,15 @@ async def main():
 
     # Initialize client manager
     print("\n🔧 Initializing Client Manager...")
+    logger.info("Initializing client manager...")
     manager = MultiClientManager()
 
     try:
         # Add main client
         print("📡 Connecting to Telegram...")
+        logger.info("Connecting to Telegram...")
         main_client = await manager.add_client(session_string)
+        logger.info(f"Connected as: {main_client.me.first_name} (@{main_client.me.username})")
 
         # Setup log handler
         print("\n📋 Configuring Logging...")
@@ -135,6 +159,7 @@ async def main():
 
         # Load plugins with event registration
         print("\n📦 Loading Plugins...")
+        logger.info("Loading plugins...")
         plugin_count = load_plugins(main_client)
 
         print("\n" + "="*60)
@@ -147,19 +172,29 @@ async def main():
         print(f"📦 Plugins: {plugin_count}")
         print("="*60)
 
+        logger.info("VZ ASSISTANT started successfully")
+        logger.info(f"User: {main_client.me.first_name} (ID: {main_client.me.id})")
+        logger.info(f"Role: {'DEVELOPER' if main_client.is_developer else 'SUDOER'}")
+        logger.info(f"Loaded {plugin_count} plugins")
+
         # Keep running
         print("\n🔄 Bot is now running... (Press Ctrl+C to stop)")
+        logger.info("Bot is now running and listening for events...")
         await main_client.client.run_until_disconnected()
 
     except KeyboardInterrupt:
+        logger.info("Received keyboard interrupt")
         print("\n\n⚠️  Stopping VZ ASSISTANT...")
     except Exception as e:
+        logger.critical(f"Fatal error in main: {e}", exc_info=True)
         print(f"\n❌ Error: {str(e)}")
         import traceback
         traceback.print_exc()
     finally:
+        logger.info("Shutting down...")
         print("\n🛑 Shutting down...")
         await manager.stop_all()
+        logger.info("VZ ASSISTANT stopped")
         print("👋 Goodbye!")
 
 # ============================================================================

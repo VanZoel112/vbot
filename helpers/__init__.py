@@ -21,6 +21,7 @@ from .inline import (
 )
 
 from .loader import load_plugins, get_all_handlers
+from .logger import logger, debug, info, warning, error, critical, log_command, log_event, log_exception
 
 __all__ = [
     'InlineManager',
@@ -35,5 +36,14 @@ __all__ = [
     'get_admin_buttons',
     'get_pm_permit_buttons',
     'load_plugins',
-    'get_all_handlers'
+    'get_all_handlers',
+    'logger',
+    'debug',
+    'info',
+    'warning',
+    'error',
+    'critical',
+    'log_command',
+    'log_event',
+    'log_exception'
 ]

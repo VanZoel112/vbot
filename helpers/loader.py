@@ -10,6 +10,10 @@ import os
 import sys
 import importlib
 from telethon import events
+import logging
+
+# Create module logger
+log = logging.getLogger("VZ_ASSISTANT.loader")
 
 # Global registry for all event handlers
 _event_handlers = []
@@ -35,27 +39,38 @@ def load_plugins(client):
     """
     plugins_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "plugins")
 
+    log.info(f"Loading plugins from: {plugins_dir}")
+
     if not os.path.exists(plugins_dir):
         os.makedirs(plugins_dir)
+        log.warning(f"Created plugins directory: {plugins_dir}")
         print(f"📁 Created plugins directory: {plugins_dir}")
         return 0
 
     plugin_count = 0
     handler_count = 0
 
-    for filename in os.listdir(plugins_dir):
+    # Get the Telethon client (unwrap VZClient if needed)
+    tg_client = getattr(client, 'client', client)
+    log.debug(f"Using client type: {type(tg_client).__name__}")
+
+    for filename in sorted(os.listdir(plugins_dir)):
         if filename.endswith(".py") and not filename.startswith("_"):
             try:
                 # Import plugin module
                 plugin_name = filename[:-3]
                 module_name = f"plugins.{plugin_name}"
 
+                log.debug(f"Loading plugin: {plugin_name}")
+
                 # Remove if already loaded (for reload support)
                 if module_name in sys.modules:
+                    log.debug(f"Reloading module: {module_name}")
                     del sys.modules[module_name]
 
                 # Import the plugin
                 module = importlib.import_module(module_name)
+                log.debug(f"Module imported: {module_name}")
 
                 # Find all event handlers in the module
                 plugin_handlers = 0
@@ -64,23 +79,31 @@ def load_plugins(client):
 
                     # Check if it's an event handler
                     if callable(attr) and hasattr(attr, '_telethon_event'):
-                        # Get the Telethon client (unwrap VZClient if needed)
-                        tg_client = getattr(client, 'client', client)
-
-                        # Add handler to client
-                        tg_client.add_event_handler(attr)
-                        plugin_handlers += 1
-                        handler_count += 1
+                        try:
+                            # Add handler to client
+                            tg_client.add_event_handler(attr)
+                            plugin_handlers += 1
+                            handler_count += 1
+                            log.debug(f"  Registered handler: {attr_name} from {plugin_name}")
+                        except Exception as e:
+                            log.error(f"  Failed to register handler {attr_name}: {e}")
 
                 plugin_count += 1
-                print(f"  ✅ {plugin_name:20s} ({plugin_handlers} handlers)")
+                msg = f"  ✅ {plugin_name:20s} ({plugin_handlers} handlers)"
+                print(msg)
+                log.info(f"Loaded plugin: {plugin_name} with {plugin_handlers} handlers")
 
             except Exception as e:
-                print(f"  ❌ {filename:20s} Error: {str(e)}")
+                msg = f"  ❌ {filename:20s} Error: {str(e)}"
+                print(msg)
+                log.error(f"Failed to load plugin {filename}: {e}", exc_info=True)
                 import traceback
                 traceback.print_exc()
 
-    print(f"\n✅ Loaded {plugin_count} plugins with {handler_count} handlers\n")
+    summary = f"Loaded {plugin_count} plugins with {handler_count} handlers"
+    print(f"\n✅ {summary}\n")
+    log.info(summary)
+
     return plugin_count
 
 def unload_plugins(client):
