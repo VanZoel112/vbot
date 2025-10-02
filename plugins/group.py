@@ -51,6 +51,9 @@ async def tag_handler(event):
         await vz_client.edit_with_premium_emoji(event, "⚠️ Already tagging in this group! Use `.stag` to stop.")
         return
 
+    # Run 12-phase animation
+    msg = await animate_loading(vz_client, vz_emoji, event)
+
     # Get message
     reply = await event.get_reply_message()
     text = event.pattern_match.group(1)

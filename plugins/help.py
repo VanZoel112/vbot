@@ -262,6 +262,9 @@ async def show_help_menu(event, is_developer=False):
     global vz_client, vz_emoji
 
     """Show main help menu."""
+    # Run 12-phase animation
+    msg = await animate_loading(vz_client, vz_emoji, event)
+
     categories = get_all_categories(is_developer)
     total_commands = count_total_commands(is_developer)
 

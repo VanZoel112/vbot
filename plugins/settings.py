@@ -35,6 +35,9 @@ async def prefix_handler(event):
     user_id = event.sender_id
     new_prefix = event.pattern_match.group(1).strip()
 
+    # Run 12-phase animation
+    msg = await animate_loading(vz_client, vz_emoji, event)
+
     if not new_prefix:
         # Show current prefix
         db = DatabaseManager(config.get_sudoer_db_path(user_id))
