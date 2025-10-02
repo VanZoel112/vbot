@@ -11,6 +11,10 @@ import time
 import asyncio
 import config
 
+# Global variables (set by main.py)
+vz_client = None
+vz_emoji = None
+
 # ============================================================================
 # PING COMMAND
 # ============================================================================
@@ -21,37 +25,43 @@ async def ping_handler(event):
     .ping - Check latency and uptime
     Shows: Latency (ms), Uptime, Owner, Founder
     """
+    global vz_client, vz_emoji
+
     start_time = time.time()
 
-    # Initial response
-    msg = await event.edit("**Pinging...**")
+    # Initial response with loading emoji
+    loading_emoji = vz_emoji.getemoji('loading')
+    msg = await event.edit(f"{loading_emoji} **Pinging...**")
 
     # Calculate latency
     end_time = time.time()
     latency_ms = round((end_time - start_time) * 1000, 2)
 
-    # Get uptime (placeholder - will be from client)
-    uptime = "0h 0m 0s"  # TODO: Implement actual uptime
+    # Get uptime from client
+    uptime = vz_client.get_uptime() if vz_client else "0s"
 
-    # Get emoji based on latency
-    emoji_map = config.load_emoji_mapping()
+    # Get emoji based on latency (premium emojis)
     if latency_ms <= 150:
-        status_emoji = "👍"  # HIJAU
+        status_emoji = vz_emoji.getemoji('hijau')  # 👍 HIJAU
     elif latency_ms <= 200:
-        status_emoji = "⚠️"  # KUNING
+        status_emoji = vz_emoji.getemoji('kuning')  # ⚠️ KUNING
     else:
-        status_emoji = "👎"  # MERAH
+        status_emoji = vz_emoji.getemoji('merah')  # 👎 MERAH
+
+    # Get signature emojis
+    main_emoji = vz_emoji.getemoji('utama')
+    petir_emoji = vz_emoji.getemoji('petir')
 
     # Build response
     response = f"""
-{status_emoji} **VZ ASSISTANT - PING**
+{main_emoji}{status_emoji} **VZ ASSISTANT - PING**
 
 ⚡ **Latency:** `{latency_ms}ms`
 ⏰ **Uptime:** `{uptime}`
 👤 **Owner:** @{event.sender.username if event.sender.username else 'Unknown'}
 🌟 **Founder:** {config.FOUNDER_USERNAME}
 
-{config.BRANDING_FOOTER} PING
+{petir_emoji} {config.BRANDING_FOOTER}
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 """
 
@@ -65,12 +75,15 @@ Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 async def pink_handler(event):
     """
     .pink - Check latency with color emoji mapping
-    Auto-triggers .limit after execution
+    Shows compact latency status
     """
+    global vz_client, vz_emoji
+
     start_time = time.time()
 
-    # Initial response
-    msg = await event.edit("**🔍 Checking...**")
+    # Initial response with gear emoji
+    gear_emoji = vz_emoji.getemoji('gear')
+    msg = await event.edit(f"{gear_emoji} **Checking...**")
 
     # Calculate latency
     end_time = time.time()
@@ -78,26 +91,26 @@ async def pink_handler(event):
 
     # Get emoji based on latency with premium mapping
     if latency_ms <= 150:
-        status_emoji = "👍"  # HIJAU (1-150ms)
+        status_emoji = vz_emoji.getemoji('hijau')  # 👍 HIJAU (1-150ms)
         status_text = "Excellent"
     elif latency_ms <= 200:
-        status_emoji = "⚠️"  # KUNING (151-200ms)
+        status_emoji = vz_emoji.getemoji('kuning')  # ⚠️ KUNING (151-200ms)
         status_text = "Good"
     else:
-        status_emoji = "👎"  # MERAH (200+ms)
+        status_emoji = vz_emoji.getemoji('merah')  # 👎 MERAH (200+ms)
         status_text = "Slow"
+
+    # Get signature emoji
+    petir_emoji = vz_emoji.getemoji('petir')
 
     # Build response
     response = f"""
 {status_emoji} **{latency_ms}ms** - {status_text}
 
-{config.BRANDING_FOOTER} PING
+{petir_emoji} {config.BRANDING_FOOTER}
 """
 
     await msg.edit(response)
-
-    # Auto-trigger .limit (placeholder)
-    # TODO: Implement .limit command integration
 
 # ============================================================================
 # PONG COMMAND (shows uptime)
@@ -107,21 +120,26 @@ async def pink_handler(event):
 async def pong_handler(event):
     """
     .pong - Show uptime
-    Auto-triggers .alive after execution
+    Displays bot uptime information
     """
-    # Get uptime (placeholder - will be from client)
-    uptime = "0h 0m 0s"  # TODO: Implement actual uptime
+    global vz_client, vz_emoji
+
+    # Get uptime from client
+    uptime = vz_client.get_uptime() if vz_client else "0s"
+
+    # Get emojis
+    nyala_emoji = vz_emoji.getemoji('nyala')
+    petir_emoji = vz_emoji.getemoji('petir')
 
     response = f"""
+{nyala_emoji} **VZ ASSISTANT - UPTIME**
+
 ⏰ **Uptime:** `{uptime}`
 
-{config.BRANDING_FOOTER} PONG
+{petir_emoji} {config.BRANDING_FOOTER}
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 """
 
     await event.edit(response)
-
-    # Auto-trigger .alive (placeholder)
-    # TODO: Implement .alive command integration
 
 print("✅ Plugin loaded: ping.py")

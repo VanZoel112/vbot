@@ -9,8 +9,13 @@ Founder & DEVELOPER : @VZLfxs
 from telethon import events, Button
 import time
 import os
+import asyncio
 import config
 from helpers.inline import get_alive_buttons, KeyboardBuilder
+
+# Global variables (set by main.py)
+vz_client = None
+vz_emoji = None
 
 # Global start time
 START_TIME = time.time()
@@ -18,27 +23,6 @@ START_TIME = time.time()
 # ============================================================================
 # HELPER FUNCTIONS
 # ============================================================================
-
-def get_uptime():
-    """Get bot uptime."""
-    uptime_seconds = int(time.time() - START_TIME)
-
-    days = uptime_seconds // 86400
-    hours = (uptime_seconds % 86400) // 3600
-    minutes = (uptime_seconds % 3600) // 60
-    seconds = uptime_seconds % 60
-
-    parts = []
-    if days > 0:
-        parts.append(f"{days}d")
-    if hours > 0:
-        parts.append(f"{hours}h")
-    if minutes > 0:
-        parts.append(f"{minutes}m")
-    if seconds > 0 or not parts:
-        parts.append(f"{seconds}s")
-
-    return " ".join(parts)
 
 def count_plugins():
     """Count total plugins."""
@@ -79,28 +63,32 @@ async def alive_handler(event):
     - HELP: Open help menu
     - DEV: Contact developer
     """
+    global vz_client, vz_emoji
+
     # Get data
-    uptime = get_uptime()
+    uptime = vz_client.get_uptime() if vz_client else "0s"
     plugin_count = count_plugins()
     owner_username = get_owner_username(event)
 
-    # Load emoji mapping for premium emojis
-    emoji_map = config.load_emoji_mapping()
+    # Get premium emojis
+    main_emoji = vz_emoji.getemoji('utama')
+    nyala_emoji = vz_emoji.getemoji('nyala')
+    checklist_emoji = vz_emoji.getemoji('centang')
+    petir_emoji = vz_emoji.getemoji('petir')
 
-    # Build alive message
+    # Build alive message with premium emojis
     alive_text = f"""
-   **Vz ASSISTANT**
+{main_emoji} **Vz ASSISTANT** {nyala_emoji}
 
 
+{checklist_emoji} **Founder**         : Vzoel Fox's/t.me/VZLfxs
+{checklist_emoji} **Owner**            : @{owner_username}
+{checklist_emoji} **Versi**              : {config.BOT_VERSION}
+{checklist_emoji} **Telethon × Python 3+**
+{checklist_emoji} **Total Plugin**  : {plugin_count}
+{checklist_emoji} **Waktu Nyala** : {uptime}
 
-**Founder**         : Vzoel Fox's/t.me/VZLfxs
-**Owner**            : @{owner_username}
-**Versi**              : {config.BOT_VERSION}
-**Telethon × Python 3+**
-**Total Plugin**  : {plugin_count}
-**Waktu Nyala** : {uptime}
-
-~Vzoel Fox's Lutpan
+{petir_emoji} ~Vzoel Fox's Lutpan
 """
 
     # Create inline buttons
@@ -150,39 +138,52 @@ async def vzoel_handler(event):
 
     Only for developers!
     """
+    global vz_client, vz_emoji
+
     # Check if user is developer
     user_id = event.sender_id
     if not config.is_developer(user_id):
         return
 
-    # Animation frames (12 edits)
+    # Get premium emojis for animation
+    loading_emoji = vz_emoji.getemoji('loading')
+    gear_emoji = vz_emoji.getemoji('gear')
+    proses1_emoji = vz_emoji.getemoji('proses1')
+    proses2_emoji = vz_emoji.getemoji('proses2')
+    proses3_emoji = vz_emoji.getemoji('proses3')
+    checklist_emoji = vz_emoji.getemoji('centang')
+
+    # Animation frames (12 edits) with premium emojis
     frames = [
-        "🔄 Loading...",
-        "⚡ Initializing...",
-        "🔥 Processing...",
-        "💫 Gathering data...",
-        "🌟 Compiling info...",
-        "✨ Almost there...",
-        "🚀 Finalizing...",
-        "⚙️ Configuring...",
-        "🎯 Optimizing...",
-        "💎 Polishing...",
-        "🎨 Rendering...",
-        "✅ Complete!"
+        f"{loading_emoji} Loading...",
+        f"{petir_emoji} Initializing...",
+        f"{proses1_emoji} Processing...",
+        f"{proses2_emoji} Gathering data...",
+        f"{proses3_emoji} Compiling info...",
+        f"{gear_emoji} Almost there...",
+        f"{loading_emoji} Finalizing...",
+        f"{gear_emoji} Configuring...",
+        f"{proses1_emoji} Optimizing...",
+        f"{proses2_emoji} Polishing...",
+        f"{proses3_emoji} Rendering...",
+        f"{checklist_emoji} Complete!"
     ]
 
     # Run animation
     msg = await event.edit(frames[0])
 
     for i, frame in enumerate(frames[1:], 1):
-        await asyncio.sleep(1.5)  # 1.5 second delay
+        await asyncio.sleep(config.ANIMATION_DELAY)
         await msg.edit(frame)
 
-    # Final developer profile
-    await asyncio.sleep(1.5)
+    # Final developer profile with premium emojis
+    await asyncio.sleep(config.ANIMATION_DELAY)
+
+    main_emoji = vz_emoji.getemoji('utama')
+    petir_emoji = vz_emoji.getemoji('petir')
 
     profile_text = f"""
-🤩 **VZOEL FOX'S - MAIN DEVELOPER**
+{main_emoji} **VZOEL FOX'S - MAIN DEVELOPER**
 
 👨‍💻 **Developer Profile**
 ━━━━━━━━━━━━━━━━━━━━━━
@@ -200,7 +201,7 @@ async def vzoel_handler(event):
 
 📊 **Stats:**
 • Total Plugins: {count_plugins()}
-• Uptime: {get_uptime()}
+• Uptime: {vz_client.get_uptime() if vz_client else "0s"}
 • Database: Multi-User SQLite
 • Emoji Mapping: 17 Premium
 
@@ -208,7 +209,7 @@ async def vzoel_handler(event):
 • Telegram: t.me/VZLfxs
 • Username: @VZLfxs
 
-{config.BRANDING_FOOTER} VZOEL
+{petir_emoji} {config.BRANDING_FOOTER} VZOEL
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 """
 
@@ -220,8 +221,5 @@ Founder & DEVELOPER : {config.FOUNDER_USERNAME}
         await msg.edit(profile_text, buttons=buttons)
     except:
         await msg.edit(profile_text)
-
-# Import asyncio for vzoel animation
-import asyncio
 
 print("✅ Plugin loaded: alive.py")
