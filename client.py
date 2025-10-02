@@ -96,37 +96,43 @@ class VZClient:
         return self.db.get_prefix(self.user_id)
 
     async def send_with_premium_emoji(self, chat_id, text: str, **kwargs):
-        """Send message with premium emoji conversion."""
+        """Send message with premium emoji conversion using entities."""
         if not self.emoji.available:
             return await self.client.send_message(chat_id, text, **kwargs)
 
-        # Build entities using the new utility
+        # Build entities using the utility
         entities = build_premium_emoji_entities(text)
 
-        # Send with custom emoji entities if any
-        if entities:
-            return await self.client.send_message(
-                chat_id,
-                text,
-                formatting_entities=entities,
-                **kwargs
-            )
-        else:
-            return await self.client.send_message(chat_id, text, **kwargs)
+        # Always send with entities - even if empty (Telegram requirement)
+        # Remove parse_mode if present as entities takes precedence
+        if 'parse_mode' in kwargs:
+            del kwargs['parse_mode']
+
+        return await self.client.send_message(
+            chat_id,
+            text,
+            formatting_entities=entities if entities else None,
+            **kwargs
+        )
 
     async def edit_with_premium_emoji(self, message, text: str, **kwargs):
-        """Edit message with premium emoji conversion."""
+        """Edit message with premium emoji conversion using entities."""
         if not self.emoji.available:
             return await message.edit(text, **kwargs)
 
-        # Build entities using the new utility
+        # Build entities using the utility
         entities = build_premium_emoji_entities(text)
 
-        # Edit with custom emoji entities if any
-        if entities:
-            return await message.edit(text, formatting_entities=entities, **kwargs)
-        else:
-            return await message.edit(text, **kwargs)
+        # Always edit with entities - even if empty (Telegram requirement)
+        # Remove parse_mode if present as entities takes precedence
+        if 'parse_mode' in kwargs:
+            del kwargs['parse_mode']
+
+        return await message.edit(
+            text,
+            formatting_entities=entities if entities else None,
+            **kwargs
+        )
 
     def get_uptime(self) -> str:
         """Get bot uptime in human-readable format."""

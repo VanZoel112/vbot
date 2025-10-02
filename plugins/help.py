@@ -300,7 +300,7 @@ Founder & DEVELOPER : {config.FOUNDER_USERNAME}
     except Exception as e:
         # Fallback without buttons
         if hasattr(event, 'edit'):
-            await event.edit(help_text)
+            await vz_client.edit_with_premium_emoji(event, help_text)
         else:
             await event.respond(help_text)
 
@@ -360,7 +360,7 @@ async def help_category_callback(event):
     try:
         await event.edit(category_text, buttons=buttons)
     except:
-        await event.edit(category_text)
+        await vz_client.edit_with_premium_emoji(event, category_text)
 
     await event.answer()
 
@@ -419,7 +419,7 @@ async def help_command_callback(event):
     try:
         await event.edit(cmd_text, buttons=buttons)
     except:
-        await event.edit(cmd_text)
+        await vz_client.edit_with_premium_emoji(event, cmd_text)
 
     await event.answer()
 

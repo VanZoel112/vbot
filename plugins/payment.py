@@ -36,7 +36,7 @@ async def get_handler(event):
     db.close()
 
     if not payments:
-        await event.edit(f"""
+        await vz_client.edit_with_premium_emoji(event, f"""
 ℹ️ **No Payment Information**
 
 Use `.setget` (reply to message) to add payment info
@@ -83,9 +83,9 @@ Founder & DEVELOPER : {config.FOUNDER_USERNAME}
             )
             await event.delete()
         except:
-            await event.edit(payment_text)
+            await vz_client.edit_with_premium_emoji(event, payment_text)
     else:
-        await event.edit(payment_text)
+        await vz_client.edit_with_premium_emoji(event, payment_text)
 
 # ============================================================================
 # SET PAYMENT INFO COMMAND
@@ -113,7 +113,7 @@ async def setget_handler(event):
     # Check if replying
     reply = await event.get_reply_message()
     if not reply or not reply.text:
-        await event.edit(f"""
+        await vz_client.edit_with_premium_emoji(event, f"""
 ❌ **Reply to a message** with payment info
 
 **Format:**
@@ -148,7 +148,7 @@ ATAS NAMA             : John Doe
                 account_name = value
 
     if not all([payment_type, account_number, account_name]):
-        await event.edit("❌ Invalid format! Make sure all fields are filled.")
+        await vz_client.edit_with_premium_emoji(event, "❌ Invalid format! Make sure all fields are filled.")
         return
 
     # Save to database
@@ -163,7 +163,7 @@ ATAS NAMA             : John Doe
 
     if not success:
         db.close()
-        await event.edit(f"""
+        await vz_client.edit_with_premium_emoji(event, f"""
 ❌ **Maximum Limit Reached**
 
 You can only save up to {config.MAX_PAYMENT_INFO} payment methods.
@@ -191,7 +191,7 @@ Use `.get` to view all payment info
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 """
 
-    await event.edit(result_text)
+    await vz_client.edit_with_premium_emoji(event, result_text)
 
 # ============================================================================
 # SET QR CODE COMMAND
@@ -214,7 +214,7 @@ async def getqr_handler(event):
     # Check if replying to photo
     reply = await event.get_reply_message()
     if not reply or not reply.photo:
-        await event.edit("""
+        await vz_client.edit_with_premium_emoji(event, """
 ❌ **Reply to a QR code image**
 
 The image should contain your payment QR code.
@@ -225,7 +225,7 @@ The image should contain your payment QR code.
 """)
         return
 
-    await event.edit("📷 Extracting QR code...")
+    await vz_client.edit_with_premium_emoji(event, "📷 Extracting QR code...")
 
     # Get file ID
     file_id = str(reply.photo.id)
@@ -246,6 +246,6 @@ Your QR code will be shown when using `.get` command.
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 """
 
-    await event.edit(result_text)
+    await vz_client.edit_with_premium_emoji(event, result_text)
 
 print("✅ Plugin loaded: payment.py")

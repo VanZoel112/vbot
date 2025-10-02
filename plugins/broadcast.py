@@ -72,7 +72,7 @@ async def bl_handler(event):
 
     # Check if already blacklisted
     if chat_id in blacklist:
-        await event.edit(f"⚠️ Group `{chat_id}` is already blacklisted!")
+        await vz_client.edit_with_premium_emoji(event, f"⚠️ Group `{chat_id}` is already blacklisted!")
         return
 
     # Add to blacklist
@@ -99,7 +99,7 @@ async def bl_handler(event):
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 """
 
-    await event.edit(result_text)
+    await vz_client.edit_with_premium_emoji(event, result_text)
 
 # ============================================================================
 # BLACKLIST REMOVE COMMAND
@@ -131,7 +131,7 @@ async def dbl_handler(event):
 
     # Check if in blacklist
     if chat_id not in blacklist:
-        await event.edit(f"⚠️ Group `{chat_id}` is not blacklisted!")
+        await vz_client.edit_with_premium_emoji(event, f"⚠️ Group `{chat_id}` is not blacklisted!")
         return
 
     # Remove from blacklist
@@ -158,7 +158,7 @@ async def dbl_handler(event):
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 """
 
-    await event.edit(result_text)
+    await vz_client.edit_with_premium_emoji(event, result_text)
 
 # ============================================================================
 # BROADCAST COMMAND
@@ -191,13 +191,13 @@ async def gcast_handler(event):
         message_to_broadcast = text_to_send
         is_reply = False
     else:
-        await event.edit("❌ Usage: `.gcast <message>` or `.gcast` (reply to message)")
+        await vz_client.edit_with_premium_emoji(event, "❌ Usage: `.gcast <message>` or `.gcast` (reply to message)")
         return
 
     # Load blacklist
     blacklist = load_blacklist(user_id)
 
-    await event.edit(f"📡 Preparing broadcast...\n🚫 Blacklisted: {len(blacklist)} groups")
+    await vz_client.edit_with_premium_emoji(event, f"📡 Preparing broadcast...\n🚫 Blacklisted: {len(blacklist)} groups")
 
     # Get all dialogs (groups/channels)
     dialogs = await event.client.get_dialogs()
@@ -214,11 +214,11 @@ async def gcast_handler(event):
     total_groups = len(groups)
 
     if total_groups == 0:
-        await event.edit("❌ No groups to broadcast to!")
+        await vz_client.edit_with_premium_emoji(event, "❌ No groups to broadcast to!")
         return
 
     # Confirm broadcast
-    await event.edit(f"""
+    await vz_client.edit_with_premium_emoji(event, f"""
 📢 **Broadcast Ready**
 
 **📊 Statistics:**
@@ -234,7 +234,7 @@ async def gcast_handler(event):
     # Start broadcasting
     success = 0
     failed = 0
-    msg = await event.edit(f"📡 Broadcasting... 0/{total_groups}")
+    msg = await vz_client.edit_with_premium_emoji(event, f"📡 Broadcasting... 0/{total_groups}")
 
     for i, dialog in enumerate(groups, 1):
         try:
@@ -301,10 +301,10 @@ async def bllist_handler(event):
     blacklist = load_blacklist(user_id)
 
     if not blacklist:
-        await event.edit("ℹ️ Blacklist is empty!")
+        await vz_client.edit_with_premium_emoji(event, "ℹ️ Blacklist is empty!")
         return
 
-    await event.edit(f"📋 Loading {len(blacklist)} blacklisted groups...")
+    await vz_client.edit_with_premium_emoji(event, f"📋 Loading {len(blacklist)} blacklisted groups...")
 
     # Get group names
     bl_text = f"""
@@ -331,6 +331,6 @@ async def bllist_handler(event):
 {config.BRANDING_FOOTER} BLGCAST
 """
 
-    await event.edit(bl_text)
+    await vz_client.edit_with_premium_emoji(event, bl_text)
 
 print("✅ Plugin loaded: broadcast.py")

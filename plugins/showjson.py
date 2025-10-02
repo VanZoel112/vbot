@@ -37,13 +37,13 @@ async def showjson_handler(event):
     """
     user_id = event.sender_id
 
-    await event.edit("📊 Loading data...")
+    await vz_client.edit_with_premium_emoji(event, "📊 Loading data...")
 
     # Load emoji mapping
     emoji_data = config.load_emoji_mapping()
 
     if not emoji_data:
-        await event.edit("❌ Emoji mapping not found!")
+        await vz_client.edit_with_premium_emoji(event, "❌ Emoji mapping not found!")
         return
 
     # Build main menu
@@ -87,7 +87,7 @@ Founder & DEVELOPER : {config.FOUNDER_USERNAME}
     try:
         await event.edit(main_text, buttons=buttons)
     except:
-        await event.edit(main_text)
+        await vz_client.edit_with_premium_emoji(event, main_text)
 
 # ============================================================================
 # CALLBACK HANDLERS
@@ -127,7 +127,7 @@ async def json_metrics_callback(event):
     try:
         await event.edit(metrics_text, buttons=buttons)
     except:
-        await event.edit(metrics_text)
+        await vz_client.edit_with_premium_emoji(event, metrics_text)
 
     await event.answer()
 
@@ -198,7 +198,7 @@ async def json_categories_callback(event):
     try:
         await event.edit(cat_text, buttons=buttons)
     except:
-        await event.edit(cat_text)
+        await vz_client.edit_with_premium_emoji(event, cat_text)
 
     await event.answer()
 
@@ -235,7 +235,7 @@ async def json_raw_callback(event):
     try:
         await event.edit(raw_text, buttons=buttons)
     except:
-        await event.edit(raw_text)
+        await vz_client.edit_with_premium_emoji(event, raw_text)
 
     await event.answer()
 
@@ -277,7 +277,7 @@ async def json_back_callback(event):
     try:
         await event.edit(main_text, buttons=buttons)
     except:
-        await event.edit(main_text)
+        await vz_client.edit_with_premium_emoji(event, main_text)
 
     await event.answer()
 

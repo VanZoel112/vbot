@@ -49,18 +49,18 @@ async def admin_handler(event):
             username = username[1:]  # Remove @
             target = await event.client.get_entity(username)
         except Exception as e:
-            await event.edit(f"❌ Failed to get user: {str(e)}")
+            await vz_client.edit_with_premium_emoji(event, f"❌ Failed to get user: {str(e)}")
             return
     else:
-        await event.edit("❌ Usage: `.admin @username <title>` or `.admin` (reply) <title>")
+        await vz_client.edit_with_premium_emoji(event, "❌ Usage: `.admin @username <title>` or `.admin` (reply) <title>")
         return
 
     # Check if user is developer (developers can't be promoted)
     if config.is_developer(target.id):
-        await event.edit("⚠️ Developers cannot be promoted (already have full access)!")
+        await vz_client.edit_with_premium_emoji(event, "⚠️ Developers cannot be promoted (already have full access)!")
         return
 
-    await event.edit(f"⚙️ Promoting {target.first_name}...")
+    await vz_client.edit_with_premium_emoji(event, f"⚙️ Promoting {target.first_name}...")
 
     # Set admin rights
     try:
@@ -107,10 +107,10 @@ async def admin_handler(event):
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 """
 
-        await event.edit(result_text)
+        await vz_client.edit_with_premium_emoji(event, result_text)
 
     except Exception as e:
-        await event.edit(f"❌ Failed to promote user: {str(e)}\n\nMake sure you have 'Add Admin' permission!")
+        await vz_client.edit_with_premium_emoji(event, f"❌ Failed to promote user: {str(e)}\n\nMake sure you have 'Add Admin' permission!")
 
 # ============================================================================
 # UNADMIN COMMAND
@@ -142,18 +142,18 @@ async def unadmin_handler(event):
             username = username[1:]  # Remove @
             target = await event.client.get_entity(username)
         except Exception as e:
-            await event.edit(f"❌ Failed to get user: {str(e)}")
+            await vz_client.edit_with_premium_emoji(event, f"❌ Failed to get user: {str(e)}")
             return
     else:
-        await event.edit("❌ Usage: `.unadmin @username` or `.unadmin` (reply)")
+        await vz_client.edit_with_premium_emoji(event, "❌ Usage: `.unadmin @username` or `.unadmin` (reply)")
         return
 
     # Check if user is developer (developers can't be demoted)
     if config.is_developer(target.id):
-        await event.edit("⚠️ Developers are immune to unadmin!")
+        await vz_client.edit_with_premium_emoji(event, "⚠️ Developers are immune to unadmin!")
         return
 
-    await event.edit(f"⚙️ Demoting {target.first_name}...")
+    await vz_client.edit_with_premium_emoji(event, f"⚙️ Demoting {target.first_name}...")
 
     # Remove admin rights
     try:
@@ -194,9 +194,9 @@ User is now a regular member.
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 """
 
-        await event.edit(result_text)
+        await vz_client.edit_with_premium_emoji(event, result_text)
 
     except Exception as e:
-        await event.edit(f"❌ Failed to demote user: {str(e)}\n\nMake sure you have 'Add Admin' permission!")
+        await vz_client.edit_with_premium_emoji(event, f"❌ Failed to demote user: {str(e)}\n\nMake sure you have 'Add Admin' permission!")
 
 print("✅ Plugin loaded: admin.py")

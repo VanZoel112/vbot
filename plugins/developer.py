@@ -28,7 +28,7 @@ def developer_only(func):
         global vz_client, vz_emoji
 
         if not config.is_developer(event.sender_id):
-            await event.edit("❌ This command is for developers only!")
+            await vz_client.edit_with_premium_emoji(event, "❌ This command is for developers only!")
             return
         return await func(event)
     return wrapper
@@ -65,17 +65,17 @@ async def sdb_handler(event):
             user_id = int(target)
             user = await event.client.get_entity(user_id)
     except Exception as e:
-        await event.edit(f"❌ Failed to get user: {str(e)}")
+        await vz_client.edit_with_premium_emoji(event, f"❌ Failed to get user: {str(e)}")
         return
 
     # Check if user is sudoer
     db_path = config.get_sudoer_db_path(user_id)
     if not os.path.exists(db_path):
-        await event.edit(f"❌ No database found for user {user_id}")
+        await vz_client.edit_with_premium_emoji(event, f"❌ No database found for user {user_id}")
         return
 
     # Load database
-    await event.edit("🔍 Loading database...")
+    await vz_client.edit_with_premium_emoji(event, "🔍 Loading database...")
 
     db = DatabaseManager(db_path)
 
@@ -83,7 +83,7 @@ async def sdb_handler(event):
     db_user = db.get_user(user_id)
 
     if not db_user:
-        await event.edit(f"❌ User {user_id} not found in database")
+        await vz_client.edit_with_premium_emoji(event, f"❌ User {user_id} not found in database")
         db.close()
         return
 
@@ -134,7 +134,7 @@ Founder & DEVELOPER : {config.FOUNDER_USERNAME}
     try:
         await event.edit(db_text, buttons=buttons)
     except:
-        await event.edit(db_text)
+        await vz_client.edit_with_premium_emoji(event, db_text)
 
 @events.register(events.NewMessage(pattern=r'^\.sgd$', outgoing=True))
 @developer_only
@@ -152,10 +152,10 @@ async def sgd_handler(event):
     # Check if replying
     reply = await event.get_reply_message()
     if not reply:
-        await event.edit("❌ Reply to a message to get data!")
+        await vz_client.edit_with_premium_emoji(event, "❌ Reply to a message to get data!")
         return
 
-    await event.edit("🔍 Extracting data...")
+    await vz_client.edit_with_premium_emoji(event, "🔍 Extracting data...")
 
     # Get sender info
     sender = await reply.get_sender()
@@ -195,7 +195,7 @@ async def sgd_handler(event):
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 """
 
-    await event.edit(data_text)
+    await vz_client.edit_with_premium_emoji(event, data_text)
 
 # ============================================================================
 # SESSION MANAGEMENT COMMANDS
@@ -217,7 +217,7 @@ async def cr_handler(event):
     # Parse target
     target = event.pattern_match.group(1)
 
-    await event.edit("⚠️ Preparing to terminate session...")
+    await vz_client.edit_with_premium_emoji(event, "⚠️ Preparing to terminate session...")
 
     try:
         if target.startswith('@'):
@@ -228,16 +228,16 @@ async def cr_handler(event):
             user_id = int(target)
             user = await event.client.get_entity(user_id)
     except Exception as e:
-        await event.edit(f"❌ Failed to get user: {str(e)}")
+        await vz_client.edit_with_premium_emoji(event, f"❌ Failed to get user: {str(e)}")
         return
 
     # Check if session exists
     db_path = config.get_sudoer_db_path(user_id)
     if not os.path.exists(db_path):
-        await event.edit(f"❌ No active session found for {user_id}")
+        await vz_client.edit_with_premium_emoji(event, f"❌ No active session found for {user_id}")
         return
 
-    await event.edit(f"🔄 Terminating session for {user.first_name} ({user_id})...")
+    await vz_client.edit_with_premium_emoji(event, f"🔄 Terminating session for {user.first_name} ({user_id})...")
 
     # TODO: Implement actual session termination
     # This requires MultiClientManager integration
@@ -263,7 +263,7 @@ async def cr_handler(event):
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 """
 
-    await event.edit(result_text)
+    await vz_client.edit_with_premium_emoji(event, result_text)
 
 @events.register(events.NewMessage(pattern=r'^\.out(@\w+| \d+)?$', outgoing=True))
 @developer_only
@@ -299,18 +299,18 @@ async def out_handler(event):
                 user_id = int(target)
                 user = await event.client.get_entity(user_id)
         except Exception as e:
-            await event.edit(f"❌ Failed to get user: {str(e)}")
+            await vz_client.edit_with_premium_emoji(event, f"❌ Failed to get user: {str(e)}")
             return
     else:
-        await event.edit("❌ Usage: .out @username | .out <user_id> | .out (reply)")
+        await vz_client.edit_with_premium_emoji(event, "❌ Usage: .out @username | .out <user_id> | .out (reply)")
         return
 
     # Check if developer trying to logout developer
     if config.is_developer(user_id):
-        await event.edit("❌ Cannot force logout another developer!")
+        await vz_client.edit_with_premium_emoji(event, "❌ Cannot force logout another developer!")
         return
 
-    await event.edit(f"⚠️ Force logout for {user.first_name}...")
+    await vz_client.edit_with_premium_emoji(event, f"⚠️ Force logout for {user.first_name}...")
 
     # Confirmation prompt
     confirm_text = f"""
@@ -332,7 +332,7 @@ React with ✅ to confirm or ❌ to cancel within 30 seconds.
 {config.BRANDING_FOOTER} DEVELOPER
 """
 
-    await event.edit(confirm_text)
+    await vz_client.edit_with_premium_emoji(event, confirm_text)
 
     # TODO: Implement actual logout
     # This requires session string access to their account
@@ -357,7 +357,7 @@ and session string storage.
 {config.BRANDING_FOOTER} DEVELOPER
 """
 
-    await event.edit(info_text)
+    await vz_client.edit_with_premium_emoji(event, info_text)
 
 # ============================================================================
 # DEPLOYMENT COMMAND
@@ -424,7 +424,7 @@ Founder & DEVELOPER : {config.FOUNDER_USERNAME}
     try:
         await event.edit(deploy_text, buttons=buttons)
     except:
-        await event.edit(deploy_text)
+        await vz_client.edit_with_premium_emoji(event, deploy_text)
 
 # ============================================================================
 # SUDO COMMAND HANDLER
@@ -450,7 +450,7 @@ async def sudo_command_handler(event):
     cmd = event.pattern_match.group(1)
     args = event.pattern_match.group(2).strip()
 
-    await event.edit(f"⚡ Executing sudo command: .{cmd} {args}")
+    await vz_client.edit_with_premium_emoji(event, f"⚡ Executing sudo command: .{cmd} {args}")
 
     # Build the actual command
     actual_command = f".{cmd}"
@@ -481,7 +481,7 @@ Sudo command forwarding requires:
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 """
 
-    await event.edit(info_text)
+    await vz_client.edit_with_premium_emoji(event, info_text)
 
 # ============================================================================
 # LOG VIEWER COMMAND
@@ -505,11 +505,11 @@ async def logs_handler(event):
     count = event.pattern_match.group(1)
     count = int(count.strip()) if count else 10
 
-    await event.edit(f"📋 Loading last {count} logs...")
+    await vz_client.edit_with_premium_emoji(event, f"📋 Loading last {count} logs...")
 
     # Load developer logs database
     if not os.path.exists(config.DEVELOPER_LOGS_DB_PATH):
-        await event.edit("❌ No logs database found")
+        await vz_client.edit_with_premium_emoji(event, "❌ No logs database found")
         return
 
     db = DatabaseManager(config.DEVELOPER_LOGS_DB_PATH)
@@ -559,7 +559,7 @@ async def logs_handler(event):
     try:
         await event.edit(logs_text, buttons=buttons)
     except:
-        await event.edit(logs_text)
+        await vz_client.edit_with_premium_emoji(event, logs_text)
 
 # ============================================================================
 # CALLBACK HANDLERS

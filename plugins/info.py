@@ -46,7 +46,7 @@ async def id_handler(event):
             is_user = True
         except Exception as e:
             error_emoji = vz_emoji.getemoji('merah')
-            await event.edit(f"{error_emoji} Failed to get user: {str(e)}")
+            await vz_client.edit_with_premium_emoji(event, f"{error_emoji} Failed to get user: {str(e)}")
             return
     else:
         # Get current chat info
@@ -54,7 +54,7 @@ async def id_handler(event):
         is_user = False
 
     loading_emoji = vz_emoji.getemoji('loading')
-    await event.edit(f"{loading_emoji} Fetching information...")
+    await vz_client.edit_with_premium_emoji(event, f"{loading_emoji} Fetching information...")
 
     # Build info text
     if is_user:
@@ -93,7 +93,7 @@ Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 """
         except Exception as e:
             error_emoji = vz_emoji.getemoji('merah')
-            await event.edit(f"{error_emoji} Error getting user info: {str(e)}")
+            await vz_client.edit_with_premium_emoji(event, f"{error_emoji} Error getting user info: {str(e)}")
             return
     else:
         # Chat/Group info
@@ -117,7 +117,7 @@ Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 """
 
-    await event.edit(info_text)
+    await vz_client.edit_with_premium_emoji(event, info_text)
 
 # ============================================================================
 # GETFILEID COMMAND
@@ -141,16 +141,16 @@ async def getfileid_handler(event):
 
     if not reply:
         error_emoji = vz_emoji.getemoji('merah')
-        await event.edit(f"{error_emoji} Reply to a media message to get file ID!")
+        await vz_client.edit_with_premium_emoji(event, f"{error_emoji} Reply to a media message to get file ID!")
         return
 
     if not reply.media:
         error_emoji = vz_emoji.getemoji('merah')
-        await event.edit(f"{error_emoji} Replied message doesn't contain media!")
+        await vz_client.edit_with_premium_emoji(event, f"{error_emoji} Replied message doesn't contain media!")
         return
 
     loading_emoji = vz_emoji.getemoji('loading')
-    await event.edit(f"{loading_emoji} Extracting file ID...")
+    await vz_client.edit_with_premium_emoji(event, f"{loading_emoji} Extracting file ID...")
 
     # Get media info
     media = reply.media
@@ -195,7 +195,7 @@ async def getfileid_handler(event):
 
     except Exception as e:
         error_emoji = vz_emoji.getemoji('merah')
-        await event.edit(f"{error_emoji} Failed to extract file ID: {str(e)}")
+        await vz_client.edit_with_premium_emoji(event, f"{error_emoji} Failed to extract file ID: {str(e)}")
         return
 
     # Format file size
@@ -233,7 +233,7 @@ Use this file_id to send or manipulate this file.
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 """
 
-    await event.edit(result_text)
+    await vz_client.edit_with_premium_emoji(event, result_text)
 
 # ============================================================================
 # LIMIT COMMAND
@@ -250,7 +250,7 @@ async def limit_handler(event):
     global vz_client, vz_emoji
 
     loading_emoji = vz_emoji.getemoji('loading')
-    await event.edit(f"{loading_emoji} Checking spam limit...")
+    await vz_client.edit_with_premium_emoji(event, f"{loading_emoji} Checking spam limit...")
 
     try:
         # Send /start to @SpamBot
@@ -283,10 +283,10 @@ Founder & DEVELOPER : {config.FOUNDER_USERNAME}
                 error_emoji = vz_emoji.getemoji('merah')
                 limit_text = f"{error_emoji} No response from @SpamBot"
 
-            await event.edit(limit_text)
+            await vz_client.edit_with_premium_emoji(event, limit_text)
 
     except Exception as e:
         error_emoji = vz_emoji.getemoji('merah')
-        await event.edit(f"{error_emoji} Failed to check limit: {str(e)}\n\nTry messaging @SpamBot manually.")
+        await vz_client.edit_with_premium_emoji(event, f"{error_emoji} Failed to check limit: {str(e)}\n\nTry messaging @SpamBot manually.")
 
 print("✅ Plugin loaded: info.py")

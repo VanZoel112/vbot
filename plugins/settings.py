@@ -43,7 +43,7 @@ async def prefix_handler(event):
         gear_emoji = vz_emoji.getemoji('gear')
         petir_emoji = vz_emoji.getemoji('petir')
 
-        await event.edit(f"""
+        await vz_client.edit_with_premium_emoji(event, f"""
 {gear_emoji} **CURRENT PREFIX**
 
 **Current Prefix:** `{current if current else 'none'}`
@@ -69,7 +69,7 @@ async def prefix_handler(event):
             error_emoji = vz_emoji.getemoji('merah')
             petir_emoji = vz_emoji.getemoji('petir')
 
-            await event.edit(f"""
+            await vz_client.edit_with_premium_emoji(event, f"""
 {error_emoji} **Invalid Prefix**
 
 **Allowed prefixes:**
@@ -106,7 +106,7 @@ Restart required for changes to take effect.
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 """
 
-    await event.edit(result_text)
+    await vz_client.edit_with_premium_emoji(event, result_text)
 
 # ============================================================================
 # PM PERMIT ENABLE COMMAND
@@ -152,7 +152,7 @@ async def pmon_handler(event):
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 """
 
-    await event.edit(result_text)
+    await vz_client.edit_with_premium_emoji(event, result_text)
 
 # ============================================================================
 # PM PERMIT DISABLE COMMAND
@@ -193,7 +193,7 @@ Use `.pmon` command
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 """
 
-    await event.edit(result_text)
+    await vz_client.edit_with_premium_emoji(event, result_text)
 
 # ============================================================================
 # SET PM MESSAGE COMMAND
@@ -216,7 +216,7 @@ async def setpm_handler(event):
 
     if not custom_message:
         error_emoji = vz_emoji.getemoji('merah')
-        await event.edit(f"{error_emoji} Usage: `.setpm <message>`")
+        await vz_client.edit_with_premium_emoji(event, f"{error_emoji} Usage: `.setpm <message>`")
         return
 
     # Save custom message
@@ -244,7 +244,7 @@ Use `.setpm default` to restore default message
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 """
 
-    await event.edit(result_text)
+    await vz_client.edit_with_premium_emoji(event, result_text)
 
 # ============================================================================
 # APPROVE USER COMMAND
@@ -265,7 +265,7 @@ async def approve_handler(event):
     # Must be in PM
     if not event.is_private:
         error_emoji = vz_emoji.getemoji('merah')
-        await event.edit(f"{error_emoji} This command only works in PM!")
+        await vz_client.edit_with_premium_emoji(event, f"{error_emoji} This command only works in PM!")
         return
 
     user_id = event.sender_id
@@ -300,7 +300,7 @@ without PM permit restrictions.
 {petir_emoji} {config.BRANDING_FOOTER} PM PERMIT
 """
 
-    await event.edit(result_text)
+    await vz_client.edit_with_premium_emoji(event, result_text)
 
 # ============================================================================
 # DISAPPROVE USER COMMAND
@@ -321,7 +321,7 @@ async def disapprove_handler(event):
     # Must be in PM
     if not event.is_private:
         error_emoji = vz_emoji.getemoji('merah')
-        await event.edit(f"{error_emoji} This command only works in PM!")
+        await vz_client.edit_with_premium_emoji(event, f"{error_emoji} This command only works in PM!")
         return
 
     user_id = event.sender_id
@@ -348,7 +348,7 @@ message again when messaging you.
 {petir_emoji} {config.BRANDING_FOOTER} PM PERMIT
 """
 
-    await event.edit(result_text)
+    await vz_client.edit_with_premium_emoji(event, result_text)
 
 # ============================================================================
 # PM PERMIT INCOMING MESSAGE HANDLER

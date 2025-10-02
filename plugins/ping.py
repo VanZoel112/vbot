@@ -31,7 +31,7 @@ async def ping_handler(event):
 
     # Initial response with loading emoji
     loading_emoji = vz_emoji.getemoji('loading')
-    msg = await event.edit(f"{loading_emoji} **Pinging...**")
+    msg = await vz_client.edit_with_premium_emoji(event, f"{loading_emoji} **Pinging...**")
 
     # Calculate latency
     end_time = time.time()
@@ -83,7 +83,7 @@ async def pink_handler(event):
 
     # Initial response with gear emoji
     gear_emoji = vz_emoji.getemoji('gear')
-    msg = await event.edit(f"{gear_emoji} **Checking...**")
+    msg = await vz_client.edit_with_premium_emoji(event, f"{gear_emoji} **Checking...**")
 
     # Calculate latency
     end_time = time.time()
@@ -140,6 +140,6 @@ async def pong_handler(event):
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 """
 
-    await event.edit(response)
+    await vz_client.edit_with_premium_emoji(event, response)
 
 print("✅ Plugin loaded: ping.py")

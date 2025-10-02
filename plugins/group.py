@@ -47,7 +47,7 @@ async def tag_handler(event):
 
     # Check if already tagging
     if chat_id in active_tags:
-        await event.edit("⚠️ Already tagging in this group! Use `.stag` to stop.")
+        await vz_client.edit_with_premium_emoji(event, "⚠️ Already tagging in this group! Use `.stag` to stop.")
         return
 
     # Get message
@@ -59,27 +59,27 @@ async def tag_handler(event):
     elif text:
         base_message = text.strip()
     else:
-        await event.edit("❌ Usage: `.tag <message>` or `.tag` (reply)")
+        await vz_client.edit_with_premium_emoji(event, "❌ Usage: `.tag <message>` or `.tag` (reply)")
         return
 
     # Get all participants
-    await event.edit("🔍 Gathering participants...")
+    await vz_client.edit_with_premium_emoji(event, "🔍 Gathering participants...")
 
     try:
         participants = await event.client.get_participants(chat_id)
     except Exception as e:
-        await event.edit(f"❌ Failed to get participants: {str(e)}")
+        await vz_client.edit_with_premium_emoji(event, f"❌ Failed to get participants: {str(e)}")
         return
 
     if not participants:
-        await event.edit("❌ No participants found!")
+        await vz_client.edit_with_premium_emoji(event, "❌ No participants found!")
         return
 
     # Filter out bots and self
     users = [p for p in participants if not p.bot and p.id != user_id]
 
     if not users:
-        await event.edit("❌ No users to tag!")
+        await vz_client.edit_with_premium_emoji(event, "❌ No users to tag!")
         return
 
     # Mark as active
@@ -89,7 +89,7 @@ async def tag_handler(event):
     tagged_count = 0
     start_time = time.time()
 
-    msg = await event.edit(f"""
+    msg = await vz_client.edit_with_premium_emoji(event, f"""
 📢 **Tag All Started**
 
 **👥 Total Users:** {total_users}
@@ -171,13 +171,13 @@ async def stag_handler(event):
     chat_id = event.chat_id
 
     if chat_id not in active_tags:
-        await event.edit("ℹ️ No active tag operation in this group!")
+        await vz_client.edit_with_premium_emoji(event, "ℹ️ No active tag operation in this group!")
         return
 
     # Remove from active tags
     del active_tags[chat_id]
 
-    await event.edit(f"""
+    await vz_client.edit_with_premium_emoji(event, f"""
 ⏹ **Tag All Stopped**
 
 Operation cancelled successfully.
@@ -241,20 +241,20 @@ async def lock_handler(event):
             target = await event.client.get_entity(username)
             target_id = target.id
         except Exception as e:
-            await event.edit(f"❌ Failed to get user: {str(e)}")
+            await vz_client.edit_with_premium_emoji(event, f"❌ Failed to get user: {str(e)}")
             return
     else:
-        await event.edit("❌ Usage: `.lock @username` or `.lock` (reply)")
+        await vz_client.edit_with_premium_emoji(event, "❌ Usage: `.lock @username` or `.lock` (reply)")
         return
 
     # Check admin rights
     try:
         perms = await event.client.get_permissions(event.chat_id, event.sender_id)
         if not perms.is_admin or not perms.delete_messages:
-            await event.edit("❌ You need admin rights with delete messages permission!")
+            await vz_client.edit_with_premium_emoji(event, "❌ You need admin rights with delete messages permission!")
             return
     except:
-        await event.edit("❌ Failed to check permissions!")
+        await vz_client.edit_with_premium_emoji(event, "❌ Failed to check permissions!")
         return
 
     # Load lock list
@@ -262,7 +262,7 @@ async def lock_handler(event):
 
     # Check if already locked
     if target_id in lockglobal:
-        await event.edit(f"⚠️ User {target.first_name} is already locked!")
+        await vz_client.edit_with_premium_emoji(event, f"⚠️ User {target.first_name} is already locked!")
         return
 
     # Add to lock list
@@ -287,7 +287,7 @@ automatically deleted in this group.
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 """
 
-    await event.edit(result_text)
+    await vz_client.edit_with_premium_emoji(event, result_text)
 
 # ============================================================================
 # UNLOCK COMMAND
@@ -319,10 +319,10 @@ async def unlock_handler(event):
             target = await event.client.get_entity(username)
             target_id = target.id
         except Exception as e:
-            await event.edit(f"❌ Failed to get user: {str(e)}")
+            await vz_client.edit_with_premium_emoji(event, f"❌ Failed to get user: {str(e)}")
             return
     else:
-        await event.edit("❌ Usage: `.unlock @username` or `.unlock` (reply)")
+        await vz_client.edit_with_premium_emoji(event, "❌ Usage: `.unlock @username` or `.unlock` (reply)")
         return
 
     # Load lock list
@@ -330,7 +330,7 @@ async def unlock_handler(event):
 
     # Check if locked
     if target_id not in lockglobal:
-        await event.edit(f"⚠️ User {target.first_name} is not locked!")
+        await vz_client.edit_with_premium_emoji(event, f"⚠️ User {target.first_name} is not locked!")
         return
 
     # Remove from lock list
@@ -355,7 +355,7 @@ be automatically deleted.
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 """
 
-    await event.edit(result_text)
+    await vz_client.edit_with_premium_emoji(event, result_text)
 
 # ============================================================================
 # AUTO-DELETE HANDLER (monitors all messages)

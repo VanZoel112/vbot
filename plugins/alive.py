@@ -91,20 +91,23 @@ async def alive_handler(event):
 {petir_emoji} ~Vzoel Fox's Lutpan
 """
 
-    # Create inline buttons
+    # Create inline buttons with premium emojis
+    telegram_emoji = vz_emoji.getemoji('telegram')
+    dev_emoji = vz_emoji.getemoji('developer')
+
     buttons = [
         [
-            Button.inline("📚 HELP", b"cmd_help"),
-            Button.url("👨‍💻 DEV", "https://t.me/VZLfxs")
+            Button.inline(f"{telegram_emoji} HELP", b"cmd_help"),
+            Button.url(f"{dev_emoji} DEV", "https://t.me/VZLfxs")
         ]
     ]
 
-    # Send or edit message with buttons
+    # Send or edit message with buttons using premium emoji method
     try:
-        await event.edit(alive_text, buttons=buttons)
+        await vz_client.edit_with_premium_emoji(event, alive_text, buttons=buttons)
     except Exception as e:
         # If inline buttons not supported, send without buttons
-        await event.edit(alive_text)
+        await vz_client.edit_with_premium_emoji(event, alive_text)
         print(f"⚠️  Inline buttons not available: {e}")
 
 # ============================================================================
@@ -152,6 +155,7 @@ async def vzoel_handler(event):
     proses2_emoji = vz_emoji.getemoji('proses2')
     proses3_emoji = vz_emoji.getemoji('proses3')
     checklist_emoji = vz_emoji.getemoji('centang')
+    petir_emoji = vz_emoji.getemoji('petir')
 
     # Animation frames (12 edits) with premium emojis
     frames = [
@@ -169,43 +173,49 @@ async def vzoel_handler(event):
         f"{checklist_emoji} Complete!"
     ]
 
-    # Run animation
-    msg = await event.edit(frames[0])
+    # Run animation - await each edit properly
+    # Start with first frame using premium emoji
+    msg = await vz_client.edit_with_premium_emoji(event, frames[0])
 
+    # Animate through remaining frames
     for i, frame in enumerate(frames[1:], 1):
         await asyncio.sleep(config.ANIMATION_DELAY)
-        await msg.edit(frame)
+        msg = await vz_client.edit_with_premium_emoji(msg, frame)
 
     # Final developer profile with premium emojis
     await asyncio.sleep(config.ANIMATION_DELAY)
 
     main_emoji = vz_emoji.getemoji('utama')
     petir_emoji = vz_emoji.getemoji('petir')
+    dev_emoji = vz_emoji.getemoji('developer')
+    owner_emoji = vz_emoji.getemoji('owner')
+    robot_emoji = vz_emoji.getemoji('robot')
+    gear_emoji = vz_emoji.getemoji('gear')
 
     profile_text = f"""
 {main_emoji} **VZOEL FOX'S - MAIN DEVELOPER**
 
-👨‍💻 **Developer Profile**
+{dev_emoji} **Developer Profile**
 ━━━━━━━━━━━━━━━━━━━━━━
 
-🆔 **User ID:** {user_id}
-🔑 **Role:** Main Developer
-⚡ **Access Level:** Full Control
-📦 **Version:** {config.BOT_VERSION}
+{robot_emoji} **User ID:** {user_id}
+{gear_emoji} **Role:** Main Developer
+{petir_emoji} **Access Level:** Full Control
+{gear_emoji} **Version:** {config.BOT_VERSION}
 
-🌟 **Specialization:**
+{owner_emoji} **Specialization:**
 • Telegram Userbot Development
 • Python × Telethon Expert
 • Premium Feature Integration
 • Multi-User Architecture
 
-📊 **Stats:**
+{gear_emoji} **Stats:**
 • Total Plugins: {count_plugins()}
 • Uptime: {vz_client.get_uptime() if vz_client else "0s"}
 • Database: Multi-User SQLite
 • Emoji Mapping: 17 Premium
 
-🔗 **Contact:**
+{dev_emoji} **Contact:**
 • Telegram: t.me/VZLfxs
 • Username: @VZLfxs
 
@@ -218,8 +228,8 @@ Founder & DEVELOPER : {config.FOUNDER_USERNAME}
     ]
 
     try:
-        await msg.edit(profile_text, buttons=buttons)
+        await vz_client.edit_with_premium_emoji(msg, profile_text, buttons=buttons)
     except:
-        await msg.edit(profile_text)
+        await vz_client.edit_with_premium_emoji(msg, profile_text)
 
 print("✅ Plugin loaded: alive.py")

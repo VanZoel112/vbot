@@ -34,7 +34,7 @@ async def joinvc_handler(event):
     """
     chat_id = event.chat_id
 
-    await event.edit("🎙️ Joining voice chat...")
+    await vz_client.edit_with_premium_emoji(event, "🎙️ Joining voice chat...")
 
     # TODO: Implement pytgcalls integration
     # from pytgcalls import PyTgCalls, StreamType
@@ -64,7 +64,7 @@ Voice chat integration requires pytgcalls setup.
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 """
 
-    await event.edit(info_text)
+    await vz_client.edit_with_premium_emoji(event, info_text)
 
 # ============================================================================
 # LEAVE VC COMMAND
@@ -81,7 +81,7 @@ async def leavevc_handler(event):
     """
     chat_id = event.chat_id
 
-    await event.edit("👋 Leaving voice chat...")
+    await vz_client.edit_with_premium_emoji(event, "👋 Leaving voice chat...")
 
     # TODO: Implement pytgcalls integration
 
@@ -107,6 +107,6 @@ Voice chat integration requires pytgcalls setup.
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 """
 
-    await event.edit(info_text)
+    await vz_client.edit_with_premium_emoji(event, info_text)
 
 print("✅ Plugin loaded: vc.py")
