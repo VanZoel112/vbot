@@ -20,6 +20,8 @@ from .inline import (
     get_pm_permit_buttons
 )
 
+from .loader import load_plugins, get_all_handlers
+
 __all__ = [
     'InlineManager',
     'KeyboardBuilder',
@@ -31,5 +33,7 @@ __all__ = [
     'get_showjson_buttons',
     'get_payment_buttons',
     'get_admin_buttons',
-    'get_pm_permit_buttons'
+    'get_pm_permit_buttons',
+    'load_plugins',
+    'get_all_handlers'
 ]

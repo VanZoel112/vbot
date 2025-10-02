@@ -19,6 +19,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import config
 from client import VZClient, MultiClientManager
 from database.models import DatabaseManager
+from helpers import load_plugins
+from telethon import events
 
 # ============================================================================
 # ASCII ART BANNER
@@ -39,31 +41,54 @@ BANNER = f"""
 """
 
 # ============================================================================
-# LOAD PLUGINS
+# LOG HANDLER
 # ============================================================================
 
-def load_plugins():
-    """Load all plugins from plugins directory."""
-    plugins_dir = os.path.join(os.path.dirname(__file__), "plugins")
+async def setup_log_handler(client: VZClient):
+    """Setup log handler to send logs to LOG_GROUP_ID."""
+    if not config.LOG_GROUP_ID:
+        print("⚠️  LOG_GROUP_ID not configured - logs will only be in terminal")
+        return
 
-    if not os.path.exists(plugins_dir):
-        os.makedirs(plugins_dir)
-        print(f"📁 Created plugins directory: {plugins_dir}")
-        return 0
+    @events.register(events.NewMessage(outgoing=True))
+    async def log_handler(event):
+        """Log all outgoing messages to log group."""
+        try:
+            # Skip if message is from log group itself
+            if event.chat_id == config.LOG_GROUP_ID:
+                return
 
-    plugin_count = 0
-    for filename in os.listdir(plugins_dir):
-        if filename.endswith(".py") and not filename.startswith("_"):
-            try:
-                # Import plugin
-                plugin_name = filename[:-3]
-                __import__(f"plugins.{plugin_name}")
-                plugin_count += 1
-                print(f"  ✅ Loaded: {plugin_name}")
-            except Exception as e:
-                print(f"  ❌ Failed to load {filename}: {e}")
+            # Skip if not a command
+            prefix = client.get_prefix()
+            if not event.text or not event.text.startswith(prefix):
+                return
 
-    return plugin_count
+            # Extract command
+            cmd = event.text.split()[0][len(prefix):]
+
+            # Get chat info
+            chat = await event.get_chat()
+            chat_name = getattr(chat, 'title', None) or getattr(chat, 'first_name', 'Unknown')
+
+            # Build log message
+            log_msg = f"""
+📝 **Command Log**
+
+👤 User: {client.me.first_name} (@{client.me.username})
+💬 Chat: {chat_name} (`{event.chat_id}`)
+⚡ Command: `{event.text}`
+🕐 Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+"""
+
+            # Send to log group
+            await client.client.send_message(config.LOG_GROUP_ID, log_msg)
+
+        except Exception as e:
+            print(f"❌ Log handler error: {e}")
+
+    # Add handler to client
+    client.client.add_event_handler(log_handler)
+    print(f"✅ Log handler configured - sending to group {config.LOG_GROUP_ID}")
 
 # ============================================================================
 # MAIN FUNCTION
@@ -72,11 +97,6 @@ def load_plugins():
 async def main():
     """Main application function."""
     print(BANNER)
-
-    # Load plugins
-    print("\n📦 Loading Plugins...")
-    plugin_count = load_plugins()
-    print(f"\n✅ Loaded {plugin_count} plugins\n")
 
     # Check for session string
     print("🔐 Session Configuration")
@@ -108,6 +128,14 @@ async def main():
         # Add main client
         print("📡 Connecting to Telegram...")
         main_client = await manager.add_client(session_string)
+
+        # Setup log handler
+        print("\n📋 Configuring Logging...")
+        await setup_log_handler(main_client)
+
+        # Load plugins with event registration
+        print("\n📦 Loading Plugins...")
+        plugin_count = load_plugins(main_client)
 
         print("\n" + "="*60)
         print("✅ VZ ASSISTANT Started Successfully!")
