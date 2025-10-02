@@ -47,8 +47,8 @@ EWALLET/BANK      :
 NOMOR REKENING :
 ATAS NAMA             :
 
-{config.BRANDING_FOOTER} PAYMENT
-""")
+{gear_emoji} Plugins Digunakan: **PAYMENT**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan""")
         return
 
     # Build payment info text
@@ -69,8 +69,8 @@ ATAS NAMA             : {payment.account_name}
 """
 
     payment_text += f"""
-{config.BRANDING_FOOTER} PAYMENT
-Founder & DEVELOPER : {config.FOUNDER_USERNAME}
+{gear_emoji} Plugins Digunakan: **PAYMENT**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
     # Send QR code if available
@@ -124,8 +124,8 @@ NOMOR REKENING : 08123456789
 ATAS NAMA             : John Doe
 ```
 
-{config.BRANDING_FOOTER} PAYMENT
-""")
+{gear_emoji} Plugins Digunakan: **PAYMENT**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan""")
         return
 
     # Parse payment info
@@ -169,8 +169,8 @@ ATAS NAMA             : John Doe
 
 You can only save up to {config.MAX_PAYMENT_INFO} payment methods.
 
-{config.BRANDING_FOOTER} PAYMENT
-""")
+{gear_emoji} Plugins Digunakan: **PAYMENT**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan""")
         return
 
     payments_count = len(db.get_payment_info(user_id))
@@ -188,8 +188,8 @@ You can only save up to {config.MAX_PAYMENT_INFO} payment methods.
 
 Use `.get` to view all payment info
 
-{config.BRANDING_FOOTER} PAYMENT
-Founder & DEVELOPER : {config.FOUNDER_USERNAME}
+{gear_emoji} Plugins Digunakan: **PAYMENT**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
     await vz_client.edit_with_premium_emoji(event, result_text)
@@ -222,8 +222,8 @@ The image should contain your payment QR code.
 
 💡 Supported: Photos only
 
-{config.BRANDING_FOOTER} PAYMENT
-""")
+{gear_emoji} Plugins Digunakan: **PAYMENT**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan""")
         return
 
     # Run 12-phase animation
@@ -244,8 +244,8 @@ The image should contain your payment QR code.
 
 Your QR code will be shown when using `.get` command.
 
-{config.BRANDING_FOOTER} PAYMENT
-Founder & DEVELOPER : {config.FOUNDER_USERNAME}
+{gear_emoji} Plugins Digunakan: **PAYMENT**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
     await vz_client.edit_with_premium_emoji(event, result_text)

@@ -96,8 +96,8 @@ async def bl_handler(event):
 
 💡 This group will be skipped during .gcast
 
-{config.BRANDING_FOOTER} BLGCAST
-Founder & DEVELOPER : {config.FOUNDER_USERNAME}
+{gear_emoji} Plugins Digunakan: **BROADCAST**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
     await vz_client.edit_with_premium_emoji(event, result_text)
@@ -155,8 +155,8 @@ async def dbl_handler(event):
 
 💡 This group will now receive .gcast broadcasts
 
-{config.BRANDING_FOOTER} BLGCAST
-Founder & DEVELOPER : {config.FOUNDER_USERNAME}
+{gear_emoji} Plugins Digunakan: **BROADCAST**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
     await vz_client.edit_with_premium_emoji(event, result_text)
@@ -278,8 +278,8 @@ async def gcast_handler(event):
 
 **⏱ Duration:** ~{total_groups * config.GCAST_DELAY:.1f}s
 
-{config.BRANDING_FOOTER} GCAST
-Founder & DEVELOPER : {config.FOUNDER_USERNAME}
+{gear_emoji} Plugins Digunakan: **BROADCAST**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
     await msg.edit(result_text)
@@ -331,8 +331,8 @@ async def bllist_handler(event):
     bl_text += f"""
 💡 Use `.dbl <id>` to remove from blacklist
 
-{config.BRANDING_FOOTER} BLGCAST
-"""
+{gear_emoji} Plugins Digunakan: **BROADCAST**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan"""
 
     await vz_client.edit_with_premium_emoji(event, bl_text)
 

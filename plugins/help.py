@@ -275,8 +275,8 @@ async def show_help_menu(event, is_developer=False):
 **📂 Categories:**
 Select a category to view commands
 
-{config.BRANDING_FOOTER} HELP
-Founder & DEVELOPER : {config.FOUNDER_USERNAME}
+{gear_emoji} Plugins Digunakan: **HELP**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
     # Create category buttons
@@ -343,8 +343,8 @@ async def help_category_callback(event):
 
 💡 **Tip:** Click a command for detailed info
 
-{config.BRANDING_FOOTER} HELP
-"""
+{gear_emoji} Plugins Digunakan: **HELP**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan"""
 
     # Create command buttons
     kb = KeyboardBuilder()
@@ -406,8 +406,8 @@ async def help_command_callback(event):
 
 📂 **Category:** {category}
 
-{config.BRANDING_FOOTER} HELP
-"""
+{gear_emoji} Plugins Digunakan: **HELP**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan"""
 
     # Create navigation buttons
     kb = KeyboardBuilder()

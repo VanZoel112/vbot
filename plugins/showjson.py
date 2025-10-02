@@ -69,8 +69,8 @@ async def showjson_handler(event):
 
 **💡 Select option below to view details**
 
-{config.BRANDING_FOOTER} SHOWJSON
-Founder & DEVELOPER : {config.FOUNDER_USERNAME}
+{gear_emoji} Plugins Digunakan: **SHOWJSON**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
     # Create buttons
@@ -118,8 +118,8 @@ async def json_metrics_callback(event):
 **📝 Description:**
 {emoji_data.get('description', 'Premium emoji mapping for VZ ASSISTANT')}
 
-{config.BRANDING_FOOTER} SHOWJSON
-"""
+{gear_emoji} Plugins Digunakan: **SHOWJSON**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan"""
 
     buttons = [
         [Button.inline("◀️ Back", b"json_back")],
@@ -155,8 +155,8 @@ async def json_emojis_callback(event):
         emojis_text += f"└ ID: `{emoji_id}`\n\n"
 
     emojis_text += f"""
-{config.BRANDING_FOOTER} SHOWJSON
-"""
+{gear_emoji} Plugins Digunakan: **SHOWJSON**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan"""
 
     buttons = [
         [Button.inline("◀️ Back", b"json_back")],
@@ -189,8 +189,8 @@ async def json_categories_callback(event):
         cat_text += f"└ Emojis: {', '.join(cat_data.get('emojis', []))}\n\n"
 
     cat_text += f"""
-{config.BRANDING_FOOTER} SHOWJSON
-"""
+{gear_emoji} Plugins Digunakan: **SHOWJSON**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan"""
 
     buttons = [
         [Button.inline("◀️ Back", b"json_back")],
@@ -226,8 +226,8 @@ async def json_raw_callback(event):
 **📁 Full file:**
 `emojiprime.json`
 
-{config.BRANDING_FOOTER} SHOWJSON
-"""
+{gear_emoji} Plugins Digunakan: **SHOWJSON**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan"""
 
     buttons = [
         [Button.inline("◀️ Back", b"json_back")],
@@ -261,8 +261,8 @@ async def json_back_callback(event):
 
 **💡 Select option below to view details**
 
-{config.BRANDING_FOOTER} SHOWJSON
-"""
+{gear_emoji} Plugins Digunakan: **SHOWJSON**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan"""
 
     buttons = [
         [

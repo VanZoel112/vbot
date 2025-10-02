@@ -105,8 +105,8 @@ async def admin_handler(event):
 ├ Pin Messages: ✅
 └ Add Admins: ✅
 
-{config.BRANDING_FOOTER} ADMIN
-Founder & DEVELOPER : {config.FOUNDER_USERNAME}
+{gear_emoji} Plugins Digunakan: **ADMIN**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
         await vz_client.edit_with_premium_emoji(event, result_text)
@@ -193,8 +193,8 @@ async def unadmin_handler(event):
 All admin rights have been removed.
 User is now a regular member.
 
-{config.BRANDING_FOOTER} ADMIN
-Founder & DEVELOPER : {config.FOUNDER_USERNAME}
+{gear_emoji} Plugins Digunakan: **ADMIN**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
         await vz_client.edit_with_premium_emoji(event, result_text)

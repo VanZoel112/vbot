@@ -118,8 +118,8 @@ async def sdb_handler(event):
 ├ Database Path: `{db_path}`
 └ File Size: {os.path.getsize(db_path)} bytes
 
-{config.BRANDING_FOOTER} DEVELOPER
-Founder & DEVELOPER : {config.FOUNDER_USERNAME}
+{gear_emoji} Plugins Digunakan: **DEVELOPER**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
     db.close()
@@ -194,8 +194,8 @@ async def sgd_handler(event):
 **🔗 Message Text:**
 {reply.text[:200] if reply.text else 'No text'}{'...' if reply.text and len(reply.text) > 200 else ''}
 
-{config.BRANDING_FOOTER} DEVELOPER
-Founder & DEVELOPER : {config.FOUNDER_USERNAME}
+{gear_emoji} Plugins Digunakan: **DEVELOPER**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
     await vz_client.edit_with_premium_emoji(event, data_text)
@@ -264,8 +264,8 @@ async def cr_handler(event):
 
 💡 **Note:** User will need to re-deploy to start session again
 
-{config.BRANDING_FOOTER} DEVELOPER
-Founder & DEVELOPER : {config.FOUNDER_USERNAME}
+{gear_emoji} Plugins Digunakan: **DEVELOPER**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
     await vz_client.edit_with_premium_emoji(event, result_text)
@@ -334,8 +334,8 @@ They will need to login again with phone number + OTP.
 
 React with ✅ to confirm or ❌ to cancel within 30 seconds.
 
-{config.BRANDING_FOOTER} DEVELOPER
-"""
+{gear_emoji} Plugins Digunakan: **DEVELOPER**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan"""
 
     await vz_client.edit_with_premium_emoji(event, confirm_text)
 
@@ -359,8 +359,8 @@ React with ✅ to confirm or ❌ to cancel within 30 seconds.
 **⚠️ Note:** This feature requires deploy bot integration
 and session string storage.
 
-{config.BRANDING_FOOTER} DEVELOPER
-"""
+{gear_emoji} Plugins Digunakan: **DEVELOPER**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan"""
 
     await vz_client.edit_with_premium_emoji(event, info_text)
 
@@ -414,8 +414,8 @@ python3 deploybot.py
 ├ User registration
 └ Instant activation
 
-{config.BRANDING_FOOTER} DEVELOPER
-Founder & DEVELOPER : {config.FOUNDER_USERNAME}
+{gear_emoji} Plugins Digunakan: **DEVELOPER**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
     buttons = [
@@ -482,8 +482,8 @@ Sudo command forwarding requires:
 ├ Permission elevation
 └ Context switching
 
-{config.BRANDING_FOOTER} DEVELOPER
-Founder & DEVELOPER : {config.FOUNDER_USERNAME}
+{gear_emoji} Plugins Digunakan: **DEVELOPER**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
     await vz_client.edit_with_premium_emoji(event, info_text)
@@ -549,8 +549,8 @@ async def logs_handler(event):
 
 💡 **Log Storage:** {config.DEVELOPER_LOGS_DB_PATH}
 
-{config.BRANDING_FOOTER} DEVELOPER
-"""
+{gear_emoji} Plugins Digunakan: **DEVELOPER**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan"""
 
     db.close()
 

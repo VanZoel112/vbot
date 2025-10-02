@@ -89,8 +89,8 @@ async def id_handler(event):
 **🔗 Permanent Link:**
 [Click here](tg://user?id={target.id})
 
-{petir_emoji} {config.BRANDING_FOOTER} INFO
-Founder & DEVELOPER : {config.FOUNDER_USERNAME}
+{petir_emoji} {gear_emoji} Plugins Digunakan: **INFO**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
         except Exception as e:
             error_emoji = vz_emoji.getemoji('merah')
@@ -114,8 +114,8 @@ Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 ├ **Members:** {target.participants_count if hasattr(target, 'participants_count') else 'Unknown'}
 └ **Photo:** {'✅ Yes' if target.photo else '❌ No'}
 
-{petir_emoji} {config.BRANDING_FOOTER} INFO
-Founder & DEVELOPER : {config.FOUNDER_USERNAME}
+{petir_emoji} {gear_emoji} Plugins Digunakan: **INFO**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
     await vz_client.edit_with_premium_emoji(event, info_text)
@@ -231,8 +231,8 @@ async def getfileid_handler(event):
 **💡 Usage:**
 Use this file_id to send or manipulate this file.
 
-{petir_emoji} {config.BRANDING_FOOTER} INFO
-Founder & DEVELOPER : {config.FOUNDER_USERNAME}
+{petir_emoji} {gear_emoji} Plugins Digunakan: **INFO**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
     await vz_client.edit_with_premium_emoji(event, result_text)
@@ -279,8 +279,8 @@ async def limit_handler(event):
 **ℹ️ Info:**
 This shows your current Telegram limits status.
 
-{petir_emoji} {config.BRANDING_FOOTER} LIMIT
-Founder & DEVELOPER : {config.FOUNDER_USERNAME}
+{petir_emoji} {gear_emoji} Plugins Digunakan: **INFO**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
             else:
                 error_emoji = vz_emoji.getemoji('merah')

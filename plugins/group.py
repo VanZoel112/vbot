@@ -146,8 +146,8 @@ async def tag_handler(event):
 
 {base_message}
 
-{config.BRANDING_FOOTER} TAGALL
-Founder & DEVELOPER : {config.FOUNDER_USERNAME}
+{gear_emoji} Plugins Digunakan: **GROUP**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
     await msg.edit(summary_text)
@@ -183,8 +183,8 @@ async def stag_handler(event):
 
 Operation cancelled successfully.
 
-{config.BRANDING_FOOTER} TAGALL
-""")
+{gear_emoji} Plugins Digunakan: **GROUP**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan""")
 
 # ============================================================================
 # SHADOW CLEAR (LOCK) MANAGEMENT
@@ -284,8 +284,8 @@ automatically deleted in this group.
 
 **📊 Total Locked:** {len(lockglobal)}
 
-{config.BRANDING_FOOTER} LOCK
-Founder & DEVELOPER : {config.FOUNDER_USERNAME}
+{gear_emoji} Plugins Digunakan: **GROUP**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
     await vz_client.edit_with_premium_emoji(event, result_text)
@@ -352,8 +352,8 @@ be automatically deleted.
 
 **📊 Total Locked:** {len(lockglobal)}
 
-{config.BRANDING_FOOTER} LOCK
-Founder & DEVELOPER : {config.FOUNDER_USERNAME}
+{gear_emoji} Plugins Digunakan: **GROUP**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
     await vz_client.edit_with_premium_emoji(event, result_text)
