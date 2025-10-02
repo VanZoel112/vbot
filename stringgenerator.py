@@ -80,14 +80,52 @@ async def generate_session_string():
         f.write(f"\nSession String:\n{session_string}\n")
 
     print(f"\n💾 Session string saved to: {output_file}")
+
+    # Auto-save to .env file
+    env_file = ".env"
+    env_updated = False
+
+    try:
+        # Read existing .env content
+        if os.path.exists(env_file):
+            with open(env_file, 'r') as f:
+                env_content = f.read()
+        else:
+            env_content = ""
+
+        # Check if SESSION_STRING exists
+        if "SESSION_STRING=" in env_content:
+            # Update existing SESSION_STRING
+            lines = env_content.split('\n')
+            for i, line in enumerate(lines):
+                if line.startswith('SESSION_STRING='):
+                    lines[i] = f'SESSION_STRING={session_string}'
+                    env_updated = True
+                    break
+            env_content = '\n'.join(lines)
+        else:
+            # Add SESSION_STRING if not exists
+            if not env_content.endswith('\n'):
+                env_content += '\n'
+            env_content += f'SESSION_STRING={session_string}\n'
+            env_updated = True
+
+        # Write back to .env
+        if env_updated:
+            with open(env_file, 'w') as f:
+                f.write(env_content)
+            print(f"✅ Session string auto-saved to .env")
+    except Exception as e:
+        print(f"⚠️  Could not auto-save to .env: {e}")
+
     print("\n⚠️  IMPORTANT:")
     print("   • Keep this session string PRIVATE")
     print("   • Do NOT share with anyone")
     print("   • Anyone with this string can access your account")
     print("\n📝 Next Steps:")
-    print("   1. Copy the session string above")
-    print("   2. Save it in a secure location")
-    print("   3. Use it to start VZ ASSISTANT")
+    print("   1. Session string saved to .env automatically")
+    print("   2. You can now run: ./start.sh or python3 main.py")
+    print("   3. Bot will start with your session")
 
     await client.disconnect()
 
@@ -133,7 +171,7 @@ async def generate_multiple_sessions():
 
         await client.disconnect()
 
-    # Save all sessions
+    # Save all sessions to text file
     output_file = os.path.join("sessions", "all_sessions.txt")
     with open(output_file, 'w') as f:
         f.write("VZ ASSISTANT - Multiple Sessions\n")
@@ -150,6 +188,52 @@ async def generate_multiple_sessions():
             f.write("\n" + "="*80 + "\n\n")
 
     print(f"\n💾 All sessions saved to: {output_file}")
+
+    # Auto-save to JSON for deploy bot
+    import json
+    json_file = os.path.join("sessions", "sudoer_sessions.json")
+
+    try:
+        # Load existing sessions if any
+        if os.path.exists(json_file):
+            with open(json_file, 'r') as f:
+                existing_sessions = json.load(f)
+        else:
+            existing_sessions = {"sessions": []}
+
+        # Add new sessions
+        for session in sessions:
+            # Check if user already exists
+            user_exists = False
+            for existing in existing_sessions["sessions"]:
+                if existing["user_id"] == session["user_id"]:
+                    # Update existing session
+                    existing["session_string"] = session["session_string"]
+                    existing["username"] = session["username"]
+                    existing["first_name"] = session["first_name"]
+                    user_exists = True
+                    break
+
+            if not user_exists:
+                # Add new session
+                existing_sessions["sessions"].append({
+                    "user_id": session["user_id"],
+                    "username": session["username"],
+                    "first_name": session["first_name"],
+                    "phone": session["phone"],
+                    "session_string": session["session_string"],
+                    "is_sudoer": True,
+                    "is_developer": False
+                })
+
+        # Save to JSON
+        with open(json_file, 'w') as f:
+            json.dump(existing_sessions, f, indent=2)
+
+        print(f"✅ Sessions auto-saved to: {json_file}")
+        print(f"📊 Total sudoers: {len(existing_sessions['sessions'])}")
+    except Exception as e:
+        print(f"⚠️  Could not save to JSON: {e}")
 
 # ============================================================================
 # INTERACTIVE MENU

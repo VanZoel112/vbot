@@ -9,6 +9,10 @@ Founder & DEVELOPER : @VZLfxs
 import os
 import json
 from typing import List, Dict
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # ============================================================================
 # TELEGRAM API CREDENTIALS
@@ -65,7 +69,14 @@ os.makedirs(SESSION_DIR, exist_ok=True)
 # ============================================================================
 # LOGGING CONFIGURATION
 # ============================================================================
-LOG_GROUP_ID = None  # Set this to your log group ID
+# Load from environment
+LOG_GROUP_ID = os.getenv("LOG_GROUP_ID")
+if LOG_GROUP_ID:
+    try:
+        LOG_GROUP_ID = int(LOG_GROUP_ID)
+    except ValueError:
+        LOG_GROUP_ID = None
+
 LOG_LEVEL = "INFO"
 
 # ============================================================================
@@ -151,9 +162,10 @@ os.makedirs(SHARED_DIR, exist_ok=True)
 os.makedirs(SUDOERS_DB_DIR, exist_ok=True)
 
 # ============================================================================
-# DEPLOYMENT BOT (Optional - for later implementation)
+# DEPLOYMENT BOT
 # ============================================================================
-DEPLOY_BOT_TOKEN = None  # Set this when implementing deploy bot
+# Load from environment
+DEPLOY_BOT_TOKEN = os.getenv("DEPLOY_BOT_TOKEN", None)
 
 # ============================================================================
 # BROADCAST SETTINGS

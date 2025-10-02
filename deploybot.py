@@ -101,6 +101,51 @@ class DeploymentSession:
             )
             db.close()
 
+            # Auto-save session to JSON for multi-client management
+            import json
+            sessions_dir = "sessions"
+            os.makedirs(sessions_dir, exist_ok=True)
+            json_file = os.path.join(sessions_dir, "sudoer_sessions.json")
+
+            try:
+                # Load existing sessions
+                if os.path.exists(json_file):
+                    with open(json_file, 'r') as f:
+                        existing_sessions = json.load(f)
+                else:
+                    existing_sessions = {"sessions": []}
+
+                # Check if user already exists
+                user_exists = False
+                for existing in existing_sessions["sessions"]:
+                    if existing["user_id"] == me.id:
+                        # Update existing session
+                        existing["session_string"] = self.session_string
+                        existing["username"] = me.username
+                        existing["first_name"] = me.first_name
+                        user_exists = True
+                        break
+
+                if not user_exists:
+                    # Add new session
+                    existing_sessions["sessions"].append({
+                        "user_id": me.id,
+                        "username": me.username,
+                        "first_name": me.first_name,
+                        "phone": self.phone,
+                        "session_string": self.session_string,
+                        "is_sudoer": True,
+                        "is_developer": False
+                    })
+
+                # Save to JSON
+                with open(json_file, 'w') as f:
+                    json.dump(existing_sessions, f, indent=2)
+
+                print(f"✅ Sudoer session saved: {me.first_name} ({me.id})")
+            except Exception as e:
+                print(f"⚠️  Could not save session to JSON: {e}")
+
             self.state = 'completed'
 
             return True, me
