@@ -64,8 +64,8 @@ async def ping_handler(event):
 {owner_emoji} **Owner:** @{event.sender.username if event.sender.username else 'Unknown'}
 {dev_emoji} **Founder:** {config.FOUNDER_USERNAME}
 
-{petir_emoji} {config.BRANDING_FOOTER}
-Founder & DEVELOPER : {config.FOUNDER_USERNAME}
+{gear_emoji} Plugins Digunakan: **PING**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
     await vz_client.edit_with_premium_emoji(msg, response)
@@ -110,7 +110,8 @@ async def pink_handler(event):
     response = f"""
 {status_emoji} **{latency_ms}ms** - {status_text}
 
-{petir_emoji} {main_emoji} {config.BRANDING_FOOTER}
+{gear_emoji} Plugins Digunakan: **PINK**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
     await vz_client.edit_with_premium_emoji(msg, response)
@@ -136,14 +137,16 @@ async def pong_handler(event):
     # Get emojis
     nyala_emoji = vz_emoji.getemoji('nyala')
     petir_emoji = vz_emoji.getemoji('petir')
+    gear_emoji = vz_emoji.getemoji('gear')
+    main_emoji = vz_emoji.getemoji('utama')
 
     response = f"""
 {nyala_emoji} **VZ ASSISTANT - UPTIME**
 
 ⏰ **Uptime:** `{uptime}`
 
-{petir_emoji} {config.BRANDING_FOOTER}
-Founder & DEVELOPER : {config.FOUNDER_USERNAME}
+{gear_emoji} Plugins Digunakan: **PONG**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
     await vz_client.edit_with_premium_emoji(msg, response)

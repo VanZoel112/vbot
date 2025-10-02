@@ -96,7 +96,8 @@ async def alive_handler(event):
 {loading_emoji} **Total Plugin**  : {plugin_count}
 {nyala_emoji} **Waktu Nyala** : {uptime}
 
-{petir_emoji} ~{main_emoji} Vzoel Fox's Lutpan
+{gear_emoji} Plugins Digunakan: **ALIVE**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
     # Create inline buttons with premium emojis
@@ -192,8 +193,8 @@ async def vzoel_handler(event):
 • Telegram: t.me/VZLfxs
 • Username: @VZLfxs
 
-{petir_emoji} {config.BRANDING_FOOTER} VZOEL
-Founder & DEVELOPER : {config.FOUNDER_USERNAME}
+{gear_emoji} Plugins Digunakan: **DEVELOPER PROFILE**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
     buttons = [
