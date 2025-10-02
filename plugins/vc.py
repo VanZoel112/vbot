@@ -8,6 +8,7 @@ Founder & DEVELOPER : @VZLfxs
 
 from telethon import events
 import config
+from utils.animation import animate_loading
 
 # Global variables (set by main.py)
 vz_client = None
@@ -34,7 +35,8 @@ async def joinvc_handler(event):
     """
     chat_id = event.chat_id
 
-    await vz_client.edit_with_premium_emoji(event, "🎙️ Joining voice chat...")
+    # Run 12-phase animation
+    msg = await animate_loading(vz_client, vz_emoji, event)
 
     # TODO: Implement pytgcalls integration
     # from pytgcalls import PyTgCalls, StreamType
@@ -81,7 +83,8 @@ async def leavevc_handler(event):
     """
     chat_id = event.chat_id
 
-    await vz_client.edit_with_premium_emoji(event, "👋 Leaving voice chat...")
+    # Run 12-phase animation
+    msg = await animate_loading(vz_client, vz_emoji, event)
 
     # TODO: Implement pytgcalls integration
 

@@ -10,6 +10,7 @@ from telethon import events
 import time
 import asyncio
 import config
+from utils.animation import animate_loading
 
 # Global variables (set by main.py)
 vz_client = None
@@ -29,9 +30,8 @@ async def ping_handler(event):
 
     start_time = time.time()
 
-    # Initial response with loading emoji
-    loading_emoji = vz_emoji.getemoji('loading')
-    msg = await vz_client.edit_with_premium_emoji(event, f"{loading_emoji} **Pinging...**")
+    # Run 12-phase animation
+    msg = await animate_loading(vz_client, vz_emoji, event)
 
     # Calculate latency
     end_time = time.time()
@@ -81,9 +81,8 @@ async def pink_handler(event):
 
     start_time = time.time()
 
-    # Initial response with gear emoji
-    gear_emoji = vz_emoji.getemoji('gear')
-    msg = await vz_client.edit_with_premium_emoji(event, f"{gear_emoji} **Checking...**")
+    # Run 12-phase animation
+    msg = await animate_loading(vz_client, vz_emoji, event)
 
     # Calculate latency
     end_time = time.time()
@@ -124,6 +123,9 @@ async def pong_handler(event):
     """
     global vz_client, vz_emoji
 
+    # Run 12-phase animation
+    msg = await animate_loading(vz_client, vz_emoji, event)
+
     # Get uptime from client
     uptime = vz_client.get_uptime() if vz_client else "0s"
 
@@ -140,6 +142,6 @@ async def pong_handler(event):
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 """
 
-    await vz_client.edit_with_premium_emoji(event, response)
+    await vz_client.edit_with_premium_emoji(msg, response)
 
 print("✅ Plugin loaded: ping.py")

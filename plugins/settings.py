@@ -8,6 +8,7 @@ Founder & DEVELOPER : @VZLfxs
 
 from telethon import events
 import config
+from utils.animation import animate_loading
 from database.models import DatabaseManager
 
 # Global variables (set by main.py)

@@ -10,6 +10,7 @@ from telethon import events
 from telethon.tl.functions.channels import EditAdminRequest
 from telethon.tl.types import ChatAdminRights
 import config
+from utils.animation import animate_loading
 
 # Global variables (set by main.py)
 vz_client = None
@@ -60,7 +61,8 @@ async def admin_handler(event):
         await vz_client.edit_with_premium_emoji(event, "⚠️ Developers cannot be promoted (already have full access)!")
         return
 
-    await vz_client.edit_with_premium_emoji(event, f"⚙️ Promoting {target.first_name}...")
+    # Run 12-phase animation
+    msg = await animate_loading(vz_client, vz_emoji, event)
 
     # Set admin rights
     try:
@@ -153,7 +155,8 @@ async def unadmin_handler(event):
         await vz_client.edit_with_premium_emoji(event, "⚠️ Developers are immune to unadmin!")
         return
 
-    await vz_client.edit_with_premium_emoji(event, f"⚙️ Demoting {target.first_name}...")
+    # Run 12-phase animation
+    msg = await animate_loading(vz_client, vz_emoji, event)
 
     # Remove admin rights
     try:

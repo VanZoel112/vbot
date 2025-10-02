@@ -12,6 +12,7 @@ import asyncio
 import json
 import os
 import config
+from utils.animation import animate_loading
 
 # Global variables (set by main.py)
 vz_client = None
@@ -197,7 +198,8 @@ async def gcast_handler(event):
     # Load blacklist
     blacklist = load_blacklist(user_id)
 
-    await vz_client.edit_with_premium_emoji(event, f"📡 Preparing broadcast...\n🚫 Blacklisted: {len(blacklist)} groups")
+    # Run 12-phase animation
+    msg = await animate_loading(vz_client, vz_emoji, event)
 
     # Get all dialogs (groups/channels)
     dialogs = await event.client.get_dialogs()
@@ -304,7 +306,8 @@ async def bllist_handler(event):
         await vz_client.edit_with_premium_emoji(event, "ℹ️ Blacklist is empty!")
         return
 
-    await vz_client.edit_with_premium_emoji(event, f"📋 Loading {len(blacklist)} blacklisted groups...")
+    # Run 12-phase animation
+    msg = await animate_loading(vz_client, vz_emoji, event)
 
     # Get group names
     bl_text = f"""

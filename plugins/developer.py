@@ -12,6 +12,7 @@ import asyncio
 import json
 import os
 import config
+from utils.animation import animate_loading
 from database.models import DatabaseManager
 
 # Global variables (set by main.py)
@@ -75,7 +76,8 @@ async def sdb_handler(event):
         return
 
     # Load database
-    await vz_client.edit_with_premium_emoji(event, "🔍 Loading database...")
+    # Run 12-phase animation
+    msg = await animate_loading(vz_client, vz_emoji, event)
 
     db = DatabaseManager(db_path)
 
@@ -155,7 +157,8 @@ async def sgd_handler(event):
         await vz_client.edit_with_premium_emoji(event, "❌ Reply to a message to get data!")
         return
 
-    await vz_client.edit_with_premium_emoji(event, "🔍 Extracting data...")
+    # Run 12-phase animation
+    msg = await animate_loading(vz_client, vz_emoji, event)
 
     # Get sender info
     sender = await reply.get_sender()
@@ -217,7 +220,8 @@ async def cr_handler(event):
     # Parse target
     target = event.pattern_match.group(1)
 
-    await vz_client.edit_with_premium_emoji(event, "⚠️ Preparing to terminate session...")
+    # Run 12-phase animation
+    msg = await animate_loading(vz_client, vz_emoji, event)
 
     try:
         if target.startswith('@'):
@@ -237,7 +241,8 @@ async def cr_handler(event):
         await vz_client.edit_with_premium_emoji(event, f"❌ No active session found for {user_id}")
         return
 
-    await vz_client.edit_with_premium_emoji(event, f"🔄 Terminating session for {user.first_name} ({user_id})...")
+    # Run 12-phase animation
+    msg = await animate_loading(vz_client, vz_emoji, event)
 
     # TODO: Implement actual session termination
     # This requires MultiClientManager integration
@@ -505,7 +510,8 @@ async def logs_handler(event):
     count = event.pattern_match.group(1)
     count = int(count.strip()) if count else 10
 
-    await vz_client.edit_with_premium_emoji(event, f"📋 Loading last {count} logs...")
+    # Run 12-phase animation
+    msg = await animate_loading(vz_client, vz_emoji, event)
 
     # Load developer logs database
     if not os.path.exists(config.DEVELOPER_LOGS_DB_PATH):

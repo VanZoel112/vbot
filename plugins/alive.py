@@ -12,6 +12,7 @@ import os
 import asyncio
 import config
 from helpers.inline import get_alive_buttons, KeyboardBuilder
+from utils.animation import animate_loading
 
 # Global variables (set by main.py)
 vz_client = None
@@ -148,42 +149,8 @@ async def vzoel_handler(event):
     if not config.is_developer(user_id):
         return
 
-    # Get premium emojis for animation
-    loading_emoji = vz_emoji.getemoji('loading')
-    gear_emoji = vz_emoji.getemoji('gear')
-    proses1_emoji = vz_emoji.getemoji('proses1')
-    proses2_emoji = vz_emoji.getemoji('proses2')
-    proses3_emoji = vz_emoji.getemoji('proses3')
-    checklist_emoji = vz_emoji.getemoji('centang')
-    petir_emoji = vz_emoji.getemoji('petir')
-
-    # Animation frames (12 edits) with premium emojis
-    frames = [
-        f"{loading_emoji} Loading...",
-        f"{petir_emoji} Initializing...",
-        f"{proses1_emoji} Processing...",
-        f"{proses2_emoji} Gathering data...",
-        f"{proses3_emoji} Compiling info...",
-        f"{gear_emoji} Almost there...",
-        f"{loading_emoji} Finalizing...",
-        f"{gear_emoji} Configuring...",
-        f"{proses1_emoji} Optimizing...",
-        f"{proses2_emoji} Polishing...",
-        f"{proses3_emoji} Rendering...",
-        f"{checklist_emoji} Complete!"
-    ]
-
-    # Run animation - await each edit properly
-    # Start with first frame using premium emoji
-    msg = await vz_client.edit_with_premium_emoji(event, frames[0])
-
-    # Animate through remaining frames
-    for i, frame in enumerate(frames[1:], 1):
-        await asyncio.sleep(config.ANIMATION_DELAY)
-        msg = await vz_client.edit_with_premium_emoji(msg, frame)
-
-    # Final developer profile with premium emojis
-    await asyncio.sleep(config.ANIMATION_DELAY)
+    # Run 12-phase animation
+    msg = await animate_loading(vz_client, vz_emoji, event)
 
     main_emoji = vz_emoji.getemoji('utama')
     petir_emoji = vz_emoji.getemoji('petir')

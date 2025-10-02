@@ -9,6 +9,7 @@ Founder & DEVELOPER : @VZLfxs
 from telethon import events
 from telethon.tl.types import MessageMediaPhoto, MessageMediaDocument
 import config
+from utils.animation import animate_loading
 
 # Global variables (set by main.py)
 vz_client = None
@@ -150,7 +151,8 @@ async def getfileid_handler(event):
         return
 
     loading_emoji = vz_emoji.getemoji('loading')
-    await vz_client.edit_with_premium_emoji(event, f"{loading_emoji} Extracting file ID...")
+    # Run 12-phase animation
+    msg = await animate_loading(vz_client, vz_emoji, event)
 
     # Get media info
     media = reply.media
@@ -250,7 +252,8 @@ async def limit_handler(event):
     global vz_client, vz_emoji
 
     loading_emoji = vz_emoji.getemoji('loading')
-    await vz_client.edit_with_premium_emoji(event, f"{loading_emoji} Checking spam limit...")
+    # Run 12-phase animation
+    msg = await animate_loading(vz_client, vz_emoji, event)
 
     try:
         # Send /start to @SpamBot

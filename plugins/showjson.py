@@ -10,6 +10,7 @@ from telethon import events, Button
 import json
 import os
 import config
+from utils.animation import animate_loading
 from helpers.inline import get_showjson_buttons
 
 # Global variables (set by main.py)
@@ -37,7 +38,8 @@ async def showjson_handler(event):
     """
     user_id = event.sender_id
 
-    await vz_client.edit_with_premium_emoji(event, "📊 Loading data...")
+    # Run 12-phase animation
+    msg = await animate_loading(vz_client, vz_emoji, event)
 
     # Load emoji mapping
     emoji_data = config.load_emoji_mapping()

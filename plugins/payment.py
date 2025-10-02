@@ -8,6 +8,7 @@ Founder & DEVELOPER : @VZLfxs
 
 from telethon import events, Button
 import config
+from utils.animation import animate_loading
 from database.models import DatabaseManager
 
 # Global variables (set by main.py)
@@ -225,7 +226,8 @@ The image should contain your payment QR code.
 """)
         return
 
-    await vz_client.edit_with_premium_emoji(event, "📷 Extracting QR code...")
+    # Run 12-phase animation
+    msg = await animate_loading(vz_client, vz_emoji, event)
 
     # Get file ID
     file_id = str(reply.photo.id)

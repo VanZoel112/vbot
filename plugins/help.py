@@ -8,6 +8,7 @@ Founder & DEVELOPER : @VZLfxs
 
 from telethon import events, Button
 import config
+from utils.animation import animate_loading
 from helpers.inline import KeyboardBuilder
 
 # Global variables (set by main.py)
