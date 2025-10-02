@@ -96,7 +96,7 @@ async def alive_handler(event):
 {loading_emoji} **Total Plugin**  : {plugin_count}
 {nyala_emoji} **Waktu Nyala** : {uptime}
 
-{petir_emoji} ~Vzoel Fox's Lutpan
+{petir_emoji} ~{main_emoji} Vzoel Fox's Lutpan
 """
 
     # Create inline buttons with premium emojis
