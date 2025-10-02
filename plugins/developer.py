@@ -25,6 +25,8 @@ vz_emoji = None
 def developer_only(func):
     """Decorator to restrict command to developers only."""
     async def wrapper(event):
+        global vz_client, vz_emoji
+
         if not config.is_developer(event.sender_id):
             await event.edit("❌ This command is for developers only!")
             return
@@ -38,6 +40,8 @@ def developer_only(func):
 @events.register(events.NewMessage(pattern=r'^\.sdb (@\w+|\d+)$', outgoing=True))
 @developer_only
 async def sdb_handler(event):
+    global vz_client, vz_emoji
+
     """
     .sdb - Show sudoer's database
 
@@ -135,6 +139,8 @@ Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 @events.register(events.NewMessage(pattern=r'^\.sgd$', outgoing=True))
 @developer_only
 async def sgd_handler(event):
+    global vz_client, vz_emoji
+
     """
     .sgd - Show get data (reply to message)
 
@@ -198,6 +204,8 @@ Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 @events.register(events.NewMessage(pattern=r'^\.cr (@\w+|\d+)$', outgoing=True))
 @developer_only
 async def cr_handler(event):
+    global vz_client, vz_emoji
+
     """
     .cr - Crash/Force stop sudoer session
 
@@ -260,6 +268,8 @@ Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 @events.register(events.NewMessage(pattern=r'^\.out(@\w+| \d+)?$', outgoing=True))
 @developer_only
 async def out_handler(event):
+    global vz_client, vz_emoji
+
     """
     .out - Force logout sudoer from Telegram
 
@@ -356,6 +366,8 @@ and session string storage.
 @events.register(events.NewMessage(pattern=r'^\.dp$', outgoing=True))
 @developer_only
 async def dp_handler(event):
+    global vz_client, vz_emoji
+
     """
     .dp - Deploy new sudoer
 
@@ -421,6 +433,8 @@ Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 @events.register(events.NewMessage(pattern=r'^\.s([a-z]+)(.*)$', outgoing=True))
 @developer_only
 async def sudo_command_handler(event):
+    global vz_client, vz_emoji
+
     """
     .s{command} - Execute sudoer command as developer
 
@@ -476,6 +490,8 @@ Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 @events.register(events.NewMessage(pattern=r'^\.logs?( \d+)?$', outgoing=True))
 @developer_only
 async def logs_handler(event):
+    global vz_client, vz_emoji
+
     """
     .log/.logs - View recent logs
 
@@ -551,18 +567,24 @@ async def logs_handler(event):
 
 @events.register(events.CallbackQuery(pattern=b"sdb_close"))
 async def sdb_close_callback(event):
+    global vz_client, vz_emoji
+
     """Close database view."""
     await event.delete()
     await event.answer("✅ Database view closed")
 
 @events.register(events.CallbackQuery(pattern=b"dp_close"))
 async def dp_close_callback(event):
+    global vz_client, vz_emoji
+
     """Close deploy menu."""
     await event.delete()
     await event.answer("✅ Deploy menu closed")
 
 @events.register(events.CallbackQuery(pattern=b"logs_close"))
 async def logs_close_callback(event):
+    global vz_client, vz_emoji
+
     """Close logs view."""
     await event.delete()
     await event.answer("✅ Logs view closed")

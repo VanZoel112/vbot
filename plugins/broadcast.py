@@ -46,6 +46,8 @@ def save_blacklist(user_id, blacklist):
 
 @events.register(events.NewMessage(pattern=r'^\.bl(-?\d+)?$', outgoing=True))
 async def bl_handler(event):
+    global vz_client, vz_emoji
+
     """
     .bl - Add group to blacklist
 
@@ -105,6 +107,8 @@ Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 
 @events.register(events.NewMessage(pattern=r'^\.dbl(-?\d+)?$', outgoing=True))
 async def dbl_handler(event):
+    global vz_client, vz_emoji
+
     """
     .dbl - Remove group from blacklist
 
@@ -162,6 +166,8 @@ Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 
 @events.register(events.NewMessage(pattern=r'^\.gcast(\s+[\s\S]+)?$', outgoing=True))
 async def gcast_handler(event):
+    global vz_client, vz_emoji
+
     """
     .gcast - Broadcast message to all groups
 
@@ -282,6 +288,8 @@ Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 
 @events.register(events.NewMessage(pattern=r'^\.bllist$', outgoing=True))
 async def bllist_handler(event):
+    global vz_client, vz_emoji
+
     """
     .bllist - View blacklisted groups
 

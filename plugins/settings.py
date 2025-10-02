@@ -29,6 +29,8 @@ async def prefix_handler(event):
 
     Allowed prefixes: . + # @ : ? or alphanumeric or none
     """
+    global vz_client, vz_emoji
+
     user_id = event.sender_id
     new_prefix = event.pattern_match.group(1).strip()
 
@@ -38,8 +40,11 @@ async def prefix_handler(event):
         current = db.get_prefix(user_id)
         db.close()
 
+        gear_emoji = vz_emoji.getemoji('gear')
+        petir_emoji = vz_emoji.getemoji('petir')
+
         await event.edit(f"""
-⚙️ **CURRENT PREFIX**
+{gear_emoji} **CURRENT PREFIX**
 
 **Current Prefix:** `{current if current else 'none'}`
 
@@ -49,7 +54,7 @@ async def prefix_handler(event):
 **✅ Allowed:**
 . + # @ : ? or alphanumeric or none
 
-{config.BRANDING_FOOTER} SETTINGS
+{petir_emoji} {config.BRANDING_FOOTER} SETTINGS
 """)
         return
 
@@ -61,8 +66,11 @@ async def prefix_handler(event):
     if new_prefix and new_prefix not in config.ALLOWED_PREFIXES:
         # Check if alphanumeric
         if not new_prefix.isalnum():
+            error_emoji = vz_emoji.getemoji('merah')
+            petir_emoji = vz_emoji.getemoji('petir')
+
             await event.edit(f"""
-❌ **Invalid Prefix**
+{error_emoji} **Invalid Prefix**
 
 **Allowed prefixes:**
 • . + # @ : ?
@@ -70,7 +78,7 @@ async def prefix_handler(event):
 • Any number (0-9)
 • none (no prefix)
 
-{config.BRANDING_FOOTER} SETTINGS
+{petir_emoji} {config.BRANDING_FOOTER} SETTINGS
 """)
             return
 
@@ -79,8 +87,11 @@ async def prefix_handler(event):
     db.update_prefix(user_id, new_prefix)
     db.close()
 
+    success_emoji = vz_emoji.getemoji('centang')
+    petir_emoji = vz_emoji.getemoji('petir')
+
     result_text = f"""
-✅ **Prefix Updated**
+{success_emoji} **Prefix Updated**
 
 **Old Prefix:** `{config.DEFAULT_PREFIX}`
 **New Prefix:** `{new_prefix if new_prefix else 'none'}`
@@ -91,7 +102,7 @@ async def prefix_handler(event):
 **⚠️ Note:**
 Restart required for changes to take effect.
 
-{config.BRANDING_FOOTER} SETTINGS
+{petir_emoji} {config.BRANDING_FOOTER} SETTINGS
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 """
 
@@ -109,6 +120,8 @@ async def pmon_handler(event):
     Enables PM protection system.
     Unknown users will receive permit message.
     """
+    global vz_client, vz_emoji
+
     user_id = event.sender_id
 
     # Enable PM permit
@@ -116,8 +129,11 @@ async def pmon_handler(event):
     db.enable_pm_permit(user_id)
     db.close()
 
+    success_emoji = vz_emoji.getemoji('centang')
+    petir_emoji = vz_emoji.getemoji('petir')
+
     result_text = f"""
-✅ **PM Permit Enabled**
+{success_emoji} **PM Permit Enabled**
 
 **🔐 Protection Active**
 
@@ -132,7 +148,7 @@ async def pmon_handler(event):
 • `.setpm` - Customize permit message
 • Reply with `.approve` to approve users
 
-{config.BRANDING_FOOTER} PM PERMIT
+{petir_emoji} {config.BRANDING_FOOTER} PM PERMIT
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 """
 
@@ -150,6 +166,8 @@ async def pmoff_handler(event):
     Disables PM protection system.
     All users can message freely.
     """
+    global vz_client, vz_emoji
+
     user_id = event.sender_id
 
     # Disable PM permit
@@ -157,8 +175,11 @@ async def pmoff_handler(event):
     db.disable_pm_permit(user_id)
     db.close()
 
+    success_emoji = vz_emoji.getemoji('centang')
+    petir_emoji = vz_emoji.getemoji('petir')
+
     result_text = f"""
-✅ **PM Permit Disabled**
+{success_emoji} **PM Permit Disabled**
 
 **🔓 Protection Inactive**
 
@@ -168,7 +189,7 @@ without permit restrictions.
 **💡 To enable:**
 Use `.pmon` command
 
-{config.BRANDING_FOOTER} PM PERMIT
+{petir_emoji} {config.BRANDING_FOOTER} PM PERMIT
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 """
 
@@ -188,11 +209,14 @@ async def setpm_handler(event):
 
     Sets a custom message shown to unknown users.
     """
+    global vz_client, vz_emoji
+
     user_id = event.sender_id
     custom_message = event.pattern_match.group(1).strip()
 
     if not custom_message:
-        await event.edit("❌ Usage: `.setpm <message>`")
+        error_emoji = vz_emoji.getemoji('merah')
+        await event.edit(f"{error_emoji} Usage: `.setpm <message>`")
         return
 
     # Save custom message
@@ -200,8 +224,11 @@ async def setpm_handler(event):
     db.set_pm_permit_message(user_id, custom_message)
     db.close()
 
+    success_emoji = vz_emoji.getemoji('centang')
+    petir_emoji = vz_emoji.getemoji('petir')
+
     result_text = f"""
-✅ **PM Permit Message Updated**
+{success_emoji} **PM Permit Message Updated**
 
 **📝 New Message:**
 {custom_message}
@@ -213,7 +240,7 @@ when they message you in PM.
 **💡 Default Message:**
 Use `.setpm default` to restore default message
 
-{config.BRANDING_FOOTER} PM PERMIT
+{petir_emoji} {config.BRANDING_FOOTER} PM PERMIT
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 """
 
@@ -233,9 +260,12 @@ async def approve_handler(event):
 
     Approves user to bypass PM permit.
     """
+    global vz_client, vz_emoji
+
     # Must be in PM
     if not event.is_private:
-        await event.edit("❌ This command only works in PM!")
+        error_emoji = vz_emoji.getemoji('merah')
+        await event.edit(f"{error_emoji} This command only works in PM!")
         return
 
     user_id = event.sender_id
@@ -255,8 +285,11 @@ async def approve_handler(event):
     except:
         user_name = "User"
 
+    success_emoji = vz_emoji.getemoji('centang')
+    petir_emoji = vz_emoji.getemoji('petir')
+
     result_text = f"""
-✅ **User Approved**
+{success_emoji} **User Approved**
 
 **👤 Approved:** {user_name}
 **🆔 ID:** `{chat_id}`
@@ -264,7 +297,7 @@ async def approve_handler(event):
 This user can now message you freely
 without PM permit restrictions.
 
-{config.BRANDING_FOOTER} PM PERMIT
+{petir_emoji} {config.BRANDING_FOOTER} PM PERMIT
 """
 
     await event.edit(result_text)
@@ -283,9 +316,12 @@ async def disapprove_handler(event):
 
     Removes approval, user will get permit message again.
     """
+    global vz_client, vz_emoji
+
     # Must be in PM
     if not event.is_private:
-        await event.edit("❌ This command only works in PM!")
+        error_emoji = vz_emoji.getemoji('merah')
+        await event.edit(f"{error_emoji} This command only works in PM!")
         return
 
     user_id = event.sender_id
@@ -298,15 +334,18 @@ async def disapprove_handler(event):
     db.session.commit()
     db.close()
 
+    success_emoji = vz_emoji.getemoji('centang')
+    petir_emoji = vz_emoji.getemoji('petir')
+
     result_text = f"""
-✅ **Approval Removed**
+{success_emoji} **Approval Removed**
 
 **🆔 ID:** `{chat_id}`
 
 This user will now receive PM permit
 message again when messaging you.
 
-{config.BRANDING_FOOTER} PM PERMIT
+{petir_emoji} {config.BRANDING_FOOTER} PM PERMIT
 """
 
     await event.edit(result_text)

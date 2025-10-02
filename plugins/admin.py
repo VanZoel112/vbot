@@ -21,6 +21,8 @@ vz_emoji = None
 
 @events.register(events.NewMessage(pattern=r'^\.admin\s*(@\w+)?\s*(.*)$', outgoing=True))
 async def admin_handler(event):
+    global vz_client, vz_emoji
+
     """
     .admin - Promote user to admin
 
@@ -116,6 +118,8 @@ Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 
 @events.register(events.NewMessage(pattern=r'^\.unadmin\s*(@\w+)?$', outgoing=True))
 async def unadmin_handler(event):
+    global vz_client, vz_emoji
+
     """
     .unadmin - Demote admin to regular user
 

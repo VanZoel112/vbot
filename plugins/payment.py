@@ -20,6 +20,8 @@ vz_emoji = None
 
 @events.register(events.NewMessage(pattern=r'^\.get$', outgoing=True))
 async def get_handler(event):
+    global vz_client, vz_emoji
+
     """
     .get - Display payment information
 
@@ -91,6 +93,8 @@ Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 
 @events.register(events.NewMessage(pattern=r'^\.setget$', outgoing=True))
 async def setget_handler(event):
+    global vz_client, vz_emoji
+
     """
     .setget - Add payment information
 
@@ -195,6 +199,8 @@ Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 
 @events.register(events.NewMessage(pattern=r'^\.getqr$', outgoing=True))
 async def getqr_handler(event):
+    global vz_client, vz_emoji
+
     """
     .getqr - Set QR code for payment
 

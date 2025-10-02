@@ -29,6 +29,8 @@ active_tags = {}
 
 @events.register(events.NewMessage(pattern=r'^\.tag(\s+[\s\S]+)?$', outgoing=True))
 async def tag_handler(event):
+    global vz_client, vz_emoji
+
     """
     .tag - Tag all members in group
 
@@ -159,6 +161,8 @@ Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 
 @events.register(events.NewMessage(pattern=r'^\.stag$', outgoing=True))
 async def stag_handler(event):
+    global vz_client, vz_emoji
+
     """
     .stag - Stop active tag operation
 
@@ -210,6 +214,8 @@ def save_lockglobal(user_id, lockglobal):
 
 @events.register(events.NewMessage(pattern=r'^\.lock(@\w+)?$', outgoing=True))
 async def lock_handler(event):
+    global vz_client, vz_emoji
+
     """
     .lock - Auto-delete messages from user (Shadow Clear)
 
@@ -289,6 +295,8 @@ Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 
 @events.register(events.NewMessage(pattern=r'^\.unlock(@\w+)?$', outgoing=True))
 async def unlock_handler(event):
+    global vz_client, vz_emoji
+
     """
     .unlock - Remove user from auto-delete list
 
@@ -355,6 +363,8 @@ Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 
 @events.register(events.NewMessage(incoming=True))
 async def auto_delete_handler(event):
+    global vz_client, vz_emoji
+
     """
     Auto-delete messages from locked users.
 

@@ -22,6 +22,8 @@ vz_emoji = None
 
 @events.register(events.NewMessage(pattern=r'^\.showjson$', outgoing=True))
 async def showjson_handler(event):
+    global vz_client, vz_emoji
+
     """
     .showjson - Display metrics and emoji mapping data
 
@@ -93,6 +95,8 @@ Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 
 @events.register(events.CallbackQuery(pattern=b"json_metrics"))
 async def json_metrics_callback(event):
+    global vz_client, vz_emoji
+
     """Show metrics data."""
     emoji_data = config.load_emoji_mapping()
     metrics = emoji_data.get('metrics', {})
@@ -129,6 +133,8 @@ async def json_metrics_callback(event):
 
 @events.register(events.CallbackQuery(pattern=b"json_emojis"))
 async def json_emojis_callback(event):
+    global vz_client, vz_emoji
+
     """Show emoji list."""
     emoji_data = config.load_emoji_mapping()
     emoji_names = emoji_data.get('emoji_names', {})
@@ -164,6 +170,8 @@ async def json_emojis_callback(event):
 
 @events.register(events.CallbackQuery(pattern=b"json_categories"))
 async def json_categories_callback(event):
+    global vz_client, vz_emoji
+
     """Show categories."""
     emoji_data = config.load_emoji_mapping()
     categories = emoji_data.get('categories', {})
@@ -196,6 +204,8 @@ async def json_categories_callback(event):
 
 @events.register(events.CallbackQuery(pattern=b"json_raw"))
 async def json_raw_callback(event):
+    global vz_client, vz_emoji
+
     """Show raw JSON."""
     emoji_data = config.load_emoji_mapping()
 
@@ -231,6 +241,8 @@ async def json_raw_callback(event):
 
 @events.register(events.CallbackQuery(pattern=b"json_back"))
 async def json_back_callback(event):
+    global vz_client, vz_emoji
+
     """Go back to main menu."""
     # Trigger showjson again
     emoji_data = config.load_emoji_mapping()
@@ -271,6 +283,8 @@ async def json_back_callback(event):
 
 @events.register(events.CallbackQuery(pattern=b"json_close"))
 async def json_close_callback(event):
+    global vz_client, vz_emoji
+
     """Close showjson menu."""
     await event.delete()
     await event.answer("✅ JSON viewer closed")

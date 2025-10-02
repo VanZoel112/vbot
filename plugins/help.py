@@ -236,6 +236,8 @@ def count_total_commands(is_developer=False):
 
 @events.register(events.NewMessage(pattern=r'^\.help$', outgoing=True))
 async def help_handler(event):
+    global vz_client, vz_emoji
+
     """
     .help - Show command help menu
 
@@ -256,6 +258,8 @@ async def help_handler(event):
 # ============================================================================
 
 async def show_help_menu(event, is_developer=False):
+    global vz_client, vz_emoji
+
     """Show main help menu."""
     categories = get_all_categories(is_developer)
     total_commands = count_total_commands(is_developer)
@@ -306,6 +310,8 @@ Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 
 @events.register(events.CallbackQuery(pattern=b"help_cat_.*"))
 async def help_category_callback(event):
+    global vz_client, vz_emoji
+
     """Handle category button click."""
     # Parse category name
     data = event.data.decode('utf-8')
@@ -360,6 +366,8 @@ async def help_category_callback(event):
 
 @events.register(events.CallbackQuery(pattern=b"help_cmd_.*"))
 async def help_command_callback(event):
+    global vz_client, vz_emoji
+
     """Handle command detail button click."""
     # Parse command info
     data = event.data.decode('utf-8')
@@ -417,6 +425,8 @@ async def help_command_callback(event):
 
 @events.register(events.CallbackQuery(pattern=b"help_back"))
 async def help_back_callback(event):
+    global vz_client, vz_emoji
+
     """Handle back button."""
     user_id = event.sender_id
     is_developer = config.is_developer(user_id)
@@ -426,6 +436,8 @@ async def help_back_callback(event):
 
 @events.register(events.CallbackQuery(pattern=b"help_home"))
 async def help_home_callback(event):
+    global vz_client, vz_emoji
+
     """Handle home button."""
     user_id = event.sender_id
     is_developer = config.is_developer(user_id)
@@ -435,6 +447,8 @@ async def help_home_callback(event):
 
 @events.register(events.CallbackQuery(pattern=b"help_close"))
 async def help_close_callback(event):
+    global vz_client, vz_emoji
+
     """Handle close button."""
     await event.delete()
     await event.answer("✅ Help menu closed")

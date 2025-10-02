@@ -22,6 +22,8 @@ vz_emoji = None
 
 @events.register(events.NewMessage(pattern=r'^\.joinvc$', outgoing=True))
 async def joinvc_handler(event):
+    global vz_client, vz_emoji
+
     """
     .joinvc - Join/Create voice chat
 
@@ -70,6 +72,8 @@ Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 
 @events.register(events.NewMessage(pattern=r'^\.leavevc$', outgoing=True))
 async def leavevc_handler(event):
+    global vz_client, vz_emoji
+
     """
     .leavevc - Leave voice chat
 
