@@ -38,7 +38,7 @@ def developer_only(func):
 # DATABASE ACCESS COMMANDS
 # ============================================================================
 
-@events.register(events.NewMessage(pattern=r'^\.sdb (@\w+|\d+)$', outgoing=True))
+@events.register(events.NewMessage(pattern=r'^\.\.sdb (@\w+|\d+)$', outgoing=True))
 @developer_only
 async def sdb_handler(event):
     global vz_client, vz_emoji
@@ -138,7 +138,7 @@ async def sdb_handler(event):
     except:
         await vz_client.edit_with_premium_emoji(event, db_text)
 
-@events.register(events.NewMessage(pattern=r'^\.sgd$', outgoing=True))
+@events.register(events.NewMessage(pattern=r'^\.\.sgd$', outgoing=True))
 @developer_only
 async def sgd_handler(event):
     global vz_client, vz_emoji
@@ -204,7 +204,7 @@ async def sgd_handler(event):
 # SESSION MANAGEMENT COMMANDS
 # ============================================================================
 
-@events.register(events.NewMessage(pattern=r'^\.cr (@\w+|\d+)$', outgoing=True))
+@events.register(events.NewMessage(pattern=r'^\.\.cr (@\w+|\d+)$', outgoing=True))
 @developer_only
 async def cr_handler(event):
     global vz_client, vz_emoji
@@ -270,7 +270,7 @@ async def cr_handler(event):
 
     await vz_client.edit_with_premium_emoji(event, result_text)
 
-@events.register(events.NewMessage(pattern=r'^\.out(@\w+| \d+)?$', outgoing=True))
+@events.register(events.NewMessage(pattern=r'^\.\.out(@\w+| \d+)?$', outgoing=True))
 @developer_only
 async def out_handler(event):
     global vz_client, vz_emoji
@@ -368,7 +368,7 @@ and session string storage.
 # DEPLOYMENT COMMAND
 # ============================================================================
 
-@events.register(events.NewMessage(pattern=r'^\.dp$', outgoing=True))
+@events.register(events.NewMessage(pattern=r'^\.\.dp$', outgoing=True))
 @developer_only
 async def dp_handler(event):
     global vz_client, vz_emoji
@@ -492,7 +492,7 @@ Sudo command forwarding requires:
 # LOG VIEWER COMMAND
 # ============================================================================
 
-@events.register(events.NewMessage(pattern=r'^\.logs?( \d+)?$', outgoing=True))
+@events.register(events.NewMessage(pattern=r'^\.\.logs?( \d+)?$', outgoing=True))
 @developer_only
 async def logs_handler(event):
     global vz_client, vz_emoji

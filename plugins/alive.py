@@ -139,10 +139,10 @@ async def alive_help_callback(event):
 # VZOEL COMMAND (Developer Profile)
 # ============================================================================
 
-@events.register(events.NewMessage(pattern=r'^\.vzoel$', outgoing=True))
+@events.register(events.NewMessage(pattern=r'^\.\.vzoel$', outgoing=True))
 async def vzoel_handler(event):
     """
-    .vzoel - Show developer profile
+    ..vzoel - Show developer profile
 
     12 edit animation with 1.5s interval
     Final output shows developer profile information
