@@ -1,0 +1,301 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2025-10-02",
+  "description": "Premium emoji mapping for VZ ASSISTANT v0.0.0.69",
+
+  "emoji_mapping": {
+    "🤩": "6156784006194009426",
+    "👨‍💻": "6206398094007863809",
+    "🌟": "6185812822564277027",
+    "⚙️": "5794353925360457382",
+    "✅": "5796280063573890402",
+    "⛈": "5794407002566300853",
+    "👍": "6098412711991841301",
+    "⚠️": "6097951256410592079",
+    "👎": "6098107013399581475",
+    "✉️": "5350291836378307462",
+    "📷": "5451643289218342306",
+    "😈": "5267186839130753795",
+    "🔪": "5267498988763891103",
+    "😐": "6100140315342016955",
+    "👨‍🚀": "6221865220428532247",
+    "♾": "6098417814412992289",
+    "🎚": "5794128499706958658"
+  },
+
+  "emoji_names": {
+    "MAIN_VZOEL": "🤩",
+    "DEVELOPER": "👨‍💻",
+    "OWNER": "🌟",
+    "GEAR": "⚙️",
+    "CHECKLIST": "✅",
+    "PETIR": "⛈",
+    "HIJAU": "👍",
+    "KUNING": "⚠️",
+    "MERAH": "👎",
+    "TELEGRAM": "✉️",
+    "CAMERA": "📷",
+    "PROSES_1": "😈",
+    "PROSES_2": "🔪",
+    "PROSES_3": "😐",
+    "ROBOT": "👨‍🚀",
+    "LOADING": "♾",
+    "NYALA": "🎚"
+  },
+
+  "categories": {
+    "identity": {
+      "description": "User identity and roles",
+      "emojis": ["🤩", "👨‍💻", "🌟"]
+    },
+    "system": {
+      "description": "System and utility indicators",
+      "emojis": ["⚙️", "✅", "⛈", "🎚"]
+    },
+    "status": {
+      "description": "Status indicators (latency colors)",
+      "emojis": ["👍", "⚠️", "👎"]
+    },
+    "communication": {
+      "description": "Communication and media",
+      "emojis": ["✉️", "📷"]
+    },
+    "process": {
+      "description": "Process animation stages",
+      "emojis": ["😈", "🔪", "😐"]
+    },
+    "special": {
+      "description": "Special effects and loading",
+      "emojis": ["👨‍🚀", "♾"]
+    }
+  },
+
+  "usage_mapping": {
+    "ping_latency": {
+      "1-150ms": "👍",
+      "151-200ms": "⚠️",
+      "200+ms": "👎"
+    },
+    "process_animation": {
+      "stage_1": "😈",
+      "stage_2": "🔪",
+      "stage_3": "😐",
+      "loading": "♾"
+    },
+    "user_roles": {
+      "main_vzoel": "🤩",
+      "developer": "👨‍💻",
+      "owner": "🌟"
+    },
+    "system_status": {
+      "active": "🎚",
+      "success": "✅",
+      "warning": "⚠️",
+      "processing": "⚙️"
+    }
+  },
+
+  "telegram_entities": {
+    "🤩": {
+      "text": "🤩",
+      "entities": [
+        {
+          "offset": 0,
+          "length": 2,
+          "type": "custom_emoji",
+          "custom_emoji_id": "6156784006194009426"
+        }
+      ]
+    },
+    "👨‍💻": {
+      "text": "👨‍💻",
+      "entities": [
+        {
+          "offset": 0,
+          "length": 5,
+          "type": "custom_emoji",
+          "custom_emoji_id": "6206398094007863809"
+        }
+      ]
+    },
+    "🌟": {
+      "text": "🌟",
+      "entities": [
+        {
+          "offset": 0,
+          "length": 2,
+          "type": "custom_emoji",
+          "custom_emoji_id": "6185812822564277027"
+        }
+      ]
+    },
+    "⚙️": {
+      "text": "⚙️",
+      "entities": [
+        {
+          "offset": 0,
+          "length": 2,
+          "type": "custom_emoji",
+          "custom_emoji_id": "5794353925360457382"
+        }
+      ]
+    },
+    "✅": {
+      "text": "✅",
+      "entities": [
+        {
+          "offset": 0,
+          "length": 1,
+          "type": "custom_emoji",
+          "custom_emoji_id": "5796280063573890402"
+        }
+      ]
+    },
+    "⛈": {
+      "text": "⛈",
+      "entities": [
+        {
+          "offset": 0,
+          "length": 1,
+          "type": "custom_emoji",
+          "custom_emoji_id": "5794407002566300853"
+        }
+      ]
+    },
+    "👍": {
+      "text": "👍",
+      "entities": [
+        {
+          "offset": 0,
+          "length": 2,
+          "type": "custom_emoji",
+          "custom_emoji_id": "6098412711991841301"
+        }
+      ]
+    },
+    "⚠️": {
+      "text": "⚠️",
+      "entities": [
+        {
+          "offset": 0,
+          "length": 2,
+          "type": "custom_emoji",
+          "custom_emoji_id": "6097951256410592079"
+        }
+      ]
+    },
+    "👎": {
+      "text": "👎",
+      "entities": [
+        {
+          "offset": 0,
+          "length": 2,
+          "type": "custom_emoji",
+          "custom_emoji_id": "6098107013399581475"
+        }
+      ]
+    },
+    "✉️": {
+      "text": "✉️",
+      "entities": [
+        {
+          "offset": 0,
+          "length": 2,
+          "type": "custom_emoji",
+          "custom_emoji_id": "5350291836378307462"
+        }
+      ]
+    },
+    "📷": {
+      "text": "📷",
+      "entities": [
+        {
+          "offset": 0,
+          "length": 2,
+          "type": "custom_emoji",
+          "custom_emoji_id": "5451643289218342306"
+        }
+      ]
+    },
+    "😈": {
+      "text": "😈",
+      "entities": [
+        {
+          "offset": 0,
+          "length": 2,
+          "type": "custom_emoji",
+          "custom_emoji_id": "5267186839130753795"
+        }
+      ]
+    },
+    "🔪": {
+      "text": "🔪",
+      "entities": [
+        {
+          "offset": 0,
+          "length": 2,
+          "type": "custom_emoji",
+          "custom_emoji_id": "5267498988763891103"
+        }
+      ]
+    },
+    "😐": {
+      "text": "😐",
+      "entities": [
+        {
+          "offset": 0,
+          "length": 2,
+          "type": "custom_emoji",
+          "custom_emoji_id": "6100140315342016955"
+        }
+      ]
+    },
+    "👨‍🚀": {
+      "text": "👨‍🚀",
+      "entities": [
+        {
+          "offset": 0,
+          "length": 5,
+          "type": "custom_emoji",
+          "custom_emoji_id": "6221865220428532247"
+        }
+      ]
+    },
+    "♾": {
+      "text": "♾",
+      "entities": [
+        {
+          "offset": 0,
+          "length": 1,
+          "type": "custom_emoji",
+          "custom_emoji_id": "6098417814412992289"
+        }
+      ]
+    },
+    "🎚": {
+      "text": "🎚",
+      "entities": [
+        {
+          "offset": 0,
+          "length": 2,
+          "type": "custom_emoji",
+          "custom_emoji_id": "5794128499706958658"
+        }
+      ]
+    }
+  },
+
+  "metrics": {
+    "total_emojis": 17,
+    "total_conversions": 0,
+    "last_conversion": null,
+    "most_used_emoji": null
+  },
+
+  "notes": {
+    "branding": "Vzoel Fox's Lutpan",
+    "version_lock": "0.0.0.69",
+    "founder": "@VZLfxs",
+    "description": "DO NOT modify emoji IDs or mappings without approval"
+  }
+}
