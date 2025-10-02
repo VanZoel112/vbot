@@ -1,8 +1,15 @@
 """Utility helpers for premium emoji conversion."""
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
+import re
 
-from telethon.tl.types import MessageEntityCustomEmoji
+from telethon.tl.types import (
+    MessageEntityCustomEmoji,
+    MessageEntityBold,
+    MessageEntityItalic,
+    MessageEntityCode,
+    MessageEntityPre,
+)
 
 import config
 
@@ -74,6 +81,106 @@ def build_premium_emoji_entities(
             index += 1
 
     return entities
+
+
+def parse_markdown_entities(text: str) -> Tuple[str, List]:
+    """
+    Parse markdown syntax and convert to Telegram entities.
+
+    Supports:
+    - **bold** -> MessageEntityBold
+    - __italic__ -> MessageEntityItalic
+    - `code` -> MessageEntityCode
+    - ```language\ncode``` -> MessageEntityPre
+
+    Returns:
+        Tuple of (cleaned_text, entities)
+    """
+    entities = []
+    cleaned_text = text
+    offset_adjustment = 0
+
+    # Pattern: **bold**
+    bold_pattern = r'\*\*(.+?)\*\*'
+    for match in re.finditer(bold_pattern, text):
+        start = match.start() - offset_adjustment
+        content = match.group(1)
+        length = len(content.encode('utf-16-le')) // 2
+
+        entities.append(MessageEntityBold(
+            offset=start,
+            length=length
+        ))
+
+        # Remove markdown syntax from text
+        cleaned_text = cleaned_text.replace(match.group(0), content, 1)
+        offset_adjustment += 4  # **..** = 4 chars removed
+
+    # Recalculate for italic (on cleaned text)
+    offset_adjustment = 0
+    temp_text = cleaned_text
+
+    # Pattern: __italic__
+    italic_pattern = r'__(.+?)__'
+    for match in re.finditer(italic_pattern, temp_text):
+        start = match.start() - offset_adjustment
+        content = match.group(1)
+        length = len(content.encode('utf-16-le')) // 2
+
+        entities.append(MessageEntityItalic(
+            offset=start,
+            length=length
+        ))
+
+        # Remove markdown syntax from text
+        cleaned_text = cleaned_text.replace(match.group(0), content, 1)
+        offset_adjustment += 4  # __..__ = 4 chars removed
+
+    # Recalculate for code
+    offset_adjustment = 0
+    temp_text = cleaned_text
+
+    # Pattern: `code`
+    code_pattern = r'`([^`]+)`'
+    for match in re.finditer(code_pattern, temp_text):
+        start = match.start() - offset_adjustment
+        content = match.group(1)
+        length = len(content.encode('utf-16-le')) // 2
+
+        entities.append(MessageEntityCode(
+            offset=start,
+            length=length
+        ))
+
+        # Remove markdown syntax from text
+        cleaned_text = cleaned_text.replace(match.group(0), content, 1)
+        offset_adjustment += 2  # `..` = 2 chars removed
+
+    return cleaned_text, entities
+
+
+def build_combined_entities(text: str, emoji_data: Optional[Dict] = None) -> Tuple[str, List]:
+    """
+    Build combined entities: markdown formatting + premium emojis.
+
+    Args:
+        text: Message text with markdown syntax
+        emoji_data: Optional emoji mapping
+
+    Returns:
+        Tuple of (cleaned_text, combined_entities)
+    """
+    # Parse markdown first
+    cleaned_text, markdown_entities = parse_markdown_entities(text)
+
+    # Build emoji entities on cleaned text
+    emoji_entities = build_premium_emoji_entities(cleaned_text, emoji_data)
+
+    # Combine and sort by offset
+    all_entities = markdown_entities + emoji_entities
+    all_entities.sort(key=lambda e: e.offset)
+
+    return cleaned_text, all_entities
 
 
 def has_premium_mapping() -> bool:

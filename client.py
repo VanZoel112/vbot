@@ -19,7 +19,7 @@ from datetime import datetime
 import config
 from database.models import DatabaseManager, MultiUserDatabaseManager
 from helpers.vz_emoji_manager import VZEmojiManager
-from utils.emoji import build_premium_emoji_entities
+from utils.emoji import build_combined_entities
 
 # ============================================================================
 # VZ CLIENT CLASS
@@ -100,8 +100,8 @@ class VZClient:
         if not self.emoji.available:
             return await self.client.send_message(chat_id, text, **kwargs)
 
-        # Build entities using the utility
-        entities = build_premium_emoji_entities(text)
+        # Build combined entities (markdown + premium emojis)
+        cleaned_text, entities = build_combined_entities(text)
 
         # Always send with entities - even if empty (Telegram requirement)
         # Remove parse_mode if present as entities takes precedence
@@ -110,7 +110,7 @@ class VZClient:
 
         return await self.client.send_message(
             chat_id,
-            text,
+            cleaned_text,
             formatting_entities=entities if entities else None,
             **kwargs
         )
@@ -120,8 +120,8 @@ class VZClient:
         if not self.emoji.available:
             return await message.edit(text, **kwargs)
 
-        # Build entities using the utility
-        entities = build_premium_emoji_entities(text)
+        # Build combined entities (markdown + premium emojis)
+        cleaned_text, entities = build_combined_entities(text)
 
         # Always edit with entities - even if empty (Telegram requirement)
         # Remove parse_mode if present as entities takes precedence
@@ -129,7 +129,7 @@ class VZClient:
             del kwargs['parse_mode']
 
         return await message.edit(
-            text,
+            cleaned_text,
             formatting_entities=entities if entities else None,
             **kwargs
         )
