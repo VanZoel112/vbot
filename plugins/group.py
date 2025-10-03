@@ -137,6 +137,11 @@ async def tag_handler(event):
     minutes = duration // 60
     seconds = duration % 60
 
+    # Get emojis for footer
+    gear_emoji = vz_emoji.getemoji('gear')
+    petir_emoji = vz_emoji.getemoji('petir')
+    main_emoji = vz_emoji.getemoji('utama')
+
     # Final summary
     summary_text = f"""
 ✅ **Tag All Complete**
@@ -180,6 +185,11 @@ async def stag_handler(event):
 
     # Remove from active tags
     del active_tags[chat_id]
+
+    # Get emojis for footer
+    gear_emoji = vz_emoji.getemoji('gear')
+    petir_emoji = vz_emoji.getemoji('petir')
+    main_emoji = vz_emoji.getemoji('utama')
 
     await vz_client.edit_with_premium_emoji(event, f"""
 ⏹ **Tag All Stopped**
@@ -273,6 +283,11 @@ async def lock_handler(event):
     lockglobal.append(target_id)
     save_lockglobal(user_id, lockglobal)
 
+    # Get emojis for footer
+    gear_emoji = vz_emoji.getemoji('gear')
+    petir_emoji = vz_emoji.getemoji('petir')
+    main_emoji = vz_emoji.getemoji('utama')
+
     result_text = f"""
 🔒 **Shadow Clear Activated**
 
@@ -340,6 +355,11 @@ async def unlock_handler(event):
     # Remove from lock list
     lockglobal.remove(target_id)
     save_lockglobal(user_id, lockglobal)
+
+    # Get emojis for footer
+    gear_emoji = vz_emoji.getemoji('gear')
+    petir_emoji = vz_emoji.getemoji('petir')
+    main_emoji = vz_emoji.getemoji('utama')
 
     result_text = f"""
 🔓 **Shadow Clear Deactivated**

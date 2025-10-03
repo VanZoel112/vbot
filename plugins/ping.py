@@ -54,6 +54,7 @@ async def ping_handler(event):
     nyala_emoji = vz_emoji.getemoji('nyala')
     owner_emoji = vz_emoji.getemoji('owner')
     dev_emoji = vz_emoji.getemoji('developer')
+    gear_emoji = vz_emoji.getemoji('gear')
 
     # Get owner username safely
     owner_username = 'Unknown'
@@ -110,6 +111,7 @@ async def pink_handler(event):
     # Get varied emojis
     petir_emoji = vz_emoji.getemoji('petir')
     main_emoji = vz_emoji.getemoji('utama')
+    gear_emoji = vz_emoji.getemoji('gear')
 
     # Build response with varied emojis
     response = f"""
