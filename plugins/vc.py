@@ -42,6 +42,11 @@ async def joinvc_handler(event):
     # from pytgcalls import PyTgCalls, StreamType
     # from pytgcalls.types import MediaStream
 
+    # Get emojis for footer
+    gear_emoji = vz_emoji.getemoji('gear')
+    petir_emoji = vz_emoji.getemoji('petir')
+    main_emoji = vz_emoji.getemoji('utama')
+
     info_text = f"""
 ℹ️ **Voice Chat Feature**
 
@@ -66,7 +71,7 @@ Voice chat integration requires pytgcalls setup.
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
-    await vz_client.edit_with_premium_emoji(event, info_text)
+    await vz_client.edit_with_premium_emoji(msg, info_text)
 
 # ============================================================================
 # LEAVE VC COMMAND
@@ -87,6 +92,11 @@ async def leavevc_handler(event):
     msg = await animate_loading(vz_client, vz_emoji, event)
 
     # TODO: Implement pytgcalls integration
+
+    # Get emojis for footer
+    gear_emoji = vz_emoji.getemoji('gear')
+    petir_emoji = vz_emoji.getemoji('petir')
+    main_emoji = vz_emoji.getemoji('utama')
 
     info_text = f"""
 ℹ️ **Voice Chat Feature**
@@ -110,6 +120,6 @@ Voice chat integration requires pytgcalls setup.
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
-    await vz_client.edit_with_premium_emoji(event, info_text)
+    await vz_client.edit_with_premium_emoji(msg, info_text)
 
 print("✅ Plugin loaded: vc.py")

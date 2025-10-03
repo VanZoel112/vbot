@@ -268,6 +268,11 @@ async def show_help_menu(event, is_developer=False):
     categories = get_all_categories(is_developer)
     total_commands = count_total_commands(is_developer)
 
+    # Get emojis for footer
+    gear_emoji = vz_emoji.getemoji('gear')
+    petir_emoji = vz_emoji.getemoji('petir')
+    main_emoji = vz_emoji.getemoji('utama')
+
     help_text = f"""
 📚 **VZ ASSISTANT - HELP MENU**
 

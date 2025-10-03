@@ -55,13 +55,18 @@ async def ping_handler(event):
     owner_emoji = vz_emoji.getemoji('owner')
     dev_emoji = vz_emoji.getemoji('developer')
 
+    # Get owner username safely
+    owner_username = 'Unknown'
+    if event.sender:
+        owner_username = event.sender.username if event.sender.username else 'Unknown'
+
     # Build response with varied emojis
     response = f"""
 {main_emoji}{status_emoji} **VZ ASSISTANT - PING**
 
 {petir_emoji} **Latency:** `{latency_ms}ms`
 {nyala_emoji} **Uptime:** `{uptime}`
-{owner_emoji} **Owner:** @{event.sender.username if event.sender.username else 'Unknown'}
+{owner_emoji} **Owner:** @{owner_username}
 {dev_emoji} **Founder:** {config.FOUNDER_USERNAME}
 
 {gear_emoji} Plugins Digunakan: **PING**
