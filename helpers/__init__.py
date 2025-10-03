@@ -24,6 +24,7 @@ from .loader import load_plugins, get_all_handlers
 from .logger import logger, debug, info, warning, error, critical, log_command, log_event, log_exception
 from .vz_emoji_manager import VZEmojiManager
 from .global_data import GlobalDataManager
+from .error_handler import ErrorFormatter, get_error_formatter
 
 __all__ = [
     'InlineManager',
@@ -49,5 +50,7 @@ __all__ = [
     'log_event',
     'log_exception',
     'VZEmojiManager',
-    'GlobalDataManager'
+    'GlobalDataManager',
+    'ErrorFormatter',
+    'get_error_formatter'
 ]

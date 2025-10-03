@@ -16,10 +16,12 @@ import random
 import time
 import config
 from utils.animation import animate_loading
+from helpers.error_handler import ErrorFormatter
 
 # Global variables (set by main.py)
 vz_client = None
 vz_emoji = None
+error_fmt = None
 
 # ============================================================================
 # TAG ALL MANAGEMENT
@@ -30,7 +32,7 @@ active_tags = {}
 
 @events.register(events.NewMessage(pattern=r'^\.tag(\s+[\s\S]+)?$', outgoing=True))
 async def tag_handler(event):
-    global vz_client, vz_emoji
+    global vz_client, vz_emoji, error_fmt
 
     """
     .tag - Tag all members in group
@@ -43,12 +45,19 @@ async def tag_handler(event):
     No admin rights required.
     Auto-stops when all users tagged.
     """
+    # Initialize error formatter if needed
+    if error_fmt is None:
+        error_fmt = ErrorFormatter(vz_emoji)
+
     chat_id = event.chat_id
     user_id = event.sender_id
 
     # Check if already tagging
     if chat_id in active_tags:
-        await vz_client.edit_with_premium_emoji(event, "⚠️ Already tagging in this group! Use `.stag` to stop.")
+        await vz_client.edit_with_premium_emoji(
+            event,
+            error_fmt.warning("Already tagging in this group! Use `.stag` to stop.")
+        )
         return
 
     # Run 12-phase animation
@@ -63,27 +72,43 @@ async def tag_handler(event):
     elif text:
         base_message = text.strip()
     else:
-        await vz_client.edit_with_premium_emoji(event, "❌ Usage: `.tag <message>` or `.tag` (reply)")
+        await vz_client.edit_with_premium_emoji(
+            event,
+            error_fmt.usage_error(
+                "tag",
+                ".tag <message> or .tag (reply)",
+                ".tag Hello everyone!"
+            )
+        )
         return
 
     # Get all participants
-    await vz_client.edit_with_premium_emoji(event, "🔍 Gathering participants...")
+    await vz_client.edit_with_premium_emoji(event, f"{vz_emoji.getemoji('gear')} Gathering participants...")
 
     try:
         participants = await event.client.get_participants(chat_id)
     except Exception as e:
-        await vz_client.edit_with_premium_emoji(event, f"❌ Failed to get participants: {str(e)}")
+        await vz_client.edit_with_premium_emoji(
+            event,
+            f"{error_fmt.error_emoji} **Failed to get participants:** `{str(e)}`"
+        )
         return
 
     if not participants:
-        await vz_client.edit_with_premium_emoji(event, "❌ No participants found!")
+        await vz_client.edit_with_premium_emoji(
+            event,
+            f"{error_fmt.error_emoji} **No participants found!**"
+        )
         return
 
     # Filter out bots and self
     users = [p for p in participants if not p.bot and p.id != user_id]
 
     if not users:
-        await vz_client.edit_with_premium_emoji(event, "❌ No users to tag!")
+        await vz_client.edit_with_premium_emoji(
+            event,
+            f"{error_fmt.error_emoji} **No users to tag!**"
+        )
         return
 
     # Mark as active
@@ -94,12 +119,12 @@ async def tag_handler(event):
     start_time = time.time()
 
     msg = await vz_client.edit_with_premium_emoji(event, f"""
-📢 **Tag All Started**
+{vz_emoji.getemoji('petir')} **Tag All Started**
 
-**👥 Total Users:** {total_users}
-**⏱ Interval:** 2.5s per batch (10 users)
+**{vz_emoji.getemoji('owner')} Total Users:** {total_users}
+**{vz_emoji.getemoji('gear')} Interval:** 2.5s per batch (10 users)
 
-🔄 Starting...
+{vz_emoji.getemoji('loading')} Starting...
 """)
 
     # Shuffle users for random tagging
@@ -142,11 +167,14 @@ async def tag_handler(event):
     petir_emoji = vz_emoji.getemoji('petir')
     main_emoji = vz_emoji.getemoji('utama')
 
+    # Get success emoji
+    success_emoji = vz_emoji.getemoji('centang')
+
     # Final summary
     summary_text = f"""
-✅ **Tag All Complete**
+{success_emoji} **Tag All Complete**
 
-**📊 Summary:**
+**{gear_emoji} Summary:**
 ├ Total Users: {total_users}
 ├ Tagged: {tagged_count}
 ├ Duration: {minutes}m {seconds}s
@@ -170,17 +198,24 @@ async def tag_handler(event):
 
 @events.register(events.NewMessage(pattern=r'^\.stag$', outgoing=True))
 async def stag_handler(event):
-    global vz_client, vz_emoji
+    global vz_client, vz_emoji, error_fmt
 
     """
     .stag - Stop active tag operation
 
     Stops the ongoing .tag command in current group.
     """
+    # Initialize error formatter if needed
+    if error_fmt is None:
+        error_fmt = ErrorFormatter(vz_emoji)
+
     chat_id = event.chat_id
 
     if chat_id not in active_tags:
-        await vz_client.edit_with_premium_emoji(event, "ℹ️ No active tag operation in this group!")
+        await vz_client.edit_with_premium_emoji(
+            event,
+            error_fmt.info("No active tag operation in this group!")
+        )
         return
 
     # Remove from active tags
@@ -228,7 +263,7 @@ def save_lockglobal(user_id, lockglobal):
 
 @events.register(events.NewMessage(pattern=r'^\.lock(@\w+)?$', outgoing=True))
 async def lock_handler(event):
-    global vz_client, vz_emoji
+    global vz_client, vz_emoji, error_fmt
 
     """
     .lock - Auto-delete messages from user (Shadow Clear)
@@ -240,6 +275,10 @@ async def lock_handler(event):
     Requires admin rights to delete messages.
     Auto-deletes all messages from locked user.
     """
+    # Initialize error formatter if needed
+    if error_fmt is None:
+        error_fmt = ErrorFormatter(vz_emoji)
+
     user_id = event.sender_id
 
     # Get target user
@@ -255,20 +294,33 @@ async def lock_handler(event):
             target = await event.client.get_entity(username)
             target_id = target.id
         except Exception as e:
-            await vz_client.edit_with_premium_emoji(event, f"❌ Failed to get user: {str(e)}")
+            await vz_client.edit_with_premium_emoji(event, error_fmt.failed_to_get_user(str(e)))
             return
     else:
-        await vz_client.edit_with_premium_emoji(event, "❌ Usage: `.lock @username` or `.lock` (reply)")
+        await vz_client.edit_with_premium_emoji(
+            event,
+            error_fmt.usage_error(
+                "lock",
+                ".lock @username or .lock (reply)",
+                ".lock @spammer"
+            )
+        )
         return
 
     # Check admin rights
     try:
         perms = await event.client.get_permissions(event.chat_id, event.sender_id)
         if not perms.is_admin or not perms.delete_messages:
-            await vz_client.edit_with_premium_emoji(event, "❌ You need admin rights with delete messages permission!")
+            await vz_client.edit_with_premium_emoji(
+                event,
+                error_fmt.permission_denied("admin rights with delete messages")
+            )
             return
     except:
-        await vz_client.edit_with_premium_emoji(event, "❌ Failed to check permissions!")
+        await vz_client.edit_with_premium_emoji(
+            event,
+            f"{error_fmt.error_emoji} **Failed to check permissions!**"
+        )
         return
 
     # Load lock list
@@ -276,7 +328,10 @@ async def lock_handler(event):
 
     # Check if already locked
     if target_id in lockglobal:
-        await vz_client.edit_with_premium_emoji(event, f"⚠️ User {target.first_name} is already locked!")
+        await vz_client.edit_with_premium_emoji(
+            event,
+            error_fmt.warning(f"User {target.first_name} is already locked!")
+        )
         return
 
     # Add to lock list
@@ -314,7 +369,7 @@ automatically deleted in this group.
 
 @events.register(events.NewMessage(pattern=r'^\.unlock(@\w+)?$', outgoing=True))
 async def unlock_handler(event):
-    global vz_client, vz_emoji
+    global vz_client, vz_emoji, error_fmt
 
     """
     .unlock - Remove user from auto-delete list
@@ -323,6 +378,10 @@ async def unlock_handler(event):
         .unlock @username      (unlock by username)
         .unlock (reply)        (unlock by reply)
     """
+    # Initialize error formatter if needed
+    if error_fmt is None:
+        error_fmt = ErrorFormatter(vz_emoji)
+
     user_id = event.sender_id
 
     # Get target user
@@ -338,10 +397,17 @@ async def unlock_handler(event):
             target = await event.client.get_entity(username)
             target_id = target.id
         except Exception as e:
-            await vz_client.edit_with_premium_emoji(event, f"❌ Failed to get user: {str(e)}")
+            await vz_client.edit_with_premium_emoji(event, error_fmt.failed_to_get_user(str(e)))
             return
     else:
-        await vz_client.edit_with_premium_emoji(event, "❌ Usage: `.unlock @username` or `.unlock` (reply)")
+        await vz_client.edit_with_premium_emoji(
+            event,
+            error_fmt.usage_error(
+                "unlock",
+                ".unlock @username or .unlock (reply)",
+                ".unlock @user123"
+            )
+        )
         return
 
     # Load lock list
@@ -349,7 +415,10 @@ async def unlock_handler(event):
 
     # Check if locked
     if target_id not in lockglobal:
-        await vz_client.edit_with_premium_emoji(event, f"⚠️ User {target.first_name} is not locked!")
+        await vz_client.edit_with_premium_emoji(
+            event,
+            error_fmt.warning(f"User {target.first_name} is not locked!")
+        )
         return
 
     # Remove from lock list
