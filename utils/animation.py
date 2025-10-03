@@ -87,4 +87,44 @@ async def animate_custom(vz_client, event_or_message, frames, delay=None):
 
     return msg
 
+async def animate_fast(vz_client, vz_emoji, event_or_message):
+    """
+    Fast 4-phase animation for quick operations.
+
+    Args:
+        vz_client: VZClient instance
+        vz_emoji: VZEmojiManager instance
+        event_or_message: Event or Message object to edit
+
+    Returns:
+        Final message object after animation completes
+    """
+    # Get premium emojis
+    loading_emoji = vz_emoji.getemoji('loading')
+    proses1_emoji = vz_emoji.getemoji('proses1')
+    gear_emoji = vz_emoji.getemoji('gear')
+    checklist_emoji = vz_emoji.getemoji('centang')
+
+    # 4 fast animation frames
+    frames = [
+        f"{loading_emoji} Processing...",
+        f"{proses1_emoji} Working...",
+        f"{gear_emoji} Finalizing...",
+        f"{checklist_emoji} Done!"
+    ]
+
+    # Use fast delay
+    delay = getattr(config, 'FAST_ANIMATION_DELAY', 0.2)
+
+    # Start with first frame
+    msg = await vz_client.edit_with_premium_emoji(event_or_message, frames[0])
+
+    # Animate through remaining frames
+    for frame in frames[1:]:
+        await asyncio.sleep(delay)
+        msg = await vz_client.edit_with_premium_emoji(msg, frame)
+
+    await asyncio.sleep(delay)
+    return msg
+
 print("✅ Animation utilities loaded")

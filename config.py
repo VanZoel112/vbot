@@ -115,10 +115,11 @@ ALIVE_TEMPLATE = """
 # ============================================================================
 # ANIMATION SETTINGS
 # ============================================================================
-ANIMATION_DELAY = 1.5  # seconds for vzoel command
+ANIMATION_DELAY = 0.35  # seconds for vzoel command (optimized for speed)
 TAG_ANIMATION_DELAY = 2.5  # seconds for tag command
 PROCESS_STEPS = 8  # Number of process animation steps
 TAG_USERS_PER_EDIT = 10  # Number of users to tag per edit
+FAST_ANIMATION_DELAY = 0.2  # seconds for fast/error animations
 
 # ============================================================================
 # HELPER FUNCTIONS
