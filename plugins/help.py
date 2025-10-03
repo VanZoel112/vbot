@@ -275,18 +275,21 @@ async def show_help_menu(event, is_developer=False):
     petir_emoji = vz_emoji.getemoji('petir')
     main_emoji = vz_emoji.getemoji('utama')
 
+    # Get additional emojis
+    owner_role_emoji = vz_emoji.getemoji('owner')
+
     help_text = f"""
-📚 **VZ ASSISTANT - HELP MENU**
+{gear_emoji} **VZ ASSISTANT - HELP MENU**
 
-🔍 **Total Commands:** {total_commands}
-👤 **Role:** {'DEVELOPER' if is_developer else 'SUDOER'}
-📝 **Prefix:** {config.DEFAULT_PREFIX}
+{gear_emoji} **Total Commands:** {total_commands}
+{owner_role_emoji} **Role:** {'DEVELOPER' if is_developer else 'SUDOER'}
+{gear_emoji} **Prefix:** {config.DEFAULT_PREFIX}
 
-**📂 Categories:**
+**{gear_emoji} Categories:**
 Select a category to view commands
 
 {gear_emoji} Plugins Digunakan: **HELP**
-{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
+{petir_emoji} by {main_emoji} {config.RESULT_FOOTER}
 """
 
     # Create category buttons
@@ -295,7 +298,7 @@ Select a category to view commands
     # Add category buttons (2 per row)
     for i, category in enumerate(categories):
         same_row = (i % 2 == 1)
-        kb.add_button(f"📁 {category}", f"help_cat_{category}", same_row=same_row)
+        kb.add_button(f"{gear_emoji} {category}", f"help_cat_{category}", same_row=same_row)
 
     # Add close button
     kb.add_button("❌ Close", "help_close")
@@ -349,18 +352,20 @@ async def help_category_callback(event):
     for cmd_name, cmd_data in commands.items():
         category_text += f"• `{cmd_data['cmd']}` - {cmd_data['desc']}\n"
 
+    kuning_emoji = vz_emoji.getemoji('kuning')
+
     category_text += f"""
 
-💡 **Tip:** Click a command for detailed info
+{kuning_emoji} **Tip:** Click a command for detailed info
 
 {gear_emoji} Plugins Digunakan: **HELP**
-{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan"""
+{petir_emoji} by {main_emoji} {config.RESULT_FOOTER}"""
 
     # Create command buttons
     kb = KeyboardBuilder()
 
     for cmd_name in commands.keys():
-        kb.add_button(f"📝 {cmd_name}", f"help_cmd_{category}_{cmd_name}")
+        kb.add_button(f"{gear_emoji} {cmd_name}", f"help_cmd_{category}_{cmd_name}")
 
     # Add navigation buttons
     kb.add_button("◀️ Back", "help_back")
@@ -403,7 +408,7 @@ async def help_command_callback(event):
 
     # Build command detail view
     cmd_text = f"""
-📝 **Command Details**
+{gear_emoji} **Command Details**
 
 **Command:** `{cmd_data['cmd']}`
 **Description:** {cmd_data['desc']}
@@ -414,10 +419,10 @@ async def help_command_callback(event):
 **Example:**
 `{cmd_data['example']}`
 
-📂 **Category:** {category}
+{gear_emoji} **Category:** {category}
 
 {gear_emoji} Plugins Digunakan: **HELP**
-{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan"""
+{petir_emoji} by {main_emoji} {config.RESULT_FOOTER}"""
 
     # Create navigation buttons
     kb = KeyboardBuilder()

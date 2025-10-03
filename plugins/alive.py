@@ -84,12 +84,11 @@ async def alive_handler(event):
     loading_emoji = vz_emoji.getemoji('loading')
     petir_emoji = vz_emoji.getemoji('petir')
 
-    # Build alive message with varied premium emojis
+    # Build alive message with vzl2-style footer
     alive_text = f"""
 {main_emoji} **Vz ASSISTANT** {nyala_emoji}
 
-
-{dev_emoji} **Founder**         : Vzoel Fox's/t.me/VZLfxs
+{dev_emoji} **{config.FOUNDER_TEXT}**
 {owner_emoji} **Owner**            : @{owner_username}
 {gear_emoji} **Versi**              : {config.BOT_VERSION}
 {dev_emoji} **Telethon × Python 3+**
@@ -97,7 +96,7 @@ async def alive_handler(event):
 {nyala_emoji} **Waktu Nyala** : {uptime}
 
 {gear_emoji} Plugins Digunakan: **ALIVE**
-{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
+{petir_emoji} by {main_emoji} {config.RESULT_FOOTER}
 """
 
     # Create inline buttons with premium emojis
@@ -194,11 +193,13 @@ async def vzoel_handler(event):
 • Username: @VZLfxs
 
 {gear_emoji} Plugins Digunakan: **DEVELOPER PROFILE**
-{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
+{petir_emoji} by {main_emoji} {config.RESULT_FOOTER}
 """
 
+    telegram_contact_emoji = vz_emoji.getemoji('telegram')
+
     buttons = [
-        [Button.url("📱 Contact", "https://t.me/VZLfxs")]
+        [Button.url(f"{telegram_contact_emoji} Contact", "https://t.me/VZLfxs")]
     ]
 
     try:

@@ -219,6 +219,15 @@ async def main():
 # ============================================================================
 
 if __name__ == "__main__":
+    # Use uvloop for better performance (vzl2 style)
+    try:
+        import uvloop
+        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+        print("⚡ uvloop enabled for performance boost")
+    except ImportError:
+        print("⚠️  uvloop not installed - using default asyncio")
+        pass
+
     try:
         # Check Python version
         if sys.version_info < (3, 9):
