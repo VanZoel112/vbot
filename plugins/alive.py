@@ -90,12 +90,12 @@ async def alive_handler(event):
 
 {dev_emoji} **{config.FOUNDER_TEXT}**
 {owner_emoji} **Owner**            : @{owner_username}
-{gear_emoji} **Versi**              : {config.BOT_VERSION}
+{petir_emoji} **Versi**              : {config.BOT_VERSION}
 {dev_emoji} **Telethon × Python 3+**
 {loading_emoji} **Total Plugin**  : {plugin_count}
 {nyala_emoji} **Waktu Nyala** : {uptime}
 
-{gear_emoji} Plugins Digunakan: **ALIVE**
+{main_emoji} Plugins Digunakan: **ALIVE**
 {petir_emoji} by {main_emoji} {config.RESULT_FOOTER}
 """
 
@@ -172,9 +172,9 @@ async def vzoel_handler(event):
 ━━━━━━━━━━━━━━━━━━━━━━
 
 {robot_emoji} **User ID:** {user_id}
-{gear_emoji} **Role:** Main Developer
-{petir_emoji} **Access Level:** Full Control
-{gear_emoji} **Version:** {config.BOT_VERSION}
+{petir_emoji} **Role:** Main Developer
+{nyala_emoji} **Access Level:** Full Control
+{petir_emoji} **Version:** {config.BOT_VERSION}
 
 {owner_emoji} **Specialization:**
 • Telegram Userbot Development
@@ -182,7 +182,7 @@ async def vzoel_handler(event):
 • Premium Feature Integration
 • Multi-User Architecture
 
-{gear_emoji} **Stats:**
+{petir_emoji} **Stats:**
 • Total Plugins: {count_plugins()}
 • Uptime: {vz_client.get_uptime() if vz_client else "0s"}
 • Database: Multi-User SQLite
@@ -192,7 +192,7 @@ async def vzoel_handler(event):
 • Telegram: t.me/VZLfxs
 • Username: @VZLfxs
 
-{gear_emoji} Plugins Digunakan: **DEVELOPER PROFILE**
+{main_emoji} Plugins Digunakan: **DEVELOPER PROFILE**
 {petir_emoji} by {main_emoji} {config.RESULT_FOOTER}
 """
 

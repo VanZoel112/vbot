@@ -70,7 +70,7 @@ async def ping_handler(event):
 {owner_emoji} **Owner:** @{owner_username}
 {dev_emoji} **{config.FOUNDER_TEXT}**
 
-{gear_emoji} Plugins Digunakan: **PING**
+{main_emoji} Plugins Digunakan: **PING**
 {petir_emoji} by {main_emoji} {config.RESULT_FOOTER}
 """
 
@@ -118,7 +118,7 @@ async def pink_handler(event):
     response = f"""
 {status_emoji} **{latency_ms}ms** - {status_text}
 
-{gear_emoji} Plugins Digunakan: **PINK**
+{main_emoji} Plugins Digunakan: **PINK**
 {petir_emoji} by {main_emoji} {config.RESULT_FOOTER}
 """
 
@@ -152,9 +152,9 @@ async def pong_handler(event):
     response = f"""
 {nyala_emoji} **VZ ASSISTANT - UPTIME**
 
-⏰ **Uptime:** `{uptime}`
+{nyala_emoji} **Uptime:** `{uptime}`
 
-{gear_emoji} Plugins Digunakan: **PONG**
+{main_emoji} Plugins Digunakan: **PONG**
 {petir_emoji} by {main_emoji} {config.RESULT_FOOTER}
 """
 

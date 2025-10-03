@@ -279,16 +279,16 @@ async def show_help_menu(event, is_developer=False):
     owner_role_emoji = vz_emoji.getemoji('owner')
 
     help_text = f"""
-{gear_emoji} **VZ ASSISTANT - HELP MENU**
+{main_emoji} **VZ ASSISTANT - HELP MENU**
 
-{gear_emoji} **Total Commands:** {total_commands}
+{petir_emoji} **Total Commands:** {total_commands}
 {owner_role_emoji} **Role:** {'DEVELOPER' if is_developer else 'SUDOER'}
 {gear_emoji} **Prefix:** {config.DEFAULT_PREFIX}
 
-**{gear_emoji} Categories:**
+**{main_emoji} Categories:**
 Select a category to view commands
 
-{gear_emoji} Plugins Digunakan: **HELP**
+{main_emoji} Plugins Digunakan: **HELP**
 {petir_emoji} by {main_emoji} {config.RESULT_FOOTER}
 """
 
@@ -298,7 +298,7 @@ Select a category to view commands
     # Add category buttons (2 per row)
     for i, category in enumerate(categories):
         same_row = (i % 2 == 1)
-        kb.add_button(f"{gear_emoji} {category}", f"help_cat_{category}", same_row=same_row)
+        kb.add_button(f"{main_emoji} {category}", f"help_cat_{category}", same_row=same_row)
 
     # Add close button
     kb.add_button("❌ Close", "help_close")
@@ -358,14 +358,14 @@ async def help_category_callback(event):
 
 {kuning_emoji} **Tip:** Click a command for detailed info
 
-{gear_emoji} Plugins Digunakan: **HELP**
+{main_emoji} Plugins Digunakan: **HELP**
 {petir_emoji} by {main_emoji} {config.RESULT_FOOTER}"""
 
     # Create command buttons
     kb = KeyboardBuilder()
 
     for cmd_name in commands.keys():
-        kb.add_button(f"{gear_emoji} {cmd_name}", f"help_cmd_{category}_{cmd_name}")
+        kb.add_button(f"{petir_emoji} {cmd_name}", f"help_cmd_{category}_{cmd_name}")
 
     # Add navigation buttons
     kb.add_button("◀️ Back", "help_back")
@@ -408,7 +408,7 @@ async def help_command_callback(event):
 
     # Build command detail view
     cmd_text = f"""
-{gear_emoji} **Command Details**
+{main_emoji} **Command Details**
 
 **Command:** `{cmd_data['cmd']}`
 **Description:** {cmd_data['desc']}
@@ -419,9 +419,9 @@ async def help_command_callback(event):
 **Example:**
 `{cmd_data['example']}`
 
-{gear_emoji} **Category:** {category}
+{petir_emoji} **Category:** {category}
 
-{gear_emoji} Plugins Digunakan: **HELP**
+{main_emoji} Plugins Digunakan: **HELP**
 {petir_emoji} by {main_emoji} {config.RESULT_FOOTER}"""
 
     # Create navigation buttons

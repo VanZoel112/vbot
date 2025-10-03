@@ -595,4 +595,299 @@ async def logs_close_callback(event):
     await event.delete()
     await event.answer("✅ Logs view closed")
 
+# ============================================================================
+# GIT OPERATIONS (DEVELOPER ONLY)
+# ============================================================================
+
+# Store token securely in home directory
+TOKEN_FILE = os.path.join(os.path.expanduser("~"), ".vbot_git_token")
+
+def save_git_token(token: str):
+    """Save GitHub token securely."""
+    with open(TOKEN_FILE, 'w') as f:
+        f.write(token)
+    os.chmod(TOKEN_FILE, 0o600)  # Only owner can read/write
+
+def load_git_token() -> str:
+    """Load GitHub token."""
+    try:
+        if os.path.exists(TOKEN_FILE):
+            with open(TOKEN_FILE, 'r') as f:
+                return f.read().strip()
+    except:
+        pass
+    return None
+
+@events.register(events.NewMessage(pattern=r'^\.\.settoken\s+(.+)$', outgoing=True))
+@developer_only
+async def settoken_handler(event):
+    global vz_client, vz_emoji
+
+    """
+    ..settoken - Set GitHub Personal Access Token
+
+    Usage: ..settoken <token>
+
+    Stores GitHub token securely for .pull and .push commands.
+    Token is saved in ~/.vbot_git_token with 600 permissions.
+
+    Developer only command.
+    """
+    token = event.pattern_match.group(1).strip()
+
+    # Animation
+    msg = await animate_loading(vz_client, vz_emoji, event)
+
+    # Save token
+    try:
+        save_git_token(token)
+
+        # Get emojis
+        main_emoji = vz_emoji.getemoji('utama')
+        centang_emoji = vz_emoji.getemoji('centang')
+        petir_emoji = vz_emoji.getemoji('petir')
+
+        success_msg = f"""
+{centang_emoji} **GitHub Token Saved**
+
+{petir_emoji} **Token Length:** {len(token)} characters
+{petir_emoji} **Storage:** ~/.vbot_git_token
+{petir_emoji} **Permissions:** 600 (owner only)
+
+{centang_emoji} **Ready for:**
+• ..pull - Pull from remote
+• ..push - Push to remote
+
+{main_emoji} Plugins Digunakan: **DEVELOPER**
+{petir_emoji} by {main_emoji} {config.RESULT_FOOTER}
+"""
+
+        await vz_client.edit_with_premium_emoji(msg, success_msg)
+
+        # Delete original message with token for security
+        await asyncio.sleep(3)
+        await event.delete()
+
+    except Exception as e:
+        merah_emoji = vz_emoji.getemoji('merah')
+        await vz_client.edit_with_premium_emoji(msg, f"{merah_emoji} **Error:** {str(e)}")
+
+@events.register(events.NewMessage(pattern=r'^\.\.pull$', outgoing=True))
+@developer_only
+async def pull_handler(event):
+    global vz_client, vz_emoji
+
+    """
+    ..pull - Pull latest changes from GitHub
+
+    Usage: ..pull
+
+    Executes: git pull origin main
+    Requires GitHub token set via ..settoken
+
+    Developer only command.
+    """
+    # Animation
+    msg = await animate_loading(vz_client, vz_emoji, event)
+
+    # Get emojis
+    main_emoji = vz_emoji.getemoji('utama')
+    loading_emoji = vz_emoji.getemoji('loading')
+    centang_emoji = vz_emoji.getemoji('centang')
+    merah_emoji = vz_emoji.getemoji('merah')
+    petir_emoji = vz_emoji.getemoji('petir')
+
+    try:
+        # Check if in git repo
+        if not os.path.exists('.git'):
+            await vz_client.edit_with_premium_emoji(
+                msg,
+                f"{merah_emoji} **Not a git repository!**"
+            )
+            return
+
+        # Get token
+        token = load_git_token()
+
+        # Execute git pull
+        import subprocess
+
+        # Configure git to use token if available
+        if token:
+            # Get remote URL
+            result = subprocess.run(
+                ['git', 'remote', 'get-url', 'origin'],
+                capture_output=True,
+                text=True
+            )
+            remote_url = result.stdout.strip()
+
+            # If HTTPS URL, add token
+            if remote_url.startswith('https://github.com'):
+                # Extract owner/repo
+                parts = remote_url.replace('https://github.com/', '').replace('.git', '')
+                auth_url = f"https://{token}@github.com/{parts}.git"
+
+                # Temporarily set URL with token
+                subprocess.run(['git', 'remote', 'set-url', 'origin', auth_url])
+
+        # Pull
+        result = subprocess.run(
+            ['git', 'pull', 'origin', 'main'],
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+
+        # Restore original URL if token was used
+        if token and remote_url:
+            subprocess.run(['git', 'remote', 'set-url', 'origin', remote_url])
+
+        if result.returncode == 0:
+            output = result.stdout or "Already up to date"
+
+            pull_msg = f"""
+{centang_emoji} **Git Pull Successful**
+
+{petir_emoji} **Output:**
+```
+{output[:500]}
+```
+
+{main_emoji} Plugins Digunakan: **DEVELOPER**
+{petir_emoji} by {main_emoji} {config.RESULT_FOOTER}
+"""
+            await vz_client.edit_with_premium_emoji(msg, pull_msg)
+        else:
+            error_msg = result.stderr or "Unknown error"
+            await vz_client.edit_with_premium_emoji(
+                msg,
+                f"{merah_emoji} **Git Pull Failed:**\n```\n{error_msg[:500]}\n```"
+            )
+
+    except subprocess.TimeoutExpired:
+        await vz_client.edit_with_premium_emoji(msg, f"{merah_emoji} **Timeout!** Operation took too long")
+    except Exception as e:
+        await vz_client.edit_with_premium_emoji(msg, f"{merah_emoji} **Error:** {str(e)}")
+
+@events.register(events.NewMessage(pattern=r'^\.\.push(?:\s+(.+))?$', outgoing=True))
+@developer_only
+async def push_handler(event):
+    global vz_client, vz_emoji
+
+    """
+    ..push - Commit and push changes to GitHub
+
+    Usage: ..push [commit message]
+
+    Executes:
+    - git add -A
+    - git commit -m "<message>"
+    - git push origin main
+
+    Default message: "Update from VZ Assistant"
+    Requires GitHub token set via ..settoken
+
+    Developer only command.
+    """
+    commit_msg = event.pattern_match.group(1)
+    if not commit_msg:
+        commit_msg = "Update from VZ Assistant"
+
+    # Animation
+    msg = await animate_loading(vz_client, vz_emoji, event)
+
+    # Get emojis
+    main_emoji = vz_emoji.getemoji('utama')
+    loading_emoji = vz_emoji.getemoji('loading')
+    centang_emoji = vz_emoji.getemoji('centang')
+    merah_emoji = vz_emoji.getemoji('merah')
+    petir_emoji = vz_emoji.getemoji('petir')
+
+    try:
+        # Check if in git repo
+        if not os.path.exists('.git'):
+            await vz_client.edit_with_premium_emoji(
+                msg,
+                f"{merah_emoji} **Not a git repository!**"
+            )
+            return
+
+        import subprocess
+
+        # Stage all changes
+        subprocess.run(['git', 'add', '-A'], check=True)
+
+        # Commit
+        commit_result = subprocess.run(
+            ['git', 'commit', '-m', commit_msg],
+            capture_output=True,
+            text=True
+        )
+
+        # Check if there were changes to commit
+        if 'nothing to commit' in commit_result.stdout:
+            await vz_client.edit_with_premium_emoji(
+                msg,
+                f"{petir_emoji} **No changes to commit**"
+            )
+            return
+
+        # Get token
+        token = load_git_token()
+
+        # Push
+        if token:
+            # Get remote URL
+            result = subprocess.run(
+                ['git', 'remote', 'get-url', 'origin'],
+                capture_output=True,
+                text=True
+            )
+            remote_url = result.stdout.strip()
+
+            # If HTTPS URL, add token
+            if remote_url.startswith('https://github.com'):
+                parts = remote_url.replace('https://github.com/', '').replace('.git', '')
+                auth_url = f"https://{token}@github.com/{parts}.git"
+                subprocess.run(['git', 'remote', 'set-url', 'origin', auth_url])
+
+        # Push
+        push_result = subprocess.run(
+            ['git', 'push', 'origin', 'main'],
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+
+        # Restore original URL if token was used
+        if token and remote_url:
+            subprocess.run(['git', 'remote', 'set-url', 'origin', remote_url])
+
+        if push_result.returncode == 0:
+            push_msg = f"""
+{centang_emoji} **Git Push Successful**
+
+{petir_emoji} **Commit:** {commit_msg}
+{petir_emoji} **Output:**
+```
+{push_result.stdout[:500] or push_result.stderr[:500]}
+```
+
+{main_emoji} Plugins Digunakan: **DEVELOPER**
+{petir_emoji} by {main_emoji} {config.RESULT_FOOTER}
+"""
+            await vz_client.edit_with_premium_emoji(msg, push_msg)
+        else:
+            error_msg = push_result.stderr or "Unknown error"
+            await vz_client.edit_with_premium_emoji(
+                msg,
+                f"{merah_emoji} **Git Push Failed:**\n```\n{error_msg[:500]}\n```"
+            )
+
+    except subprocess.TimeoutExpired:
+        await vz_client.edit_with_premium_emoji(msg, f"{merah_emoji} **Timeout!** Operation took too long")
+    except Exception as e:
+        await vz_client.edit_with_premium_emoji(msg, f"{merah_emoji} **Error:** {str(e)}")
+
 print("✅ Plugin loaded: developer.py")
