@@ -10,7 +10,7 @@ from telethon import events
 import time
 import asyncio
 import config
-from utils.animation import animate_loading
+from utils.animation import animate_ping
 
 # Global variables (set by main.py)
 vz_client = None
@@ -30,8 +30,8 @@ async def ping_handler(event):
 
     start_time = time.time()
 
-    # Run 12-phase animation
-    msg = await animate_loading(vz_client, vz_emoji, event)
+    # Run ping animation (vzl2 style - simple "Menghitung...")
+    msg = await animate_ping(vz_client, vz_emoji, event)
 
     # Calculate latency
     end_time = time.time()
@@ -90,8 +90,9 @@ async def pink_handler(event):
 
     start_time = time.time()
 
-    # Run 12-phase animation
-    msg = await animate_loading(vz_client, vz_emoji, event)
+    # Run pink animation (vzl2 style - "Testing latency...")
+    loading_emoji = vz_emoji.getemoji('loading')
+    msg = await vz_client.edit_with_premium_emoji(event, f"{loading_emoji} Testing latency...")
 
     # Calculate latency
     end_time = time.time()
@@ -135,8 +136,9 @@ async def pong_handler(event):
     """
     global vz_client, vz_emoji
 
-    # Run 12-phase animation
-    msg = await animate_loading(vz_client, vz_emoji, event)
+    # Run ping animation (vzl2 style - "Testing...")
+    loading_emoji = vz_emoji.getemoji('loading')
+    msg = await vz_client.edit_with_premium_emoji(event, f"{loading_emoji} Testing...")
 
     # Get uptime from client
     uptime = vz_client.get_uptime() if vz_client else "0s"

@@ -9,6 +9,8 @@ Founder & DEVELOPER : @VZLfxs
 from telethon import events, Button
 import config
 from utils.animation import animate_loading
+# Note: help.py can use animate_loading as it's generic enough
+# or can create help-specific animation in utils/animation.py later
 from helpers.inline import KeyboardBuilder
 
 # Global variables (set by main.py)

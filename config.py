@@ -115,9 +115,10 @@ ALIVE_TEMPLATE = """
 # ============================================================================
 # ANIMATION SETTINGS
 # ============================================================================
-ANIMATION_DELAY = 0.35  # seconds for vzoel command (optimized for speed)
+# Updated to match vzl2 pattern with descriptive phases
+ANIMATION_DELAY = 2.5  # seconds for descriptive animation phases (vzl2 style)
 TAG_ANIMATION_DELAY = 2.5  # seconds for tag command
-PROCESS_STEPS = 8  # Number of process animation steps
+PROCESS_STEPS = 12  # Number of process animation steps (vzl2 uses 12)
 TAG_USERS_PER_EDIT = 10  # Number of users to tag per edit
 FAST_ANIMATION_DELAY = 0.2  # seconds for fast/error animations
 

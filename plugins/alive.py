@@ -12,7 +12,7 @@ import os
 import asyncio
 import config
 from helpers.inline import get_alive_buttons, KeyboardBuilder
-from utils.animation import animate_loading
+from utils.animation import animate_alive
 
 # Global variables (set by main.py)
 vz_client = None
@@ -66,8 +66,8 @@ async def alive_handler(event):
     """
     global vz_client, vz_emoji
 
-    # Run 12-phase animation
-    msg = await animate_loading(vz_client, vz_emoji, event)
+    # Run 12-phase descriptive animation (vzl2 style)
+    msg = await animate_alive(vz_client, vz_emoji, event)
 
     # Get data
     uptime = vz_client.get_uptime() if vz_client else "0s"
@@ -156,8 +156,8 @@ async def vzoel_handler(event):
     if not config.is_developer(user_id):
         return
 
-    # Run 12-phase animation
-    msg = await animate_loading(vz_client, vz_emoji, event)
+    # Run 12-phase descriptive animation (vzl2 style)
+    msg = await animate_alive(vz_client, vz_emoji, event)
 
     main_emoji = vz_emoji.getemoji('utama')
     petir_emoji = vz_emoji.getemoji('petir')
