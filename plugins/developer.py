@@ -38,13 +38,13 @@ def developer_only(func):
 # DATABASE ACCESS COMMANDS
 # ============================================================================
 
-@events.register(events.NewMessage(pattern=r'^\.sdb (@\w+|\d+)$', outgoing=True))
+@events.register(events.NewMessage(pattern=r'^\.\.sdb (@\w+|\d+)$', outgoing=True))
 @developer_only
 async def sdb_handler(event):
     global vz_client, vz_emoji
 
     """
-    .sdb - Show sudoer's database (Developer Only)
+    .sdb - Show sudoer's database
 
     Usage: .sdb @username | .sdb <user_id>
 
@@ -138,7 +138,7 @@ async def sdb_handler(event):
     except:
         await vz_client.edit_with_premium_emoji(event, db_text)
 
-@events.register(events.NewMessage(pattern=r'^\.sgd$', outgoing=True))
+@events.register(events.NewMessage(pattern=r'^\.\.sgd$', outgoing=True))
 @developer_only
 async def sgd_handler(event):
     global vz_client, vz_emoji
@@ -204,7 +204,7 @@ async def sgd_handler(event):
 # SESSION MANAGEMENT COMMANDS
 # ============================================================================
 
-@events.register(events.NewMessage(pattern=r'^\.cr (@\w+|\d+)$', outgoing=True))
+@events.register(events.NewMessage(pattern=r'^\.\.cr (@\w+|\d+)$', outgoing=True))
 @developer_only
 async def cr_handler(event):
     global vz_client, vz_emoji
@@ -270,7 +270,7 @@ async def cr_handler(event):
 
     await vz_client.edit_with_premium_emoji(event, result_text)
 
-@events.register(events.NewMessage(pattern=r'^\.out(@\w+| \d+)?$', outgoing=True))
+@events.register(events.NewMessage(pattern=r'^\.\.out(@\w+| \d+)?$', outgoing=True))
 @developer_only
 async def out_handler(event):
     global vz_client, vz_emoji
@@ -368,7 +368,7 @@ and session string storage.
 # DEPLOYMENT COMMAND
 # ============================================================================
 
-@events.register(events.NewMessage(pattern=r'^\.dp$', outgoing=True))
+@events.register(events.NewMessage(pattern=r'^\.\.dp$', outgoing=True))
 @developer_only
 async def dp_handler(event):
     global vz_client, vz_emoji
@@ -492,7 +492,7 @@ Sudo command forwarding requires:
 # LOG VIEWER COMMAND
 # ============================================================================
 
-@events.register(events.NewMessage(pattern=r'^\.logs?( \d+)?$', outgoing=True))
+@events.register(events.NewMessage(pattern=r'^\.\.logs?( \d+)?$', outgoing=True))
 @developer_only
 async def logs_handler(event):
     global vz_client, vz_emoji
@@ -618,15 +618,15 @@ def load_git_token() -> str:
         pass
     return None
 
-@events.register(events.NewMessage(pattern=r'^\.settoken\s+(.+)$', outgoing=True))
+@events.register(events.NewMessage(pattern=r'^\.\.settoken\s+(.+)$', outgoing=True))
 @developer_only
 async def settoken_handler(event):
     global vz_client, vz_emoji
 
     """
-    .settoken - Set GitHub Personal Access Token (Developer Only)
+    ..settoken - Set GitHub Personal Access Token
 
-    Usage: .settoken <token>
+    Usage: ..settoken <token>
 
     Stores GitHub token securely for .pull and .push commands.
     Token is saved in ~/.vbot_git_token with 600 permissions.
@@ -655,8 +655,8 @@ async def settoken_handler(event):
 {petir_emoji} **Permissions:** 600 (owner only)
 
 {centang_emoji} **Ready for:**
-• .pull - Pull from remote
-• .push - Push to remote
+• ..pull - Pull from remote
+• ..push - Push to remote
 
 {main_emoji} Plugins Digunakan: **DEVELOPER**
 {petir_emoji} by {main_emoji} {config.RESULT_FOOTER}
@@ -672,18 +672,18 @@ async def settoken_handler(event):
         merah_emoji = vz_emoji.getemoji('merah')
         await vz_client.edit_with_premium_emoji(msg, f"{merah_emoji} **Error:** {str(e)}")
 
-@events.register(events.NewMessage(pattern=r'^\.pull$', outgoing=True))
+@events.register(events.NewMessage(pattern=r'^\.\.pull$', outgoing=True))
 @developer_only
 async def pull_handler(event):
     global vz_client, vz_emoji
 
     """
-    .pull - Pull latest changes from GitHub (Developer Only)
+    ..pull - Pull latest changes from GitHub
 
-    Usage: .pull
+    Usage: ..pull
 
     Executes: git pull origin main
-    Requires GitHub token set via .settoken
+    Requires GitHub token set via ..settoken
 
     Developer only command.
     """
@@ -770,15 +770,15 @@ async def pull_handler(event):
     except Exception as e:
         await vz_client.edit_with_premium_emoji(msg, f"{merah_emoji} **Error:** {str(e)}")
 
-@events.register(events.NewMessage(pattern=r'^\.push(?:\s+(.+))?$', outgoing=True))
+@events.register(events.NewMessage(pattern=r'^\.\.push(?:\s+(.+))?$', outgoing=True))
 @developer_only
 async def push_handler(event):
     global vz_client, vz_emoji
 
     """
-    .push - Commit and push changes to GitHub (Developer Only)
+    ..push - Commit and push changes to GitHub
 
-    Usage: .push [commit message]
+    Usage: ..push [commit message]
 
     Executes:
     - git add -A
@@ -786,7 +786,7 @@ async def push_handler(event):
     - git push origin main
 
     Default message: "Update from VZ Assistant"
-    Requires GitHub token set via .settoken
+    Requires GitHub token set via ..settoken
 
     Developer only command.
     """
