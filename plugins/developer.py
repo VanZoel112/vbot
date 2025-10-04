@@ -457,68 +457,6 @@ python3 deploybot.py
         await vz_client.edit_with_premium_emoji(event, deploy_text)
 
 # ============================================================================
-# SUDO COMMAND HANDLER
-# ============================================================================
-
-@events.register(events.NewMessage(pattern=r'^\.s([a-z]+)(.*)$', outgoing=True))
-@developer_only
-async def sudo_command_handler(event):
-    global vz_client, vz_emoji
-
-    """
-    .s{command} - Execute sudoer command as developer
-
-    Usage: .s<command> <args>
-    Examples:
-        .sgcast Hello everyone!
-        .stag Important message
-        .sping
-
-    Executes any sudoer command with developer privileges.
-    Useful for testing and managing sudoer features.
-    """
-    # Get premium emojis
-    gear_emoji = vz_emoji.getemoji('gear')
-    petir_emoji = vz_emoji.getemoji('petir')
-    main_emoji = vz_emoji.getemoji('utama')
-
-    cmd = event.pattern_match.group(1)
-    args = event.pattern_match.group(2).strip()
-
-    await vz_client.edit_with_premium_emoji(event, f"⚡ Executing sudo command: .{cmd} {args}")
-
-    # Build the actual command
-    actual_command = f".{cmd}"
-    if args:
-        actual_command += f" {args}"
-
-    await asyncio.sleep(1)
-
-    # Info message
-    info_text = f"""
-🔐 **SUDO COMMAND EXECUTION**
-
-**Command:** `.{cmd}`
-**Arguments:** `{args if args else 'None'}`
-**Full Command:** `{actual_command}`
-
-**ℹ️ Note:**
-This will execute the command with developer privileges.
-The command will run as if a sudoer executed it.
-
-**⚠️ Implementation:**
-Sudo command forwarding requires:
-├ Command parser integration
-├ Permission elevation
-└ Context switching
-
-{robot_emoji} Plugins Digunakan: **DEVELOPER**
-{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
-"""
-
-    await vz_client.edit_with_premium_emoji(event, info_text)
-
-# ============================================================================
 # LOG VIEWER COMMAND
 # ============================================================================
 
