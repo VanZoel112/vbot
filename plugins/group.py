@@ -163,9 +163,9 @@ async def tag_handler(event):
     seconds = duration % 60
 
     # Get emojis for footer
-    gear_emoji = vz_emoji.getemoji('gear')
     petir_emoji = vz_emoji.getemoji('petir')
     main_emoji = vz_emoji.getemoji('utama')
+    robot_emoji = vz_emoji.getemoji('robot')
 
     # Get success emoji
     success_emoji = vz_emoji.getemoji('centang')
@@ -299,12 +299,11 @@ async def lock_handler(event):
     save_lockglobal(user_id, lockglobal)
 
     # Get emojis for message and footer
-    gear_emoji = vz_emoji.getemoji('gear')
     petir_emoji = vz_emoji.getemoji('petir')
     main_emoji = vz_emoji.getemoji('utama')
     aktif_emoji = vz_emoji.getemoji('aktif')
     telegram_emoji = vz_emoji.getemoji('telegram')
-    proses_emoji = vz_emoji.getemoji('robot')
+    robot_emoji = vz_emoji.getemoji('robot')
 
     result_text = f"""
 {aktif_emoji} **Shadow Clear Activated**
@@ -318,7 +317,7 @@ async def lock_handler(event):
 All messages from this user will be
 automatically deleted in this group.
 
-**{proses_emoji} Total Locked:** {len(lockglobal)}
+**{robot_emoji} Total Locked:** {len(lockglobal)}
 
 {robot_emoji} Plugins Digunakan: **GROUP**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
@@ -389,12 +388,11 @@ async def unlock_handler(event):
     save_lockglobal(user_id, lockglobal)
 
     # Get emojis for message and footer
-    gear_emoji = vz_emoji.getemoji('gear')
     petir_emoji = vz_emoji.getemoji('petir')
     main_emoji = vz_emoji.getemoji('utama')
     centang_emoji = vz_emoji.getemoji('centang')
     telegram_emoji = vz_emoji.getemoji('telegram')
-    proses_emoji = vz_emoji.getemoji('robot')
+    robot_emoji = vz_emoji.getemoji('robot')
 
     result_text = f"""
 {centang_emoji} **Shadow Clear Deactivated**
@@ -408,7 +406,7 @@ async def unlock_handler(event):
 Messages from this user will no longer
 be automatically deleted.
 
-**{proses_emoji} Total Locked:** {len(lockglobal)}
+**{robot_emoji} Total Locked:** {len(lockglobal)}
 
 {robot_emoji} Plugins Digunakan: **GROUP**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
@@ -757,9 +755,9 @@ async def stop_tagall_handler(event):
         # Remove from active tags
         del active_tags[chat_id]
 
-        gear_emoji = vz_emoji.getemoji('gear')
         petir_emoji = vz_emoji.getemoji('petir')
         main_emoji = vz_emoji.getemoji('utama')
+        robot_emoji = vz_emoji.getemoji('robot')
 
         await vz_client.edit_with_premium_emoji(event, f"""
 ⏹ **Tag All Stopped**
