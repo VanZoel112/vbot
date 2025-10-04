@@ -267,6 +267,24 @@ async def lock_handler(event):
         )
         return
 
+    # Prevent self-lock (would cause spam loop)
+    if target_id == user_id:
+        merah_emoji = vz_emoji.getemoji('merah')
+        await vz_client.edit_with_premium_emoji(
+            event,
+            f"{merah_emoji} **Cannot lock yourself!**\n\nSelf-lock would cause spam loop and trigger rate limits."
+        )
+        return
+
+    # Prevent sudoer from locking developer (hierarchy protection)
+    if config.is_developer(target_id) and not config.is_developer(user_id):
+        merah_emoji = vz_emoji.getemoji('merah')
+        await vz_client.edit_with_premium_emoji(
+            event,
+            f"{merah_emoji} **Cannot lock developer!**\n\nDevelopers cannot be locked by sudoers.\nThis prevents spam loop and rate limits."
+        )
+        return
+
     # Check admin rights
     try:
         perms = await event.client.get_permissions(event.chat_id, event.sender_id)
@@ -441,6 +459,11 @@ async def auto_delete_handler(event):
         return
 
     sender_id = event.sender_id
+
+    # CRITICAL: Never delete developer messages (hierarchy protection)
+    # This prevents spam loop if developer is somehow in lock list
+    if config.is_developer(sender_id):
+        return
 
     # Get owner's user ID from the client
     # In multi-client setup, each client has its own lock list
