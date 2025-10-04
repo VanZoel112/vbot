@@ -37,16 +37,12 @@ _DEFAULT_ALIAS_OVERRIDES: Mapping[str, Sequence[str]] = {
     "MERAH": ("merah", "latency_bad"),
     "TELEGRAM": ("telegram", "inbox"),
     "CAMERA": ("camera", "photo"),
-    "PROSES": ("proses", "process"),
     "PROSES_1": ("proses1", "anim_stage_1"),
     "PROSES_2": ("proses2", "anim_stage_2"),
     "PROSES_3": ("proses3", "anim_stage_3"),
     "ROBOT": ("robot", "space"),
     "LOADING": ("infinite", "loading_loop"),
-    "NYALA": ("nyala", "aktif", "active"),
-    "ADDER1": ("adder1", "special1"),
-    "ADDER2": ("adder2", "special2"),
-    "BIRU": ("biru", "blue"),
+    "NYALA": ("nyala", "active"),
 }
 
 _DEFAULT_SIGNATURE_SEQUENCE: Sequence[str] = (

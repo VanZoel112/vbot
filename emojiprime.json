@@ -15,15 +15,12 @@
     "👎": "6098107013399581475",
     "✉️": "5350291836378307462",
     "📷": "5451643289218342306",
-    "👽": "5321023901998801538",
     "😈": "5267186839130753795",
     "🔪": "5267498988763891103",
     "😐": "6100140315342016955",
     "👨‍🚀": "6221865220428532247",
     "♾": "6098417814412992289",
-    "🎚": "5794128499706958658",
-    "💟": "5427157414375881061",
-    "🎅": "5260687265121712272"
+    "🎚": "5794128499706958658"
   },
 
   "emoji_names": {
@@ -38,16 +35,12 @@
     "MERAH": "👎",
     "TELEGRAM": "✉️",
     "CAMERA": "📷",
-    "PROSES": "👽",
     "PROSES_1": "😈",
     "PROSES_2": "🔪",
     "PROSES_3": "😐",
     "ROBOT": "👨‍🚀",
     "LOADING": "♾",
-    "NYALA": "🎚",
-    "ADDER1": "😈",
-    "ADDER2": "💟",
-    "BIRU": "🎅"
+    "NYALA": "🎚"
   },
 
   "categories": {
@@ -57,7 +50,7 @@
     },
     "system": {
       "description": "System and utility indicators",
-      "emojis": ["⚙️", "✅", "⛈", "🎚", "👽"]
+      "emojis": ["⚙️", "✅", "⛈", "🎚"]
     },
     "status": {
       "description": "Status indicators (latency colors)",
@@ -69,7 +62,7 @@
     },
     "process": {
       "description": "Process animation stages",
-      "emojis": ["👽", "😈", "🔪", "😐"]
+      "emojis": ["😈", "🔪", "😐"]
     },
     "special": {
       "description": "Special effects and loading",
@@ -224,17 +217,6 @@
         }
       ]
     },
-    "👽": {
-      "text": "👽",
-      "entities": [
-        {
-          "offset": 0,
-          "length": 2,
-          "type": "custom_emoji",
-          "custom_emoji_id": "5321023901998801538"
-        }
-      ]
-    },
     "😈": {
       "text": "😈",
       "entities": [
@@ -300,33 +282,11 @@
           "custom_emoji_id": "5794128499706958658"
         }
       ]
-    },
-    "💟": {
-      "text": "💟",
-      "entities": [
-        {
-          "offset": 0,
-          "length": 2,
-          "type": "custom_emoji",
-          "custom_emoji_id": "5427157414375881061"
-        }
-      ]
-    },
-    "🎅": {
-      "text": "🎅",
-      "entities": [
-        {
-          "offset": 0,
-          "length": 2,
-          "type": "custom_emoji",
-          "custom_emoji_id": "5260687265121712272"
-        }
-      ]
     }
   },
 
   "metrics": {
-    "total_emojis": 20,
+    "total_emojis": 17,
     "total_conversions": 0,
     "last_conversion": null,
     "most_used_emoji": null
