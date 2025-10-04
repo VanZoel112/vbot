@@ -925,4 +925,338 @@ async def push_handler(event):
     except Exception as e:
         await vz_client.edit_with_premium_emoji(msg, f"{merah_emoji} **Error:** {str(e)}")
 
+# ============================================================================
+# AUTO-DEPLOY COMMANDS (UPDATE & RESTART)
+# ============================================================================
+
+@events.register(events.NewMessage(pattern=r'^\.\.update$', outgoing=True))
+@developer_only
+async def update_handler(event):
+    global vz_client, vz_emoji
+
+    """
+    ..update - Pull latest code and restart bot
+
+    Usage: ..update
+
+    Executes:
+    1. Backup current state
+    2. Git stash (if local changes)
+    3. Git pull origin main
+    4. Restart bot process
+
+    Developer only command.
+    """
+    # Get emojis
+    main_emoji = vz_emoji.getemoji('utama')
+    loading_emoji = vz_emoji.getemoji('loading')
+    centang_emoji = vz_emoji.getemoji('centang')
+    merah_emoji = vz_emoji.getemoji('merah')
+    petir_emoji = vz_emoji.getemoji('petir')
+    robot_emoji = vz_emoji.getemoji('robot')
+
+    # Phase 1: Check git status
+    await vz_client.edit_with_premium_emoji(
+        event,
+        f"{loading_emoji} **Step 1/5:** Checking git status..."
+    )
+
+    try:
+        # Check if in git repo
+        if not os.path.exists('.git'):
+            await vz_client.edit_with_premium_emoji(
+                event,
+                f"{merah_emoji} **Not a git repository!**"
+            )
+            return
+
+        import subprocess
+
+        # Check git status
+        status_result = subprocess.run(
+            ['git', 'status', '--porcelain'],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+
+        has_changes = bool(status_result.stdout.strip())
+
+        # Phase 2: Stash if needed
+        await vz_client.edit_with_premium_emoji(
+            event,
+            f"{loading_emoji} **Step 2/5:** Backing up local changes..."
+        )
+
+        stashed = False
+        if has_changes:
+            stash_result = subprocess.run(
+                ['git', 'stash', 'push', '-m', 'Auto-stash before update'],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            stashed = stash_result.returncode == 0
+
+        # Phase 3: Pull from remote
+        await vz_client.edit_with_premium_emoji(
+            event,
+            f"{loading_emoji} **Step 3/5:** Pulling latest code..."
+        )
+
+        # Get token
+        token = load_git_token()
+        remote_url = None
+
+        if token:
+            # Get remote URL
+            result = subprocess.run(
+                ['git', 'remote', 'get-url', 'origin'],
+                capture_output=True,
+                text=True
+            )
+            remote_url = result.stdout.strip()
+
+            # If HTTPS URL, add token
+            if remote_url.startswith('https://github.com'):
+                parts = remote_url.replace('https://github.com/', '').replace('.git', '')
+                auth_url = f"https://{token}@github.com/{parts}.git"
+                subprocess.run(['git', 'remote', 'set-url', 'origin', auth_url])
+
+        # Pull
+        pull_result = subprocess.run(
+            ['git', 'pull', 'origin', 'main'],
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+
+        # Restore original URL
+        if token and remote_url:
+            subprocess.run(['git', 'remote', 'set-url', 'origin', remote_url])
+
+        if pull_result.returncode != 0:
+            error_msg = pull_result.stderr or "Unknown error"
+            await vz_client.edit_with_premium_emoji(
+                event,
+                f"{merah_emoji} **Pull Failed:**\n```\n{error_msg[:500]}\n```"
+            )
+
+            # Restore stashed changes
+            if stashed:
+                subprocess.run(['git', 'stash', 'pop'])
+            return
+
+        pull_output = pull_result.stdout or "Already up to date"
+
+        # Phase 4: Install dependencies
+        await vz_client.edit_with_premium_emoji(
+            event,
+            f"{loading_emoji} **Step 4/5:** Installing dependencies..."
+        )
+
+        # Install requirements if requirements.txt exists
+        if os.path.exists('requirements.txt'):
+            pip_result = subprocess.run(
+                ['pip3', 'install', '-r', 'requirements.txt', '--quiet'],
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
+
+        # Phase 5: Restart bot
+        await vz_client.edit_with_premium_emoji(
+            event,
+            f"{loading_emoji} **Step 5/5:** Restarting bot..."
+        )
+
+        await asyncio.sleep(2)
+
+        # Send final message before restart
+        restart_msg = f"""
+{centang_emoji} **Update Successful!**
+
+{petir_emoji} **Git Pull:**
+```
+{pull_output[:300]}
+```
+
+{robot_emoji} **Actions Taken:**
+├ {'✅ Stashed local changes' if stashed else '✅ No local changes'}
+├ ✅ Pulled latest code
+├ ✅ Installed dependencies
+└ 🔄 Restarting bot...
+
+{main_emoji} Bot will restart in 3 seconds...
+
+{robot_emoji} Plugins Digunakan: **DEVELOPER**
+{petir_emoji} by {main_emoji} {config.RESULT_FOOTER}
+"""
+
+        await vz_client.edit_with_premium_emoji(event, restart_msg)
+
+        # Wait 3 seconds
+        await asyncio.sleep(3)
+
+        # Restart bot
+        import sys
+        os.execv(sys.executable, [sys.executable] + sys.argv)
+
+    except subprocess.TimeoutExpired:
+        await vz_client.edit_with_premium_emoji(event, f"{merah_emoji} **Timeout!** Operation took too long")
+    except Exception as e:
+        await vz_client.edit_with_premium_emoji(event, f"{merah_emoji} **Error:** {str(e)}")
+
+@events.register(events.NewMessage(pattern=r'^\.\.restart$', outgoing=True))
+@developer_only
+async def restart_handler(event):
+    global vz_client, vz_emoji
+
+    """
+    ..restart - Restart bot without pulling
+
+    Usage: ..restart
+
+    Restarts the bot process immediately.
+    Use ..update to pull code before restart.
+
+    Developer only command.
+    """
+    # Get emojis
+    main_emoji = vz_emoji.getemoji('utama')
+    centang_emoji = vz_emoji.getemoji('centang')
+    petir_emoji = vz_emoji.getemoji('petir')
+    robot_emoji = vz_emoji.getemoji('robot')
+
+    restart_msg = f"""
+{centang_emoji} **Restarting Bot...**
+
+{robot_emoji} **Process:**
+└ 🔄 Restarting in 2 seconds...
+
+{main_emoji} Plugins Digunakan: **DEVELOPER**
+{petir_emoji} by {main_emoji} {config.RESULT_FOOTER}
+"""
+
+    await vz_client.edit_with_premium_emoji(event, restart_msg)
+
+    # Wait 2 seconds
+    await asyncio.sleep(2)
+
+    # Restart bot
+    import sys
+    os.execv(sys.executable, [sys.executable] + sys.argv)
+
+@events.register(events.NewMessage(pattern=r'^\.\.status$', outgoing=True))
+@developer_only
+async def status_handler(event):
+    global vz_client, vz_emoji
+
+    """
+    ..status - Check bot and system status
+
+    Usage: ..status
+
+    Shows:
+    - Bot uptime
+    - Git status
+    - System resources
+    - Plugin count
+
+    Developer only command.
+    """
+    # Animation
+    msg = await animate_loading(vz_client, vz_emoji, event)
+
+    # Get emojis
+    main_emoji = vz_emoji.getemoji('utama')
+    centang_emoji = vz_emoji.getemoji('centang')
+    petir_emoji = vz_emoji.getemoji('petir')
+    robot_emoji = vz_emoji.getemoji('robot')
+    telegram_emoji = vz_emoji.getemoji('telegram')
+
+    try:
+        import subprocess
+        import psutil
+        import sys
+        from datetime import datetime
+
+        # Get bot info
+        bot_user = vz_client.me
+
+        # Get git info
+        git_branch = "Unknown"
+        git_commit = "Unknown"
+        git_status = "Unknown"
+
+        if os.path.exists('.git'):
+            # Branch
+            branch_result = subprocess.run(
+                ['git', 'branch', '--show-current'],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            git_branch = branch_result.stdout.strip() or "Unknown"
+
+            # Commit
+            commit_result = subprocess.run(
+                ['git', 'rev-parse', '--short', 'HEAD'],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            git_commit = commit_result.stdout.strip() or "Unknown"
+
+            # Status
+            status_result = subprocess.run(
+                ['git', 'status', '--porcelain'],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            has_changes = bool(status_result.stdout.strip())
+            git_status = "Modified" if has_changes else "Clean"
+
+        # Get system info
+        process = psutil.Process()
+        memory_mb = process.memory_info().rss / 1024 / 1024
+        cpu_percent = process.cpu_percent(interval=0.1)
+
+        # Count plugins
+        plugins_dir = os.path.join(os.path.dirname(__file__))
+        plugin_count = len([f for f in os.listdir(plugins_dir) if f.endswith('.py') and not f.startswith('_')])
+
+        status_text = f"""
+{centang_emoji} **VZ ASSISTANT STATUS**
+
+{robot_emoji} **Bot Information:**
+├ Version: {config.BOT_VERSION}
+├ User: {bot_user.first_name} (@{bot_user.username})
+├ User ID: `{bot_user.id}`
+└ Plugins: {plugin_count} loaded
+
+{telegram_emoji} **Git Status:**
+├ Branch: {git_branch}
+├ Commit: {git_commit}
+└ Status: {git_status}
+
+{petir_emoji} **System Resources:**
+├ Python: {sys.version.split()[0]}
+├ Memory: {memory_mb:.1f} MB
+├ CPU: {cpu_percent}%
+└ PID: {os.getpid()}
+
+{centang_emoji} **Bot is running smoothly!**
+
+{robot_emoji} Plugins Digunakan: **DEVELOPER**
+{petir_emoji} by {main_emoji} {config.RESULT_FOOTER}
+"""
+
+        await vz_client.edit_with_premium_emoji(msg, status_text)
+
+    except Exception as e:
+        merah_emoji = vz_emoji.getemoji('merah')
+        await vz_client.edit_with_premium_emoji(msg, f"{merah_emoji} **Error:** {str(e)}")
+
 print("✅ Plugin loaded: developer.py")
