@@ -60,7 +60,7 @@ async def settoken_handler(event):
 
     # Processing message
     loading_emoji = vz_emoji.getemoji('loading')
-    proses_emoji = vz_emoji.getemoji('proses')
+    proses_emoji = vz_emoji.getemoji('robot')
     telegram_emoji = vz_emoji.getemoji('telegram')
 
     processing_msg = f"""{loading_emoji} **CONFIGURING GITHUB TOKEN**
@@ -84,8 +84,8 @@ VZ ASSISTANT"""
     if success:
         centang_emoji = vz_emoji.getemoji('centang')
         aktif_emoji = vz_emoji.getemoji('aktif')
-        proses_emoji = vz_emoji.getemoji('proses')
-        biru_emoji = vz_emoji.getemoji('biru')
+        proses_emoji = vz_emoji.getemoji('robot')
+        biru_emoji = vz_emoji.getemoji('camera')
 
         response = f"""{centang_emoji} **GITHUB TOKEN CONFIGURED**
 
@@ -147,7 +147,7 @@ async def push_handler(event):
 
     # Processing message
     loading_emoji = vz_emoji.getemoji('loading')
-    proses_emoji = vz_emoji.getemoji('proses')
+    proses_emoji = vz_emoji.getemoji('robot')
     telegram_emoji = vz_emoji.getemoji('telegram')
     aktif_emoji = vz_emoji.getemoji('aktif')
 
@@ -167,7 +167,7 @@ VZ ASSISTANT"""
     if success:
         status = git_manager.get_status()
         centang_emoji = vz_emoji.getemoji('centang')
-        biru_emoji = vz_emoji.getemoji('biru')
+        biru_emoji = vz_emoji.getemoji('camera')
 
         response = f"""{centang_emoji} **PUSH SUCCESSFUL**
 
@@ -226,7 +226,7 @@ async def pull_handler(event):
 
     # Processing message
     loading_emoji = vz_emoji.getemoji('loading')
-    proses_emoji = vz_emoji.getemoji('proses')
+    proses_emoji = vz_emoji.getemoji('robot')
     telegram_emoji = vz_emoji.getemoji('telegram')
     aktif_emoji = vz_emoji.getemoji('aktif')
 
@@ -246,7 +246,7 @@ VZ ASSISTANT"""
     if success:
         status = git_manager.get_status()
         centang_emoji = vz_emoji.getemoji('centang')
-        biru_emoji = vz_emoji.getemoji('biru')
+        biru_emoji = vz_emoji.getemoji('camera')
 
         response = f"""{centang_emoji} **PULL SUCCESSFUL**
 
@@ -304,7 +304,7 @@ async def gitstatus_handler(event):
 
     # Processing message
     loading_emoji = vz_emoji.getemoji('loading')
-    proses_emoji = vz_emoji.getemoji('proses')
+    proses_emoji = vz_emoji.getemoji('robot')
 
     processing_msg = f"""{loading_emoji} **CHECKING REPOSITORY STATUS**
 
@@ -329,13 +329,13 @@ VZ ASSISTANT"""
     else:
         # Build status message
         utama_emoji = vz_emoji.getemoji('utama')
-        proses_emoji = vz_emoji.getemoji('proses')
+        proses_emoji = vz_emoji.getemoji('robot')
         telegram_emoji = vz_emoji.getemoji('telegram')
         aktif_emoji = vz_emoji.getemoji('aktif')
-        biru_emoji = vz_emoji.getemoji('biru')
+        biru_emoji = vz_emoji.getemoji('camera')
         kuning_emoji = vz_emoji.getemoji('kuning')
         centang_emoji = vz_emoji.getemoji('centang')
-        adder1_emoji = vz_emoji.getemoji('adder1')
+        adder1_emoji = vz_emoji.getemoji('petir')
 
         has_changes_icon = centang_emoji if info['has_changes'] else kuning_emoji
         changes_status = "Yes" if info['has_changes'] else "No"

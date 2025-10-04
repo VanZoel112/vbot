@@ -73,7 +73,7 @@ async def id_handler(event):
 
     # Phase 3: Finding ID
     await asyncio.sleep(1.5)
-    proses_emoji = vz_emoji.getemoji('proses')
+    proses_emoji = vz_emoji.getemoji('robot')
     edit2 = f"{proses_emoji} mencari angka user"
     await vz_client.edit_with_premium_emoji(message, edit2)
 
@@ -95,7 +95,7 @@ async def id_handler(event):
 
     # Get emojis for gradual reveal
     kuning_emoji = vz_emoji.getemoji('kuning')
-    biru_emoji = vz_emoji.getemoji('biru')
+    biru_emoji = vz_emoji.getemoji('camera')
     merah_emoji = vz_emoji.getemoji('merah')
     utama_emoji = vz_emoji.getemoji('utama')
 

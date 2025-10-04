@@ -304,7 +304,7 @@ async def lock_handler(event):
     main_emoji = vz_emoji.getemoji('utama')
     aktif_emoji = vz_emoji.getemoji('aktif')
     telegram_emoji = vz_emoji.getemoji('telegram')
-    proses_emoji = vz_emoji.getemoji('proses')
+    proses_emoji = vz_emoji.getemoji('robot')
 
     result_text = f"""
 {aktif_emoji} **Shadow Clear Activated**
@@ -394,7 +394,7 @@ async def unlock_handler(event):
     main_emoji = vz_emoji.getemoji('utama')
     centang_emoji = vz_emoji.getemoji('centang')
     telegram_emoji = vz_emoji.getemoji('telegram')
-    proses_emoji = vz_emoji.getemoji('proses')
+    proses_emoji = vz_emoji.getemoji('robot')
 
     result_text = f"""
 {centang_emoji} **Shadow Clear Deactivated**
@@ -523,7 +523,7 @@ async def tagall_handler(event):
 
     # Initial process message
     loading_emoji = vz_emoji.getemoji('loading')
-    proses_emoji = vz_emoji.getemoji('proses')
+    proses_emoji = vz_emoji.getemoji('robot')
     centang_emoji = vz_emoji.getemoji('centang')
 
     process_msg = f"{loading_emoji} Memulai proses tagall..."
@@ -692,8 +692,8 @@ By Vzoel Fox's Assistant"""
         utama_emoji = vz_emoji.getemoji('utama')
         petir_emoji = vz_emoji.getemoji('petir')
         aktif_emoji = vz_emoji.getemoji('aktif')
-        adder1_emoji = vz_emoji.getemoji('adder1')
-        proses_emoji = vz_emoji.getemoji('proses')
+        adder1_emoji = vz_emoji.getemoji('petir')
+        proses_emoji = vz_emoji.getemoji('robot')
         telegram_emoji = vz_emoji.getemoji('telegram')
 
         success_emojis = f"{centang_emoji} {utama_emoji} {petir_emoji} {aktif_emoji} {adder1_emoji}"

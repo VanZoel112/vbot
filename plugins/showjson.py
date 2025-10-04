@@ -273,7 +273,7 @@ async def sj_handler(event):
     global vz_client, vz_emoji
 
     loading_emoji = vz_emoji.getemoji('loading')
-    proses_emoji = vz_emoji.getemoji('proses')
+    proses_emoji = vz_emoji.getemoji('robot')
 
     processing_msg = await vz_client.edit_with_premium_emoji(event,
         f"{loading_emoji} Analyzing Message...\n\n"
@@ -307,7 +307,7 @@ async def sj_handler(event):
         # Get emojis
         utama_emoji = vz_emoji.getemoji('utama')
         aktif_emoji = vz_emoji.getemoji('aktif')
-        proses_emoji = vz_emoji.getemoji('proses')
+        proses_emoji = vz_emoji.getemoji('robot')
         loading_emoji = vz_emoji.getemoji('loading')
         centang_emoji = vz_emoji.getemoji('centang')
         kuning_emoji = vz_emoji.getemoji('kuning')

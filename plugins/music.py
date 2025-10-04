@@ -78,7 +78,7 @@ async def play_handler(event):
     query = event.pattern_match.group(1).strip()
 
     loading_emoji = vz_emoji.getemoji('loading')
-    proses_emoji = vz_emoji.getemoji('proses')
+    proses_emoji = vz_emoji.getemoji('robot')
 
     processing_msg = f"""{loading_emoji} **PROCESSING**
 
@@ -95,10 +95,10 @@ VZ ASSISTANT"""
 
         centang_emoji = vz_emoji.getemoji('centang')
         aktif_emoji = vz_emoji.getemoji('aktif')
-        proses_emoji = vz_emoji.getemoji('proses')
+        proses_emoji = vz_emoji.getemoji('robot')
         kuning_emoji = vz_emoji.getemoji('kuning')
         utama_emoji = vz_emoji.getemoji('utama')
-        biru_emoji = vz_emoji.getemoji('biru')
+        biru_emoji = vz_emoji.getemoji('camera')
 
         if result.get('streaming'):
             if result.get('queued'):
@@ -258,7 +258,7 @@ async def stop_handler(event):
     success = await music_manager.stop_stream(event.chat_id)
 
     centang_emoji = vz_emoji.getemoji('centang')
-    proses_emoji = vz_emoji.getemoji('proses')
+    proses_emoji = vz_emoji.getemoji('robot')
     aktif_emoji = vz_emoji.getemoji('aktif')
     kuning_emoji = vz_emoji.getemoji('kuning')
 
@@ -298,7 +298,7 @@ async def queue_handler(event):
     kuning_emoji = vz_emoji.getemoji('kuning')
     telegram_emoji = vz_emoji.getemoji('telegram')
     utama_emoji = vz_emoji.getemoji('utama')
-    proses_emoji = vz_emoji.getemoji('proses')
+    proses_emoji = vz_emoji.getemoji('robot')
     aktif_emoji = vz_emoji.getemoji('aktif')
 
     if not current and not queue:

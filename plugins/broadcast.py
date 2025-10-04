@@ -96,7 +96,7 @@ async def bl_handler(event):
     centang_emoji = vz_emoji.getemoji('centang')
     telegram_emoji = vz_emoji.getemoji('telegram')
     aktif_emoji = vz_emoji.getemoji('aktif')
-    proses_emoji = vz_emoji.getemoji('proses')
+    proses_emoji = vz_emoji.getemoji('robot')
 
     result_text = f"""
 {centang_emoji} **Blacklist Added**
@@ -166,7 +166,7 @@ async def dbl_handler(event):
     centang_emoji = vz_emoji.getemoji('centang')
     telegram_emoji = vz_emoji.getemoji('telegram')
     aktif_emoji = vz_emoji.getemoji('aktif')
-    proses_emoji = vz_emoji.getemoji('proses')
+    proses_emoji = vz_emoji.getemoji('robot')
 
     result_text = f"""
 {centang_emoji} **Blacklist Removed**
@@ -207,15 +207,15 @@ async def gcast_handler(event):
     petir_emoji = vz_emoji.getemoji('petir')
     main_emoji = vz_emoji.getemoji('utama')
     loading_emoji = vz_emoji.getemoji('loading')
-    proses_emoji = vz_emoji.getemoji('proses')
+    proses_emoji = vz_emoji.getemoji('robot')
     aktif_emoji = vz_emoji.getemoji('nyala')
     centang_emoji = vz_emoji.getemoji('centang')
     merah_emoji = vz_emoji.getemoji('merah')
     kuning_emoji = vz_emoji.getemoji('kuning')
-    biru_emoji = vz_emoji.getemoji('biru')
+    biru_emoji = vz_emoji.getemoji('camera')
     telegram_emoji = vz_emoji.getemoji('telegram')
-    adder1_emoji = vz_emoji.getemoji('adder1')
-    adder2_emoji = vz_emoji.getemoji('adder2')
+    adder1_emoji = vz_emoji.getemoji('petir')
+    adder2_emoji = vz_emoji.getemoji('telegram')
 
     # Get message to broadcast
     reply = await event.get_reply_message()
@@ -445,12 +445,12 @@ async def ginfo_handler(event):
 
     # Get premium emojis
     loading_emoji = vz_emoji.getemoji('loading')
-    proses_emoji = vz_emoji.getemoji('proses')
+    proses_emoji = vz_emoji.getemoji('robot')
     aktif_emoji = vz_emoji.getemoji('nyala')
     petir_emoji = vz_emoji.getemoji('petir')
     main_emoji = vz_emoji.getemoji('utama')
-    adder1_emoji = vz_emoji.getemoji('adder1')
-    adder2_emoji = vz_emoji.getemoji('adder2')
+    adder1_emoji = vz_emoji.getemoji('petir')
+    adder2_emoji = vz_emoji.getemoji('telegram')
     telegram_emoji = vz_emoji.getemoji('telegram')
     merah_emoji = vz_emoji.getemoji('merah')
     centang_emoji = vz_emoji.getemoji('centang')
