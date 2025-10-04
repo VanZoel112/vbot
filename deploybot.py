@@ -16,6 +16,7 @@ from telethon.errors import SessionPasswordNeededError, PhoneCodeInvalidError
 import config
 from database.models import DatabaseManager
 from database.deploy_auth import DeployAuthDB
+from helpers.docker_manager import docker_manager
 
 # ============================================================================
 # DEPLOY BOT CONFIGURATION
@@ -147,6 +148,43 @@ class DeploymentSession:
                 print(f"✅ Sudoer session saved: {me.first_name} ({me.id})")
             except Exception as e:
                 print(f"⚠️  Could not save session to JSON: {e}")
+
+            # 🚀 AUTONOMOUS DOCKER DEPLOYMENT
+            # Connect to Docker and deploy container automatically
+            try:
+                print(f"\n🐳 Starting autonomous Docker deployment for {me.first_name}...")
+
+                # Connect to Docker
+                if await docker_manager.connect():
+                    # Build image if needed
+                    await docker_manager.build_image()
+
+                    # Create and start container
+                    success, message, container_id = await docker_manager.create_sudoer_container(
+                        user_id=me.id,
+                        session_string=self.session_string,
+                        username=me.username,
+                        first_name=me.first_name
+                    )
+
+                    if success:
+                        print(f"✅ Docker deployment successful: {container_id}")
+                        # Store container info in result
+                        me.container_id = container_id
+                        me.container_deployed = True
+                    else:
+                        print(f"❌ Docker deployment failed: {message}")
+                        me.container_deployed = False
+                        me.deployment_error = message
+                else:
+                    print("⚠️  Could not connect to Docker daemon")
+                    me.container_deployed = False
+                    me.deployment_error = "Docker daemon not available"
+
+            except Exception as e:
+                print(f"❌ Docker deployment error: {e}")
+                me.container_deployed = False
+                me.deployment_error = str(e)
 
             self.state = 'completed'
 
@@ -692,6 +730,7 @@ Use /cancel to cancel deployment
         if success:
             me = result
 
+            # Build success message with Docker info
             success_text = f"""
 ✅ **Deployment Successful!**
 
@@ -705,10 +744,29 @@ Use /cancel to cancel deployment
 ├ Session String: Generated ✅
 ├ Database: Created ✅
 └ Status: Active ✅
+"""
 
+            # Add Docker container info if deployed
+            if hasattr(me, 'container_deployed') and me.container_deployed:
+                success_text += f"""
+**🐳 Docker Container:**
+├ Container ID: `{me.container_id}`
+├ Status: Running ✅
+├ Mode: Autonomous Deploy
+└ Auto-restart: Enabled ✅
+"""
+            elif hasattr(me, 'deployment_error'):
+                success_text += f"""
+**⚠️ Docker Container:**
+├ Deployment: Failed
+├ Reason: {me.deployment_error}
+└ Session saved, but container not started
+"""
+
+            success_text += f"""
 **🎉 You're all set!**
 
-Your VZ ASSISTANT is now running.
+Your VZ ASSISTANT is {' running in Docker container' if hasattr(me, 'container_deployed') and me.container_deployed else 'active'}.
 Check your Saved Messages for updates.
 
 {config.BRANDING_FOOTER}
@@ -733,7 +791,7 @@ async def main():
     print(f"""
 ╔══════════════════════════════════════════════════════════╗
 ║              VZ ASSISTANT v{config.BOT_VERSION}                      ║
-║              Deploy Bot                                  ║
+║              Deploy Bot (Autonomous Docker)              ║
 ║                                                          ║
 ║              {config.BRANDING_FOOTER}                    ║
 ║              Founder & DEVELOPER : {config.FOUNDER_USERNAME}               ║
@@ -742,19 +800,42 @@ async def main():
 🤖 Starting Deploy Bot...
 """)
 
+    # Connect to Docker daemon
+    print("🐳 Connecting to Docker daemon...")
+    if await docker_manager.connect():
+        print("✅ Docker daemon connected")
+        # Build base image
+        print("🔨 Checking Docker image...")
+        await docker_manager.build_image()
+    else:
+        print("⚠️  Docker daemon not available - containers won't auto-deploy")
+
     await bot.start(bot_token=BOT_TOKEN)
 
     print("\n✅ Deploy Bot is running!")
     print("📱 Users can now deploy via @YourBotUsername")
+    print("🐳 Docker auto-deployment: ENABLED")
     print("\n🔄 Bot is active... (Press Ctrl+C to stop)\n")
 
-    await bot.run_until_disconnected()
+    try:
+        await bot.run_until_disconnected()
+    finally:
+        # Cleanup
+        await docker_manager.close()
 
 # ============================================================================
 # RUN
 # ============================================================================
 
 if __name__ == "__main__":
+    try:
+        # Use uvloop for better async performance
+        import uvloop
+        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+        print("🚀 Using uvloop for optimized async performance")
+    except ImportError:
+        print("⚠️  uvloop not installed, using default asyncio")
+
     try:
         asyncio.run(main())
     except KeyboardInterrupt:

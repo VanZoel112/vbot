@@ -1,0 +1,42 @@
+# VZ ASSISTANT Sudoer Container
+# Dockerfile for individual sudoer instances
+# 2025© Vzoel Fox's Lutpan
+
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install uvloop for async optimization
+RUN pip install --no-cache-dir uvloop
+
+# Copy application code
+COPY . .
+
+# Create necessary directories
+RUN mkdir -p sessions database/sudoers logs
+
+# Environment variables (will be overridden at runtime)
+ENV SESSION_STRING=""
+ENV USER_ID=""
+ENV API_ID="29919905"
+ENV API_HASH="717957f0e3ae20a7db004d08b66bfd30"
+
+# Healthcheck
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import sys; sys.exit(0)"
+
+# Run main application
+CMD ["python", "main.py"]
