@@ -98,6 +98,7 @@ async def id_handler(event):
     biru_emoji = vz_emoji.getemoji('camera')
     merah_emoji = vz_emoji.getemoji('merah')
     utama_emoji = vz_emoji.getemoji('utama')
+    robot_emoji = vz_emoji.getemoji('robot')
 
     # Phase 5: Show ID (vzl2 pattern - gradual reveal)
     hasil1 = f"ID : {user_id} {kuning_emoji}"
@@ -114,14 +115,14 @@ Nama User : {full_name} {biru_emoji}"""
     username_display = f"@{username}" if username != "No Username" else "No Username"
     hasil3 = f"""ID : {user_id} {kuning_emoji}
 Nama User : {full_name} {biru_emoji}
-Username : {username_display} {merah_emoji}"""
+Username : {robot_emoji} {username_display} {merah_emoji}"""
     await vz_client.edit_with_premium_emoji(message, hasil3)
 
     await asyncio.sleep(1.5)
     # Phase 8: Final result with signature (vzl2 pattern)
     hasil_final = f"""ID : {user_id} {kuning_emoji}
 Nama User : {full_name} {biru_emoji}
-Username : {username_display} {merah_emoji}
+Username : {robot_emoji} {username_display} {merah_emoji}
 Info by. Vzoel Assistant {utama_emoji}"""
     await vz_client.edit_with_premium_emoji(message, hasil_final)
 
@@ -238,7 +239,7 @@ async def getfileid_handler(event):
 **💡 Usage:**
 Use this file_id to send or manipulate this file.
 
-{petir_emoji} {gear_emoji} Plugins Digunakan: **INFO**
+{petir_emoji} {robot_emoji} Plugins Digunakan: **INFO**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
@@ -288,7 +289,7 @@ async def limit_handler(event):
 **ℹ️ Info:**
 This shows your current Telegram limits status.
 
-{petir_emoji} {gear_emoji} Plugins Digunakan: **INFO**
+{petir_emoji} {robot_emoji} Plugins Digunakan: **INFO**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
             else:

@@ -105,9 +105,9 @@ async def bl_handler(event):
 **{aktif_emoji} ID:** `{chat_id}`
 **{proses_emoji} Total Blacklisted:** {len(blacklist)}
 
-{gear_emoji} This group will be skipped during .gcast
+{robot_emoji} This group will be skipped during .gcast
 
-{gear_emoji} Plugins Digunakan: **BROADCAST**
+{robot_emoji} Plugins Digunakan: **BROADCAST**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
@@ -175,9 +175,9 @@ async def dbl_handler(event):
 **{aktif_emoji} ID:** `{chat_id}`
 **{proses_emoji} Total Blacklisted:** {len(blacklist)}
 
-{gear_emoji} This group will now receive .gcast broadcasts
+{robot_emoji} This group will now receive .gcast broadcasts
 
-{gear_emoji} Plugins Digunakan: **BROADCAST**
+{robot_emoji} Plugins Digunakan: **BROADCAST**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
@@ -421,9 +421,9 @@ async def bllist_handler(event):
             break
 
     bl_text += f"""
-{gear_emoji} Use `.dbl <id>` to remove from blacklist
+{telegram_emoji} Use `.dbl <id>` to remove from blacklist
 
-{gear_emoji} Plugins Digunakan: **BROADCAST**
+{robot_emoji} Plugins Digunakan: **BROADCAST**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan"""
 
     await vz_client.edit_with_premium_emoji(event, bl_text)

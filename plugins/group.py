@@ -174,7 +174,7 @@ async def tag_handler(event):
     summary_text = f"""
 {success_emoji} **Tag All Complete**
 
-**{gear_emoji} Summary:**
+**{robot_emoji} Summary:**
 ├ Total Users: {total_users}
 ├ Tagged: {tagged_count}
 ├ Duration: {minutes}m {seconds}s
@@ -182,7 +182,7 @@ async def tag_handler(event):
 
 {base_message}
 
-{gear_emoji} Plugins Digunakan: **GROUP**
+{robot_emoji} Plugins Digunakan: **GROUP**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
@@ -320,7 +320,7 @@ automatically deleted in this group.
 
 **{proses_emoji} Total Locked:** {len(lockglobal)}
 
-{gear_emoji} Plugins Digunakan: **GROUP**
+{robot_emoji} Plugins Digunakan: **GROUP**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
@@ -410,7 +410,7 @@ be automatically deleted.
 
 **{proses_emoji} Total Locked:** {len(lockglobal)}
 
-{gear_emoji} Plugins Digunakan: **GROUP**
+{robot_emoji} Plugins Digunakan: **GROUP**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
@@ -766,7 +766,7 @@ async def stop_tagall_handler(event):
 
 Operation cancelled successfully.
 
-{gear_emoji} Plugins Digunakan: **GROUP**
+{robot_emoji} Plugins Digunakan: **GROUP**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan""")
         return
 

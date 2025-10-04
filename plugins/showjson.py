@@ -331,7 +331,7 @@ async def sj_handler(event):
             header_text += f"{loading_emoji} Parts: `{len(chunks)} chunks`\n\n"
             header_text += f"{centang_emoji} Part 1/{len(chunks)}:\n\n"
             header_text += f"```json\n{chunks[0]}\n```\n\n"
-            header_text += f"{gear_emoji} Plugins Digunakan: **SHOWJSON**\n"
+            header_text += f"{robot_emoji} Plugins Digunakan: **SHOWJSON**\n"
             header_text += f"{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan"
 
             await vz_client.edit_with_premium_emoji(processing_msg, header_text)
@@ -359,7 +359,7 @@ async def sj_handler(event):
 
             result_text += f"{kuning_emoji} **Full JSON Data:**\n\n"
             result_text += f"```json\n{json_str}\n```\n\n"
-            result_text += f"{gear_emoji} Plugins Digunakan: **SHOWJSON**\n"
+            result_text += f"{robot_emoji} Plugins Digunakan: **SHOWJSON**\n"
             result_text += f"{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan"
 
             await vz_client.edit_with_premium_emoji(processing_msg, result_text)

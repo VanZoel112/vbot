@@ -52,7 +52,7 @@ EWALLET/BANK      :
 NOMOR REKENING :
 ATAS NAMA             :
 
-{gear_emoji} Plugins Digunakan: **PAYMENT**
+{robot_emoji} Plugins Digunakan: **PAYMENT**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan""")
         return
 
@@ -74,7 +74,7 @@ ATAS NAMA             : {payment.account_name}
 """
 
     payment_text += f"""
-{gear_emoji} Plugins Digunakan: **PAYMENT**
+{robot_emoji} Plugins Digunakan: **PAYMENT**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
@@ -134,7 +134,7 @@ NOMOR REKENING : 08123456789
 ATAS NAMA             : John Doe
 ```
 
-{gear_emoji} Plugins Digunakan: **PAYMENT**
+{robot_emoji} Plugins Digunakan: **PAYMENT**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan""")
         return
 
@@ -179,7 +179,7 @@ ATAS NAMA             : John Doe
 
 You can only save up to {config.MAX_PAYMENT_INFO} payment methods.
 
-{gear_emoji} Plugins Digunakan: **PAYMENT**
+{robot_emoji} Plugins Digunakan: **PAYMENT**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan""")
         return
 
@@ -198,7 +198,7 @@ You can only save up to {config.MAX_PAYMENT_INFO} payment methods.
 
 Use `.get` to view all payment info
 
-{gear_emoji} Plugins Digunakan: **PAYMENT**
+{robot_emoji} Plugins Digunakan: **PAYMENT**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
@@ -237,7 +237,7 @@ The image should contain your payment QR code.
 
 💡 Supported: Photos only
 
-{gear_emoji} Plugins Digunakan: **PAYMENT**
+{robot_emoji} Plugins Digunakan: **PAYMENT**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan""")
         return
 
@@ -259,7 +259,7 @@ The image should contain your payment QR code.
 
 Your QR code will be shown when using `.get` command.
 
-{gear_emoji} Plugins Digunakan: **PAYMENT**
+{robot_emoji} Plugins Digunakan: **PAYMENT**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 

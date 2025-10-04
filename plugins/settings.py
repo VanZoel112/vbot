@@ -59,7 +59,7 @@ async def prefix_handler(event):
 **✅ Allowed:**
 . + # @ : ? or alphanumeric or none
 
-{petir_emoji} {gear_emoji} Plugins Digunakan: **SETTINGS**
+{petir_emoji} {robot_emoji} Plugins Digunakan: **SETTINGS**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan""")
         return
 
@@ -85,7 +85,7 @@ async def prefix_handler(event):
 • Any number (0-9)
 • none (no prefix)
 
-{petir_emoji} {gear_emoji} Plugins Digunakan: **SETTINGS**
+{petir_emoji} {robot_emoji} Plugins Digunakan: **SETTINGS**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan""")
             return
 
@@ -111,7 +111,7 @@ async def prefix_handler(event):
 **⚠️ Note:**
 Restart required for changes to take effect.
 
-{petir_emoji} {gear_emoji} Plugins Digunakan: **SETTINGS**
+{petir_emoji} {robot_emoji} Plugins Digunakan: **SETTINGS**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
@@ -159,7 +159,7 @@ async def pmon_handler(event):
 • `.setpm` - Customize permit message
 • Reply with `.approve` to approve users
 
-{petir_emoji} {gear_emoji} Plugins Digunakan: **SETTINGS**
+{petir_emoji} {robot_emoji} Plugins Digunakan: **SETTINGS**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
@@ -202,7 +202,7 @@ without permit restrictions.
 **💡 To enable:**
 Use `.pmon` command
 
-{petir_emoji} {gear_emoji} Plugins Digunakan: **SETTINGS**
+{petir_emoji} {robot_emoji} Plugins Digunakan: **SETTINGS**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
@@ -255,7 +255,7 @@ when they message you in PM.
 **💡 Default Message:**
 Use `.setpm default` to restore default message
 
-{petir_emoji} {gear_emoji} Plugins Digunakan: **SETTINGS**
+{petir_emoji} {robot_emoji} Plugins Digunakan: **SETTINGS**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
@@ -314,7 +314,7 @@ async def approve_handler(event):
 This user can now message you freely
 without PM permit restrictions.
 
-{petir_emoji} {gear_emoji} Plugins Digunakan: **SETTINGS**
+{petir_emoji} {robot_emoji} Plugins Digunakan: **SETTINGS**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan"""
 
     await vz_client.edit_with_premium_emoji(event, result_text)
@@ -364,7 +364,7 @@ async def disapprove_handler(event):
 This user will now receive PM permit
 message again when messaging you.
 
-{petir_emoji} {gear_emoji} Plugins Digunakan: **SETTINGS**
+{petir_emoji} {robot_emoji} Plugins Digunakan: **SETTINGS**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan"""
 
     await vz_client.edit_with_premium_emoji(event, result_text)

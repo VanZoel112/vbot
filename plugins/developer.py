@@ -123,7 +123,7 @@ async def sdb_handler(event):
 ├ Database Path: `{db_path}`
 └ File Size: {os.path.getsize(db_path)} bytes
 
-{gear_emoji} Plugins Digunakan: **DEVELOPER**
+{robot_emoji} Plugins Digunakan: **DEVELOPER**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
@@ -204,7 +204,7 @@ async def sgd_handler(event):
 **🔗 Message Text:**
 {reply.text[:200] if reply.text else 'No text'}{'...' if reply.text and len(reply.text) > 200 else ''}
 
-{gear_emoji} Plugins Digunakan: **DEVELOPER**
+{robot_emoji} Plugins Digunakan: **DEVELOPER**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
@@ -279,7 +279,7 @@ async def cr_handler(event):
 
 💡 **Note:** User will need to re-deploy to start session again
 
-{gear_emoji} Plugins Digunakan: **DEVELOPER**
+{robot_emoji} Plugins Digunakan: **DEVELOPER**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
@@ -354,7 +354,7 @@ They will need to login again with phone number + OTP.
 
 React with ✅ to confirm or ❌ to cancel within 30 seconds.
 
-{gear_emoji} Plugins Digunakan: **DEVELOPER**
+{robot_emoji} Plugins Digunakan: **DEVELOPER**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan"""
 
     await vz_client.edit_with_premium_emoji(event, confirm_text)
@@ -379,7 +379,7 @@ React with ✅ to confirm or ❌ to cancel within 30 seconds.
 **⚠️ Note:** This feature requires deploy bot integration
 and session string storage.
 
-{gear_emoji} Plugins Digunakan: **DEVELOPER**
+{robot_emoji} Plugins Digunakan: **DEVELOPER**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan"""
 
     await vz_client.edit_with_premium_emoji(event, info_text)
@@ -439,7 +439,7 @@ python3 deploybot.py
 ├ User registration
 └ Instant activation
 
-{gear_emoji} Plugins Digunakan: **DEVELOPER**
+{robot_emoji} Plugins Digunakan: **DEVELOPER**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
@@ -512,7 +512,7 @@ Sudo command forwarding requires:
 ├ Permission elevation
 └ Context switching
 
-{gear_emoji} Plugins Digunakan: **DEVELOPER**
+{robot_emoji} Plugins Digunakan: **DEVELOPER**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
@@ -584,7 +584,7 @@ async def logs_handler(event):
 
 💡 **Log Storage:** {config.DEVELOPER_LOGS_DB_PATH}
 
-{gear_emoji} Plugins Digunakan: **DEVELOPER**
+{robot_emoji} Plugins Digunakan: **DEVELOPER**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan"""
 
     db.close()

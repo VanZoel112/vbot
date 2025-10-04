@@ -110,7 +110,7 @@ async def admin_handler(event):
 ├ Pin Messages: ✅
 └ Add Admins: ✅
 
-{gear_emoji} Plugins Digunakan: **ADMIN**
+{robot_emoji} Plugins Digunakan: **ADMIN**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
@@ -203,7 +203,7 @@ async def unadmin_handler(event):
 All admin rights have been removed.
 User is now a regular member.
 
-{gear_emoji} Plugins Digunakan: **ADMIN**
+{robot_emoji} Plugins Digunakan: **ADMIN**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 

@@ -67,7 +67,7 @@ Voice chat integration requires pytgcalls setup.
 • pytgcalls.github.io
 • tgcalls.org
 
-{gear_emoji} Plugins Digunakan: **VOICE CHAT**
+{robot_emoji} Plugins Digunakan: **VOICE CHAT**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
@@ -116,7 +116,7 @@ Voice chat integration requires pytgcalls setup.
 ├ Stream audio
 └ User-based (no admin required)
 
-{gear_emoji} Plugins Digunakan: **VOICE CHAT**
+{robot_emoji} Plugins Digunakan: **VOICE CHAT**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
 """
 
