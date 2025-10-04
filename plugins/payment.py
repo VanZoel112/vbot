@@ -31,6 +31,11 @@ async def get_handler(event):
     """
     user_id = event.sender_id
 
+    # Get premium emojis
+    gear_emoji = vz_emoji.getemoji('gear')
+    petir_emoji = vz_emoji.getemoji('petir')
+    main_emoji = vz_emoji.getemoji('utama')
+
     # Get payment info from database
     db = DatabaseManager(config.get_sudoer_db_path(user_id))
     payments = db.get_payment_info(user_id)
@@ -110,6 +115,11 @@ async def setget_handler(event):
     Max 3 payment methods.
     """
     user_id = event.sender_id
+
+    # Get premium emojis
+    gear_emoji = vz_emoji.getemoji('gear')
+    petir_emoji = vz_emoji.getemoji('petir')
+    main_emoji = vz_emoji.getemoji('utama')
 
     # Check if replying
     reply = await event.get_reply_message()
@@ -211,6 +221,11 @@ async def getqr_handler(event):
     Auto-extracts file_id and saves it.
     """
     user_id = event.sender_id
+
+    # Get premium emojis
+    gear_emoji = vz_emoji.getemoji('gear')
+    petir_emoji = vz_emoji.getemoji('petir')
+    main_emoji = vz_emoji.getemoji('utama')
 
     # Check if replying to photo
     reply = await event.get_reply_message()

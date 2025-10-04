@@ -341,6 +341,10 @@ async def help_category_callback(event):
         await event.answer("❌ Category not found", alert=True)
         return
 
+    # Get emojis for footer
+    main_emoji = vz_emoji.getemoji('utama')
+    petir_emoji = vz_emoji.getemoji('petir')
+
     # Build category view
     category_text = f"""
 📁 **{category} Commands**
@@ -405,6 +409,10 @@ async def help_command_callback(event):
     if not cmd_data:
         await event.answer("❌ Command not found", alert=True)
         return
+
+    # Get emojis for footer
+    main_emoji = vz_emoji.getemoji('utama')
+    petir_emoji = vz_emoji.getemoji('petir')
 
     # Build command detail view
     cmd_text = f"""

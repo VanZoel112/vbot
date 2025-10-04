@@ -164,6 +164,7 @@ async def vzoel_handler(event):
     owner_emoji = vz_emoji.getemoji('owner')
     robot_emoji = vz_emoji.getemoji('robot')
     gear_emoji = vz_emoji.getemoji('gear')
+    nyala_emoji = vz_emoji.getemoji('nyala')
 
     profile_text = f"""
 {main_emoji} **VZOEL FOX'S - MAIN DEVELOPER**

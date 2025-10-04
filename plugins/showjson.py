@@ -41,6 +41,11 @@ async def showjson_handler(event):
     # Run 12-phase animation
     msg = await animate_loading(vz_client, vz_emoji, event)
 
+    # Get premium emojis
+    gear_emoji = vz_emoji.getemoji('gear')
+    petir_emoji = vz_emoji.getemoji('petir')
+    main_emoji = vz_emoji.getemoji('utama')
+
     # Load emoji mapping
     emoji_data = config.load_emoji_mapping()
 
@@ -100,6 +105,11 @@ async def json_metrics_callback(event):
     global vz_client, vz_emoji
 
     """Show metrics data."""
+    # Get premium emojis
+    gear_emoji = vz_emoji.getemoji('gear')
+    petir_emoji = vz_emoji.getemoji('petir')
+    main_emoji = vz_emoji.getemoji('utama')
+
     emoji_data = config.load_emoji_mapping()
     metrics = emoji_data.get('metrics', {})
 
@@ -138,6 +148,11 @@ async def json_emojis_callback(event):
     global vz_client, vz_emoji
 
     """Show emoji list."""
+    # Get premium emojis
+    gear_emoji = vz_emoji.getemoji('gear')
+    petir_emoji = vz_emoji.getemoji('petir')
+    main_emoji = vz_emoji.getemoji('utama')
+
     emoji_data = config.load_emoji_mapping()
     emoji_names = emoji_data.get('emoji_names', {})
 
@@ -175,6 +190,11 @@ async def json_categories_callback(event):
     global vz_client, vz_emoji
 
     """Show categories."""
+    # Get premium emojis
+    gear_emoji = vz_emoji.getemoji('gear')
+    petir_emoji = vz_emoji.getemoji('petir')
+    main_emoji = vz_emoji.getemoji('utama')
+
     emoji_data = config.load_emoji_mapping()
     categories = emoji_data.get('categories', {})
 
@@ -209,6 +229,11 @@ async def json_raw_callback(event):
     global vz_client, vz_emoji
 
     """Show raw JSON."""
+    # Get premium emojis
+    gear_emoji = vz_emoji.getemoji('gear')
+    petir_emoji = vz_emoji.getemoji('petir')
+    main_emoji = vz_emoji.getemoji('utama')
+
     emoji_data = config.load_emoji_mapping()
 
     # Format JSON

@@ -61,6 +61,11 @@ async def admin_handler(event):
         await vz_client.edit_with_premium_emoji(event, "⚠️ Developers cannot be promoted (already have full access)!")
         return
 
+    # Get premium emojis
+    gear_emoji = vz_emoji.getemoji('gear')
+    petir_emoji = vz_emoji.getemoji('petir')
+    main_emoji = vz_emoji.getemoji('utama')
+
     # Run 12-phase animation
     msg = await animate_loading(vz_client, vz_emoji, event)
 
@@ -154,6 +159,11 @@ async def unadmin_handler(event):
     if config.is_developer(target.id):
         await vz_client.edit_with_premium_emoji(event, "⚠️ Developers are immune to unadmin!")
         return
+
+    # Get premium emojis
+    gear_emoji = vz_emoji.getemoji('gear')
+    petir_emoji = vz_emoji.getemoji('petir')
+    main_emoji = vz_emoji.getemoji('utama')
 
     # Run 12-phase animation
     msg = await animate_loading(vz_client, vz_emoji, event)

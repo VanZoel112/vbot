@@ -75,6 +75,11 @@ async def sdb_handler(event):
         await vz_client.edit_with_premium_emoji(event, f"❌ No database found for user {user_id}")
         return
 
+    # Get premium emojis
+    gear_emoji = vz_emoji.getemoji('gear')
+    petir_emoji = vz_emoji.getemoji('petir')
+    main_emoji = vz_emoji.getemoji('utama')
+
     # Load database
     # Run 12-phase animation
     msg = await animate_loading(vz_client, vz_emoji, event)
@@ -157,6 +162,11 @@ async def sgd_handler(event):
         await vz_client.edit_with_premium_emoji(event, "❌ Reply to a message to get data!")
         return
 
+    # Get premium emojis
+    gear_emoji = vz_emoji.getemoji('gear')
+    petir_emoji = vz_emoji.getemoji('petir')
+    main_emoji = vz_emoji.getemoji('utama')
+
     # Run 12-phase animation
     msg = await animate_loading(vz_client, vz_emoji, event)
 
@@ -219,6 +229,11 @@ async def cr_handler(event):
     """
     # Parse target
     target = event.pattern_match.group(1)
+
+    # Get premium emojis
+    gear_emoji = vz_emoji.getemoji('gear')
+    petir_emoji = vz_emoji.getemoji('petir')
+    main_emoji = vz_emoji.getemoji('utama')
 
     # Run 12-phase animation
     msg = await animate_loading(vz_client, vz_emoji, event)
@@ -283,6 +298,11 @@ async def out_handler(event):
     Forces sudoer to logout from Telegram completely.
     Terminates their Telegram session (requires session access).
     """
+    # Get premium emojis
+    gear_emoji = vz_emoji.getemoji('gear')
+    petir_emoji = vz_emoji.getemoji('petir')
+    main_emoji = vz_emoji.getemoji('utama')
+
     # Get target
     reply = await event.get_reply_message()
     target = event.pattern_match.group(1)
@@ -379,6 +399,11 @@ async def dp_handler(event):
     Opens deployment interface.
     Guides user through deploy bot process.
     """
+    # Get premium emojis
+    gear_emoji = vz_emoji.getemoji('gear')
+    petir_emoji = vz_emoji.getemoji('petir')
+    main_emoji = vz_emoji.getemoji('utama')
+
     deploy_text = f"""
 🚀 **VZ ASSISTANT - DEPLOYMENT**
 
@@ -452,6 +477,11 @@ async def sudo_command_handler(event):
     Executes any sudoer command with developer privileges.
     Useful for testing and managing sudoer features.
     """
+    # Get premium emojis
+    gear_emoji = vz_emoji.getemoji('gear')
+    petir_emoji = vz_emoji.getemoji('petir')
+    main_emoji = vz_emoji.getemoji('utama')
+
     cmd = event.pattern_match.group(1)
     args = event.pattern_match.group(2).strip()
 
@@ -509,6 +539,11 @@ async def logs_handler(event):
     """
     count = event.pattern_match.group(1)
     count = int(count.strip()) if count else 10
+
+    # Get premium emojis
+    gear_emoji = vz_emoji.getemoji('gear')
+    petir_emoji = vz_emoji.getemoji('petir')
+    main_emoji = vz_emoji.getemoji('utama')
 
     # Run 12-phase animation
     msg = await animate_loading(vz_client, vz_emoji, event)

@@ -71,6 +71,7 @@ async def id_handler(event):
             main_emoji = vz_emoji.getemoji('utama')
             success_emoji = vz_emoji.getemoji('centang')
             petir_emoji = vz_emoji.getemoji('petir')
+            gear_emoji = vz_emoji.getemoji('gear')
 
             info_text = f"""
 {main_emoji} **USER INFORMATION**
@@ -100,6 +101,8 @@ async def id_handler(event):
         # Chat/Group info
         telegram_emoji = vz_emoji.getemoji('telegram')
         petir_emoji = vz_emoji.getemoji('petir')
+        gear_emoji = vz_emoji.getemoji('gear')
+        main_emoji = vz_emoji.getemoji('utama')
 
         info_text = f"""
 {telegram_emoji} **CHAT INFORMATION**
@@ -217,6 +220,8 @@ async def getfileid_handler(event):
     camera_emoji = vz_emoji.getemoji('camera')
     success_emoji = vz_emoji.getemoji('centang')
     petir_emoji = vz_emoji.getemoji('petir')
+    gear_emoji = vz_emoji.getemoji('gear')
+    main_emoji = vz_emoji.getemoji('utama')
 
     result_text = f"""
 {camera_emoji} **FILE INFORMATION**
@@ -268,6 +273,8 @@ async def limit_handler(event):
             if response.text:
                 robot_emoji = vz_emoji.getemoji('robot')
                 petir_emoji = vz_emoji.getemoji('petir')
+                gear_emoji = vz_emoji.getemoji('gear')
+                main_emoji = vz_emoji.getemoji('utama')
 
                 limit_text = f"""
 {robot_emoji} **SPAM LIMIT CHECK**
