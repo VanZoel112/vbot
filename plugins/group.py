@@ -192,47 +192,7 @@ async def tag_handler(event):
     if chat_id in active_tags:
         del active_tags[chat_id]
 
-# ============================================================================
-# STOP TAG COMMAND
-# ============================================================================
-
-@events.register(events.NewMessage(pattern=r'^\.stag$', outgoing=True))
-async def stag_handler(event):
-    global vz_client, vz_emoji, error_fmt
-
-    """
-    .stag - Stop active tag operation
-
-    Stops the ongoing .tag command in current group.
-    """
-    # Initialize error formatter if needed
-    if error_fmt is None:
-        error_fmt = ErrorFormatter(vz_emoji)
-
-    chat_id = event.chat_id
-
-    if chat_id not in active_tags:
-        await vz_client.edit_with_premium_emoji(
-            event,
-            error_fmt.info("No active tag operation in this group!")
-        )
-        return
-
-    # Remove from active tags
-    del active_tags[chat_id]
-
-    # Get emojis for footer
-    gear_emoji = vz_emoji.getemoji('gear')
-    petir_emoji = vz_emoji.getemoji('petir')
-    main_emoji = vz_emoji.getemoji('utama')
-
-    await vz_client.edit_with_premium_emoji(event, f"""
-⏹ **Tag All Stopped**
-
-Operation cancelled successfully.
-
-{gear_emoji} Plugins Digunakan: **GROUP**
-{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan""")
+# Note: .stag handler moved to end of file to handle both .tag and .tagall
 
 # ============================================================================
 # SHADOW CLEAR (LOCK) MANAGEMENT
@@ -497,5 +457,318 @@ async def auto_delete_handler(event):
     except Exception as e:
         # Log error but don't break
         print(f"Auto-delete error: {e}")
+
+# ============================================================================
+# SMART BATCH TAGALL (vzl2 pattern)
+# ============================================================================
+
+# Global variables for tagall state
+tagall_tasks = {}
+tagall_active = {}
+tagall_messages = {}  # Store tagall messages for editing
+tagall_progress = {}  # Track progress per chat
+
+@events.register(events.NewMessage(pattern=r'^\.tagall( (.+))?$', outgoing=True))
+async def tagall_handler(event):
+    """
+    .tagall - Smart batch tag all members (vzl2 pattern)
+
+    Usage:
+        .tagall <message>      (tag with message)
+        .tagall (reply)        (tag with replied message)
+
+    Smart batch editing: 5 users per edit
+    Premium emoji mapping for visual appeal
+    """
+    global vz_client, vz_emoji, error_fmt, tagall_tasks, tagall_active, tagall_messages, tagall_progress
+
+    # Initialize error formatter if needed
+    if error_fmt is None:
+        error_fmt = ErrorFormatter(vz_emoji)
+
+    # Check if we're in a group
+    if event.is_private:
+        await vz_client.edit_with_premium_emoji(
+            event,
+            error_fmt.error("Tagall hanya bisa digunakan di grup")
+        )
+        return
+
+    chat_id = event.chat_id
+    user_id = event.sender_id
+
+    # Stop any existing tagall in this chat
+    if chat_id in tagall_tasks and not tagall_tasks[chat_id].done():
+        tagall_tasks[chat_id].cancel()
+        tagall_active[chat_id] = False
+
+    # Get message content
+    message_text = ""
+    reply = await event.get_reply_message()
+    args = event.pattern_match.group(2)
+
+    if reply:
+        message_text = reply.text or ""
+    elif args:
+        message_text = args.strip()
+
+    # Start tagall process
+    tagall_active[chat_id] = True
+
+    # Initial process message
+    loading_emoji = vz_emoji.getemoji('loading')
+    proses_emoji = vz_emoji.getemoji('proses')
+    centang_emoji = vz_emoji.getemoji('centang')
+
+    process_msg = f"{loading_emoji} Memulai proses tagall..."
+    msg = await vz_client.edit_with_premium_emoji(event, process_msg)
+
+    # Get chat info
+    try:
+        chat = await event.get_chat()
+        chat_title = chat.title
+
+        # Get all members
+        import asyncio
+        await asyncio.sleep(1)
+        await vz_client.edit_with_premium_emoji(msg, f"{proses_emoji} Mengambil daftar member dari {chat_title}...")
+
+        participants = []
+        async for user in event.client.iter_participants(chat_id):
+            if not user.bot and not user.deleted and user.id != user_id:
+                participants.append(user)
+
+        if not participants:
+            await vz_client.edit_with_premium_emoji(
+                msg,
+                error_fmt.warning("Tidak ada member yang bisa di-tag")
+            )
+            return
+
+        await asyncio.sleep(1)
+        await vz_client.edit_with_premium_emoji(msg, f"{centang_emoji} Ditemukan {len(participants)} member. Memulai tagall...")
+
+        # Initialize tagall tracking
+        tagall_progress[chat_id] = {'total': len(participants), 'processed': 0}
+
+        # Start tagall task
+        tagall_tasks[chat_id] = asyncio.create_task(
+            perform_smart_batch_tagall(event, msg, participants, message_text, chat_title)
+        )
+
+        # Wait for task completion
+        try:
+            await tagall_tasks[chat_id]
+        except asyncio.CancelledError:
+            kuning_emoji = vz_emoji.getemoji('kuning')
+            await vz_client.edit_with_premium_emoji(msg, f"{kuning_emoji} Tagall dihentikan oleh pengguna")
+
+    except Exception as e:
+        await vz_client.edit_with_premium_emoji(msg, error_fmt.error(f"Error saat tagall: {str(e)}"))
+    finally:
+        tagall_active[chat_id] = False
+        # Clean up tracking data
+        if chat_id in tagall_progress:
+            del tagall_progress[chat_id]
+        if chat_id in tagall_messages:
+            del tagall_messages[chat_id]
+
+async def perform_smart_batch_tagall(event, status_msg, participants, message_text, chat_title):
+    """Perform tagall with smart batch editing system - 5 users per message edit (vzl2 pattern)"""
+    global vz_client, vz_emoji, tagall_active, tagall_messages, tagall_progress
+
+    chat_id = event.chat_id
+    total_users = len(participants)
+    processed_count = 0
+    batch_size = 5
+
+    # Premium emoji mapping for visual appeal (vzl2 pattern)
+    emoji_mapping = {
+        0: 'utama',    # Main emoji
+        1: 'centang',  # Success
+        2: 'petir',    # Power
+        3: 'aktif',    # Active
+        4: 'adder1'    # Special
+    }
+
+    # Status emojis for different phases
+    status_emojis = ['loading', 'proses', 'kuning', 'biru', 'merah']
+
+    # Create initial tagall message that will be edited with user batches
+    initial_emoji = vz_emoji.getemoji('loading')
+    initial_msg = f"{initial_emoji} Memulai smart batch tagall..."
+    tagall_msg = await event.client.send_message(chat_id, initial_msg)
+    tagall_messages[chat_id] = tagall_msg
+
+    # Process users in batches of 5
+    for i in range(0, total_users, batch_size):
+        if not tagall_active.get(chat_id, False):
+            break
+
+        try:
+            batch = participants[i:i + batch_size]
+            batch_mentions = []
+            batch_display = []
+
+            # Process each user in the current batch
+            for idx, participant in enumerate(batch):
+                if not tagall_active.get(chat_id, False):
+                    break
+
+                # Get user info
+                username = f"@{participant.username}" if participant.username else "User"
+                full_name = f"{participant.first_name or ''} {participant.last_name or ''}".strip()
+                if not full_name:
+                    full_name = "Unknown User"
+
+                # Create mention link
+                mention = f"[{full_name}](tg://user?id={participant.id})"
+                batch_mentions.append(mention)
+
+                # Get emoji for this position in batch
+                emoji_key = emoji_mapping.get(idx, 'telegram')
+                emoji_char = vz_emoji.getemoji(emoji_key)
+
+                # Create display info
+                batch_display.append(f"{emoji_char} {full_name}")
+                processed_count += 1
+
+            # Create batch message with mentions and message text
+            if batch_mentions:
+                mention_text = " ".join(batch_mentions)
+                if message_text:
+                    batch_message = f"{mention_text} {message_text}"
+                else:
+                    batch_message = mention_text
+
+                # Edit the tagall message with current batch info
+                batch_number = (i // batch_size) + 1
+                total_batches = (total_users + batch_size - 1) // batch_size
+
+                petir_emoji = vz_emoji.getemoji('petir')
+                centang_emoji = vz_emoji.getemoji('centang')
+                aktif_emoji = vz_emoji.getemoji('aktif')
+                telegram_emoji = vz_emoji.getemoji('telegram')
+                progress_emoji = vz_emoji.getemoji(random.choice(status_emojis))
+
+                status_display = f"""{petir_emoji} **VZ ASSISTANT SMART BATCH TAGALL**
+
+{centang_emoji} Batch {batch_number}/{total_batches} - Target Users:
+
+""" + "\n".join(batch_display) + f"""
+
+{progress_emoji} Progress: {processed_count}/{total_users} users
+{aktif_emoji} Pesan: {message_text or 'Default tagall'}
+{telegram_emoji} Grup: {chat_title}
+
+By Vzoel Fox's Assistant"""
+
+                # Edit the main tracking message
+                await vz_client.edit_with_premium_emoji(status_msg, status_display)
+
+                # Edit the tagall message with the actual mentions
+                await tagall_msg.edit(batch_message)
+
+                # Update progress tracking
+                tagall_progress[chat_id]['processed'] = processed_count
+
+                # Delay between batches to avoid flood
+                await asyncio.sleep(3)
+
+        except Exception as e:
+            # Skip problematic batch and continue
+            print(f"[Tagall] Error in batch {i//batch_size + 1}: {e}")
+            continue
+
+    # Final completion message with success summary
+    if tagall_active.get(chat_id, False):
+        centang_emoji = vz_emoji.getemoji('centang')
+        utama_emoji = vz_emoji.getemoji('utama')
+        petir_emoji = vz_emoji.getemoji('petir')
+        aktif_emoji = vz_emoji.getemoji('aktif')
+        adder1_emoji = vz_emoji.getemoji('adder1')
+        proses_emoji = vz_emoji.getemoji('proses')
+        telegram_emoji = vz_emoji.getemoji('telegram')
+
+        success_emojis = f"{centang_emoji} {utama_emoji} {petir_emoji} {aktif_emoji} {adder1_emoji}"
+
+        completion_msg = f"""{success_emojis} **TAGALL COMPLETED**
+
+{centang_emoji} Total Tagged: {processed_count} users
+{utama_emoji} Batches Processed: {(processed_count + batch_size - 1) // batch_size}
+{aktif_emoji} Message: {message_text or 'Default tagall'}
+{petir_emoji} Group: {chat_title}
+{adder1_emoji} Method: Smart Batch Editing
+
+{proses_emoji} Status: Successfully Completed
+{telegram_emoji} System: VZ ASSISTANT Premium Tagall
+
+By Vzoel Fox's Assistant"""
+
+        await vz_client.edit_with_premium_emoji(status_msg, completion_msg)
+
+        # Clean up tracking data
+        if chat_id in tagall_progress:
+            del tagall_progress[chat_id]
+        if chat_id in tagall_messages:
+            del tagall_messages[chat_id]
+
+@events.register(events.NewMessage(pattern=r'^\.stag$', outgoing=True))
+async def stop_tagall_handler(event):
+    """
+    .stag - Stop ongoing tagall process
+
+    Stops both .tag and .tagall operations
+    """
+    global vz_client, vz_emoji, tagall_tasks, tagall_active, tagall_progress, tagall_messages, active_tags
+
+    chat_id = event.chat_id
+
+    # Check .tagall first
+    if chat_id in tagall_tasks and not tagall_tasks[chat_id].done():
+        # Cancel the tagall task
+        tagall_tasks[chat_id].cancel()
+        tagall_active[chat_id] = False
+
+        # Clean up tracking data
+        if chat_id in tagall_progress:
+            del tagall_progress[chat_id]
+        if chat_id in tagall_messages:
+            del tagall_messages[chat_id]
+
+        centang_emoji = vz_emoji.getemoji('centang')
+        kuning_emoji = vz_emoji.getemoji('kuning')
+        telegram_emoji = vz_emoji.getemoji('telegram')
+
+        await vz_client.edit_with_premium_emoji(
+            event,
+            f"{centang_emoji} Smart Batch Tagall Stopped\n\n{kuning_emoji} Cleanup completed\n{telegram_emoji} VZ ASSISTANT Tagall"
+        )
+        return
+
+    # Check .tag (original implementation)
+    if chat_id in active_tags:
+        # Remove from active tags
+        del active_tags[chat_id]
+
+        gear_emoji = vz_emoji.getemoji('gear')
+        petir_emoji = vz_emoji.getemoji('petir')
+        main_emoji = vz_emoji.getemoji('utama')
+
+        await vz_client.edit_with_premium_emoji(event, f"""
+⏹ **Tag All Stopped**
+
+Operation cancelled successfully.
+
+{gear_emoji} Plugins Digunakan: **GROUP**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan""")
+        return
+
+    # No active tag operation
+    kuning_emoji = vz_emoji.getemoji('kuning')
+    await vz_client.edit_with_premium_emoji(
+        event,
+        f"{kuning_emoji} Tidak ada proses tag/tagall yang sedang berjalan"
+    )
 
 print("✅ Plugin loaded: group.py")
