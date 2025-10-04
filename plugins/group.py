@@ -261,7 +261,7 @@ def save_lockglobal(user_id, lockglobal):
 # LOCK COMMAND
 # ============================================================================
 
-@events.register(events.NewMessage(pattern=r'^\.lock(@\w+)?$', outgoing=True))
+@events.register(events.NewMessage(pattern=r'^\.lock( (.+))?$', outgoing=True))
 async def lock_handler(event):
     global vz_client, vz_emoji, error_fmt
 
@@ -283,14 +283,14 @@ async def lock_handler(event):
 
     # Get target user
     reply = await event.get_reply_message()
-    username = event.pattern_match.group(1)
+    args = event.pattern_match.group(2)
 
     if reply:
         target = await reply.get_sender()
         target_id = target.id
-    elif username:
+    elif args:
         try:
-            username = username[1:]  # Remove @
+            username = args.strip().replace('@', '')
             target = await event.client.get_entity(username)
             target_id = target.id
         except Exception as e:
@@ -367,7 +367,7 @@ automatically deleted in this group.
 # UNLOCK COMMAND
 # ============================================================================
 
-@events.register(events.NewMessage(pattern=r'^\.unlock(@\w+)?$', outgoing=True))
+@events.register(events.NewMessage(pattern=r'^\.unlock( (.+))?$', outgoing=True))
 async def unlock_handler(event):
     global vz_client, vz_emoji, error_fmt
 
@@ -386,14 +386,14 @@ async def unlock_handler(event):
 
     # Get target user
     reply = await event.get_reply_message()
-    username = event.pattern_match.group(1)
+    args = event.pattern_match.group(2)
 
     if reply:
         target = await reply.get_sender()
         target_id = target.id
-    elif username:
+    elif args:
         try:
-            username = username[1:]  # Remove @
+            username = args.strip().replace('@', '')
             target = await event.client.get_entity(username)
             target_id = target.id
         except Exception as e:
@@ -464,20 +464,38 @@ async def auto_delete_handler(event):
     This runs for all incoming messages and checks
     if sender is in the lock list.
     """
+    # Skip if it's our own message
+    try:
+        me = await event.client.get_me()
+        if event.sender_id == me.id:
+            return
+    except:
+        return
+
     # Only work in groups
     if event.is_private:
         return
 
     sender_id = event.sender_id
 
-    # Get bot's user ID (we need to check their lock list)
-    # For now, we'll check all users' lock lists
-    # TODO: Optimize this with a global lock cache
+    # Get owner's user ID from the client
+    # In multi-client setup, each client has its own lock list
+    try:
+        me = await event.client.get_me()
+        my_id = me.id
 
-    # Check if sender is in any lock list
-    # This is a simplified version - in production,
-    # you'd want to cache this and only check relevant users
+        # Load lock list for this client owner
+        lockglobal = load_lockglobal(my_id)
 
-    return  # Disabled for now - needs optimization
+        # Check if sender is locked
+        if sender_id in lockglobal:
+            try:
+                await event.delete()
+            except Exception as e:
+                # Can't delete (no permission or other error)
+                pass
+    except Exception as e:
+        # Log error but don't break
+        print(f"Auto-delete error: {e}")
 
 print("✅ Plugin loaded: group.py")

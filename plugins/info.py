@@ -19,109 +19,111 @@ vz_emoji = None
 # ID COMMAND
 # ============================================================================
 
-@events.register(events.NewMessage(pattern=r'^\.id(@\w+)?$', outgoing=True))
+@events.register(events.NewMessage(pattern=r'^\.id(?: (.+))?$', outgoing=True))
 async def id_handler(event):
     """
-    .id - Get user information
+    .id - Get user information with animated display
 
     Usage:
         .id @username          (get info by username)
         .id (reply)            (get info from reply)
-        .id                    (get current chat info)
+        .id                    (get your own info)
 
-    Shows: ID, name, username, group count
+    Shows: ID, name, username with 4-phase animation
     """
     global vz_client, vz_emoji
 
     # Get target
     reply = await event.get_reply_message()
-    username = event.pattern_match.group(1)
+    args = event.pattern_match.group(1)
+
+    target_user = None
 
     if reply:
-        target = await reply.get_sender()
-        is_user = True
-    elif username:
+        # Get user from reply
+        if reply.sender:
+            target_user = reply.sender
+        else:
+            error_emoji = vz_emoji.getemoji('merah')
+            await vz_client.edit_with_premium_emoji(event, f"{error_emoji} Cannot get user from reply")
+            return
+    elif args:
+        # Get user from username
+        username = args.strip().replace('@', '')
         try:
-            username = username[1:]  # Remove @
-            target = await event.client.get_entity(username)
-            is_user = True
+            target_user = await event.client.get_entity(username)
         except Exception as e:
             error_emoji = vz_emoji.getemoji('merah')
-            await vz_client.edit_with_premium_emoji(event, f"{error_emoji} Failed to get user: {str(e)}")
+            await vz_client.edit_with_premium_emoji(event, f"{error_emoji} Username @{username} not found")
             return
     else:
-        # Get current chat info
-        target = await event.get_chat()
-        is_user = False
+        # Get current user (self)
+        target_user = await event.client.get_me()
 
+    # Phase 1: Initial loading (vzl2 pattern)
+    import asyncio
+    utama_emoji = vz_emoji.getemoji('utama')
+    initial_msg = f"{utama_emoji} sebentar....."
+    message = await vz_client.edit_with_premium_emoji(event, initial_msg)
+
+    # Phase 2: Initialize user
+    await asyncio.sleep(1.5)
+    edit1 = f"{utama_emoji} menginisialisasi user"
+    await vz_client.edit_with_premium_emoji(message, edit1)
+
+    # Phase 3: Finding ID
+    await asyncio.sleep(1.5)
+    proses_emoji = vz_emoji.getemoji('proses')
+    edit2 = f"{proses_emoji} mencari angka user"
+    await vz_client.edit_with_premium_emoji(message, edit2)
+
+    # Phase 4: Finding info
+    await asyncio.sleep(1.5)
     loading_emoji = vz_emoji.getemoji('loading')
-    await vz_client.edit_with_premium_emoji(event, f"{loading_emoji} Fetching information...")
+    edit3 = f"{loading_emoji} menemukan informasi"
+    await vz_client.edit_with_premium_emoji(message, edit3)
 
-    # Build info text
-    if is_user:
-        # User info
-        try:
-            # Get common groups count
-            try:
-                common = await event.client.get_common_chats(target)
-                group_count = len(common)
-            except:
-                group_count = "Unknown"
+    # Delay before results
+    await asyncio.sleep(2)
 
-            main_emoji = vz_emoji.getemoji('utama')
-            success_emoji = vz_emoji.getemoji('centang')
-            petir_emoji = vz_emoji.getemoji('petir')
-            gear_emoji = vz_emoji.getemoji('gear')
+    # Extract user information (vzl2 pattern)
+    user_id = target_user.id
+    username = target_user.username or "No Username"
+    first_name = target_user.first_name or ""
+    last_name = target_user.last_name or ""
+    full_name = f"{first_name} {last_name}".strip() or "No Name"
 
-            info_text = f"""
-{main_emoji} **USER INFORMATION**
+    # Get emojis for gradual reveal
+    kuning_emoji = vz_emoji.getemoji('kuning')
+    biru_emoji = vz_emoji.getemoji('biru')
+    merah_emoji = vz_emoji.getemoji('merah')
+    utama_emoji = vz_emoji.getemoji('utama')
 
-**📋 Basic Info:**
-├ **Name:** {target.first_name} {target.last_name if target.last_name else ''}
-├ **Username:** @{target.username if target.username else 'None'}
-├ **User ID:** `{target.id}`
-├ **Bot:** {'✅ Yes' if target.bot else '❌ No'}
-└ **Premium:** {success_emoji if hasattr(target, 'premium') and target.premium else '❌'} {'Yes' if hasattr(target, 'premium') and target.premium else 'No'}
+    # Phase 5: Show ID (vzl2 pattern - gradual reveal)
+    hasil1 = f"ID : {user_id} {kuning_emoji}"
+    await vz_client.edit_with_premium_emoji(message, hasil1)
 
-**📊 Statistics:**
-├ **Common Groups:** {group_count}
-└ **Profile Photo:** {'✅ Yes' if target.photo else '❌ No'}
+    await asyncio.sleep(1.5)
+    # Phase 6: Show ID + Name
+    hasil2 = f"""ID : {user_id} {kuning_emoji}
+Nama User : {full_name} {biru_emoji}"""
+    await vz_client.edit_with_premium_emoji(message, hasil2)
 
-**🔗 Permanent Link:**
-[Click here](tg://user?id={target.id})
+    await asyncio.sleep(1.5)
+    # Phase 7: Show ID + Name + Username
+    username_display = f"@{username}" if username != "No Username" else "No Username"
+    hasil3 = f"""ID : {user_id} {kuning_emoji}
+Nama User : {full_name} {biru_emoji}
+Username : {username_display} {merah_emoji}"""
+    await vz_client.edit_with_premium_emoji(message, hasil3)
 
-{petir_emoji} {gear_emoji} Plugins Digunakan: **INFO**
-{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
-"""
-        except Exception as e:
-            error_emoji = vz_emoji.getemoji('merah')
-            await vz_client.edit_with_premium_emoji(event, f"{error_emoji} Error getting user info: {str(e)}")
-            return
-    else:
-        # Chat/Group info
-        telegram_emoji = vz_emoji.getemoji('telegram')
-        petir_emoji = vz_emoji.getemoji('petir')
-        gear_emoji = vz_emoji.getemoji('gear')
-        main_emoji = vz_emoji.getemoji('utama')
-
-        info_text = f"""
-{telegram_emoji} **CHAT INFORMATION**
-
-**📋 Basic Info:**
-├ **Title:** {target.title if hasattr(target, 'title') else 'Private Chat'}
-├ **Chat ID:** `{target.id}`
-├ **Type:** {target.__class__.__name__}
-├ **Username:** @{target.username if hasattr(target, 'username') and target.username else 'None'}
-
-**📊 Statistics:**
-├ **Members:** {target.participants_count if hasattr(target, 'participants_count') else 'Unknown'}
-└ **Photo:** {'✅ Yes' if target.photo else '❌ No'}
-
-{petir_emoji} {gear_emoji} Plugins Digunakan: **INFO**
-{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
-"""
-
-    await vz_client.edit_with_premium_emoji(event, info_text)
+    await asyncio.sleep(1.5)
+    # Phase 8: Final result with signature (vzl2 pattern)
+    hasil_final = f"""ID : {user_id} {kuning_emoji}
+Nama User : {full_name} {biru_emoji}
+Username : {username_display} {merah_emoji}
+Info by. Vzoel Assistant {utama_emoji}"""
+    await vz_client.edit_with_premium_emoji(message, hasil_final)
 
 # ============================================================================
 # GETFILEID COMMAND
