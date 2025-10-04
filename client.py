@@ -210,6 +210,42 @@ class MultiClientManager:
         """Get all active clients."""
         return self.clients.values()
 
+    def get_sudoer_clients(self):
+        """Get all sudoer clients (non-developers)."""
+        return [client for client in self.clients.values() if not client.is_developer]
+
+    async def broadcast_command(self, command_text: str, exclude_user_id: int = None):
+        """
+        Broadcast command to all sudoer clients.
+
+        Args:
+            command_text: The full command text to send (e.g., ".gcast Hello")
+            exclude_user_id: Optional user ID to exclude from broadcast
+
+        Returns:
+            dict: Results from each client {user_id: success_bool}
+        """
+        results = {}
+        sudoers = self.get_sudoer_clients()
+
+        for client in sudoers:
+            # Skip excluded user
+            if exclude_user_id and client.user_id == exclude_user_id:
+                continue
+
+            try:
+                # Send command to saved messages (or specified chat)
+                await client.client.send_message(
+                    'me',  # Send to self (saved messages)
+                    command_text
+                )
+                results[client.user_id] = True
+            except Exception as e:
+                results[client.user_id] = False
+                print(f"Failed to broadcast to {client.user_id}: {e}")
+
+        return results
+
 # ============================================================================
 # COMMAND DECORATOR
 # ============================================================================

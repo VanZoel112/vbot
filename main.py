@@ -157,7 +157,8 @@ async def main():
         import builtins
         builtins.vz_client = main_client
         builtins.vz_emoji = main_client.emoji
-        logger.info("Global variables set: vz_client, vz_emoji")
+        builtins.manager = manager  # For broadcast middleware
+        logger.info("Global variables set: vz_client, vz_emoji, manager")
 
         # Setup log handler
         print("\n📋 Configuring Logging...")
@@ -177,6 +178,8 @@ async def main():
                     module.vz_client = main_client
                 if hasattr(module, 'vz_emoji'):
                     module.vz_emoji = main_client.emoji
+                if hasattr(module, 'manager'):
+                    module.manager = manager
         logger.info("Injected globals into all plugin modules")
 
         print("\n" + "="*60)
