@@ -298,24 +298,27 @@ async def lock_handler(event):
     lockglobal.append(target_id)
     save_lockglobal(user_id, lockglobal)
 
-    # Get emojis for footer
+    # Get emojis for message and footer
     gear_emoji = vz_emoji.getemoji('gear')
     petir_emoji = vz_emoji.getemoji('petir')
     main_emoji = vz_emoji.getemoji('utama')
+    aktif_emoji = vz_emoji.getemoji('aktif')
+    telegram_emoji = vz_emoji.getemoji('telegram')
+    proses_emoji = vz_emoji.getemoji('proses')
 
     result_text = f"""
-🔒 **Shadow Clear Activated**
+{aktif_emoji} **Shadow Clear Activated**
 
-**👤 Target:**
+**{telegram_emoji} Target:**
 ├ Name: {target.first_name}
 ├ Username: @{target.username if target.username else 'None'}
 ├ ID: `{target_id}`
 
-**⚡ Effect:**
+**{petir_emoji} Effect:**
 All messages from this user will be
 automatically deleted in this group.
 
-**📊 Total Locked:** {len(lockglobal)}
+**{proses_emoji} Total Locked:** {len(lockglobal)}
 
 {gear_emoji} Plugins Digunakan: **GROUP**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
@@ -385,24 +388,27 @@ async def unlock_handler(event):
     lockglobal.remove(target_id)
     save_lockglobal(user_id, lockglobal)
 
-    # Get emojis for footer
+    # Get emojis for message and footer
     gear_emoji = vz_emoji.getemoji('gear')
     petir_emoji = vz_emoji.getemoji('petir')
     main_emoji = vz_emoji.getemoji('utama')
+    centang_emoji = vz_emoji.getemoji('centang')
+    telegram_emoji = vz_emoji.getemoji('telegram')
+    proses_emoji = vz_emoji.getemoji('proses')
 
     result_text = f"""
-🔓 **Shadow Clear Deactivated**
+{centang_emoji} **Shadow Clear Deactivated**
 
-**👤 Target:**
+**{telegram_emoji} Target:**
 ├ Name: {target.first_name}
 ├ Username: @{target.username if target.username else 'None'}
 ├ ID: `{target_id}`
 
-**✅ Effect:**
+**{centang_emoji} Effect:**
 Messages from this user will no longer
 be automatically deleted.
 
-**📊 Total Locked:** {len(lockglobal)}
+**{proses_emoji} Total Locked:** {len(lockglobal)}
 
 {gear_emoji} Plugins Digunakan: **GROUP**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan

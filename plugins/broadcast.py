@@ -78,7 +78,8 @@ async def bl_handler(event):
 
     # Check if already blacklisted
     if chat_id in blacklist:
-        await vz_client.edit_with_premium_emoji(event, f"⚠️ Group `{chat_id}` is already blacklisted!")
+        kuning_emoji = vz_emoji.getemoji('kuning')
+        await vz_client.edit_with_premium_emoji(event, f"{kuning_emoji} Group `{chat_id}` is already blacklisted!")
         return
 
     # Add to blacklist
@@ -92,14 +93,19 @@ async def bl_handler(event):
     except:
         chat_name = 'Unknown'
 
+    centang_emoji = vz_emoji.getemoji('centang')
+    telegram_emoji = vz_emoji.getemoji('telegram')
+    aktif_emoji = vz_emoji.getemoji('aktif')
+    proses_emoji = vz_emoji.getemoji('proses')
+
     result_text = f"""
-✅ **Blacklist Added**
+{centang_emoji} **Blacklist Added**
 
-**📁 Group:** {chat_name}
-**🆔 ID:** `{chat_id}`
-**📊 Total Blacklisted:** {len(blacklist)}
+**{telegram_emoji} Group:** {chat_name}
+**{aktif_emoji} ID:** `{chat_id}`
+**{proses_emoji} Total Blacklisted:** {len(blacklist)}
 
-💡 This group will be skipped during .gcast
+{gear_emoji} This group will be skipped during .gcast
 
 {gear_emoji} Plugins Digunakan: **BROADCAST**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
@@ -142,7 +148,8 @@ async def dbl_handler(event):
 
     # Check if in blacklist
     if chat_id not in blacklist:
-        await vz_client.edit_with_premium_emoji(event, f"⚠️ Group `{chat_id}` is not blacklisted!")
+        kuning_emoji = vz_emoji.getemoji('kuning')
+        await vz_client.edit_with_premium_emoji(event, f"{kuning_emoji} Group `{chat_id}` is not blacklisted!")
         return
 
     # Remove from blacklist
@@ -156,14 +163,19 @@ async def dbl_handler(event):
     except:
         chat_name = 'Unknown'
 
+    centang_emoji = vz_emoji.getemoji('centang')
+    telegram_emoji = vz_emoji.getemoji('telegram')
+    aktif_emoji = vz_emoji.getemoji('aktif')
+    proses_emoji = vz_emoji.getemoji('proses')
+
     result_text = f"""
-✅ **Blacklist Removed**
+{centang_emoji} **Blacklist Removed**
 
-**📁 Group:** {chat_name}
-**🆔 ID:** `{chat_id}`
-**📊 Total Blacklisted:** {len(blacklist)}
+**{telegram_emoji} Group:** {chat_name}
+**{aktif_emoji} ID:** `{chat_id}`
+**{proses_emoji} Total Blacklisted:** {len(blacklist)}
 
-💡 This group will now receive .gcast broadcasts
+{gear_emoji} This group will now receive .gcast broadcasts
 
 {gear_emoji} Plugins Digunakan: **BROADCAST**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
@@ -381,15 +393,17 @@ async def bllist_handler(event):
     blacklist = load_blacklist(user_id)
 
     if not blacklist:
-        await vz_client.edit_with_premium_emoji(event, "ℹ️ Blacklist is empty!")
+        telegram_emoji = vz_emoji.getemoji('telegram')
+        await vz_client.edit_with_premium_emoji(event, f"{telegram_emoji} Blacklist is empty!")
         return
 
     # Run 12-phase animation
     msg = await animate_loading(vz_client, vz_emoji, event)
 
     # Get group names
+    merah_emoji = vz_emoji.getemoji('merah')
     bl_text = f"""
-🚫 **Blacklist - {len(blacklist)} Groups**
+{merah_emoji} **Blacklist - {len(blacklist)} Groups**
 
 """
 
@@ -407,7 +421,7 @@ async def bllist_handler(event):
             break
 
     bl_text += f"""
-💡 Use `.dbl <id>` to remove from blacklist
+{gear_emoji} Use `.dbl <id>` to remove from blacklist
 
 {gear_emoji} Plugins Digunakan: **BROADCAST**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan"""
