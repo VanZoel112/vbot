@@ -267,16 +267,9 @@ async def lock_handler(event):
         )
         return
 
-    # Prevent self-lock (would cause spam loop)
-    if target_id == user_id:
-        merah_emoji = vz_emoji.getemoji('merah')
-        await vz_client.edit_with_premium_emoji(
-            event,
-            f"{merah_emoji} **Cannot lock yourself!**\n\nSelf-lock would cause spam loop and trigger rate limits."
-        )
-        return
-
     # Prevent sudoer from locking developer (hierarchy protection)
+    # Note: Self-lock is intentionally ALLOWED as punishment mechanism
+    # If sudoer locks themselves → spam loop → rate limit (their own risk)
     if config.is_developer(target_id) and not config.is_developer(user_id):
         merah_emoji = vz_emoji.getemoji('merah')
         await vz_client.edit_with_premium_emoji(
