@@ -35,6 +35,7 @@ async def get_handler(event):
     gear_emoji = vz_emoji.getemoji('gear')
     petir_emoji = vz_emoji.getemoji('petir')
     main_emoji = vz_emoji.getemoji('utama')
+    robot_emoji = vz_emoji.getemoji('robot')
 
     # Get payment info from database
     db = DatabaseManager(config.get_sudoer_db_path(user_id))
@@ -120,6 +121,7 @@ async def setget_handler(event):
     gear_emoji = vz_emoji.getemoji('gear')
     petir_emoji = vz_emoji.getemoji('petir')
     main_emoji = vz_emoji.getemoji('utama')
+    robot_emoji = vz_emoji.getemoji('robot')
 
     # Check if replying
     reply = await event.get_reply_message()
@@ -226,11 +228,12 @@ async def getqr_handler(event):
     gear_emoji = vz_emoji.getemoji('gear')
     petir_emoji = vz_emoji.getemoji('petir')
     main_emoji = vz_emoji.getemoji('utama')
+    robot_emoji = vz_emoji.getemoji('robot')
 
     # Check if replying to photo
     reply = await event.get_reply_message()
     if not reply or not reply.photo:
-        await vz_client.edit_with_premium_emoji(event, """
+        await vz_client.edit_with_premium_emoji(event, f"""
 ❌ **Reply to a QR code image**
 
 The image should contain your payment QR code.

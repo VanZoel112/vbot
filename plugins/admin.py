@@ -65,6 +65,7 @@ async def admin_handler(event):
     gear_emoji = vz_emoji.getemoji('gear')
     petir_emoji = vz_emoji.getemoji('petir')
     main_emoji = vz_emoji.getemoji('utama')
+    robot_emoji = vz_emoji.getemoji('robot')
 
     # Run 12-phase animation
     msg = await animate_loading(vz_client, vz_emoji, event)
@@ -164,6 +165,7 @@ async def unadmin_handler(event):
     gear_emoji = vz_emoji.getemoji('gear')
     petir_emoji = vz_emoji.getemoji('petir')
     main_emoji = vz_emoji.getemoji('utama')
+    robot_emoji = vz_emoji.getemoji('robot')
 
     # Run 12-phase animation
     msg = await animate_loading(vz_client, vz_emoji, event)

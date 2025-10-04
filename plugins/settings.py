@@ -47,6 +47,7 @@ async def prefix_handler(event):
         gear_emoji = vz_emoji.getemoji('gear')
         petir_emoji = vz_emoji.getemoji('petir')
         main_emoji = vz_emoji.getemoji('utama')
+        robot_emoji = vz_emoji.getemoji('robot')
 
         await vz_client.edit_with_premium_emoji(event, f"""
 {gear_emoji} **CURRENT PREFIX**
@@ -75,6 +76,7 @@ async def prefix_handler(event):
             petir_emoji = vz_emoji.getemoji('petir')
             gear_emoji = vz_emoji.getemoji('gear')
             main_emoji = vz_emoji.getemoji('utama')
+            robot_emoji = vz_emoji.getemoji('robot')
 
             await vz_client.edit_with_premium_emoji(event, f"""
 {error_emoji} **Invalid Prefix**
@@ -98,6 +100,7 @@ async def prefix_handler(event):
     petir_emoji = vz_emoji.getemoji('petir')
     gear_emoji = vz_emoji.getemoji('gear')
     main_emoji = vz_emoji.getemoji('utama')
+    robot_emoji = vz_emoji.getemoji('robot')
 
     result_text = f"""
 {success_emoji} **Prefix Updated**
@@ -142,6 +145,7 @@ async def pmon_handler(event):
     petir_emoji = vz_emoji.getemoji('petir')
     gear_emoji = vz_emoji.getemoji('gear')
     main_emoji = vz_emoji.getemoji('utama')
+    robot_emoji = vz_emoji.getemoji('robot')
 
     result_text = f"""
 {success_emoji} **PM Permit Enabled**
@@ -190,6 +194,7 @@ async def pmoff_handler(event):
     petir_emoji = vz_emoji.getemoji('petir')
     gear_emoji = vz_emoji.getemoji('gear')
     main_emoji = vz_emoji.getemoji('utama')
+    robot_emoji = vz_emoji.getemoji('robot')
 
     result_text = f"""
 {success_emoji} **PM Permit Disabled**
@@ -241,6 +246,7 @@ async def setpm_handler(event):
     petir_emoji = vz_emoji.getemoji('petir')
     gear_emoji = vz_emoji.getemoji('gear')
     main_emoji = vz_emoji.getemoji('utama')
+    robot_emoji = vz_emoji.getemoji('robot')
 
     result_text = f"""
 {success_emoji} **PM Permit Message Updated**
@@ -304,6 +310,7 @@ async def approve_handler(event):
     petir_emoji = vz_emoji.getemoji('petir')
     gear_emoji = vz_emoji.getemoji('gear')
     main_emoji = vz_emoji.getemoji('utama')
+    robot_emoji = vz_emoji.getemoji('robot')
 
     result_text = f"""
 {success_emoji} **User Approved**
@@ -355,6 +362,7 @@ async def disapprove_handler(event):
     petir_emoji = vz_emoji.getemoji('petir')
     gear_emoji = vz_emoji.getemoji('gear')
     main_emoji = vz_emoji.getemoji('utama')
+    robot_emoji = vz_emoji.getemoji('robot')
 
     result_text = f"""
 {success_emoji} **Approval Removed**

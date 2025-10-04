@@ -274,9 +274,11 @@ async def show_help_menu(event, is_developer=False):
     gear_emoji = vz_emoji.getemoji('gear')
     petir_emoji = vz_emoji.getemoji('petir')
     main_emoji = vz_emoji.getemoji('utama')
+    robot_emoji = vz_emoji.getemoji('robot')
 
     # Get additional emojis
     owner_role_emoji = vz_emoji.getemoji('owner')
+    telegram_emoji = vz_emoji.getemoji('telegram')
 
     help_text = f"""
 {main_emoji} **VZ ASSISTANT - HELP MENU**
@@ -285,10 +287,10 @@ async def show_help_menu(event, is_developer=False):
 {owner_role_emoji} **Role:** {'DEVELOPER' if is_developer else 'SUDOER'}
 {gear_emoji} **Prefix:** {config.DEFAULT_PREFIX}
 
-**{main_emoji} Categories:**
+**{telegram_emoji} Categories:**
 Select a category to view commands
 
-{main_emoji} Plugins Digunakan: **HELP**
+{robot_emoji} Plugins Digunakan: **HELP**
 {petir_emoji} by {main_emoji} {config.RESULT_FOOTER}
 """
 
@@ -344,10 +346,12 @@ async def help_category_callback(event):
     # Get emojis for footer
     main_emoji = vz_emoji.getemoji('utama')
     petir_emoji = vz_emoji.getemoji('petir')
+    robot_emoji = vz_emoji.getemoji('robot')
+    telegram_emoji = vz_emoji.getemoji('telegram')
 
     # Build category view
     category_text = f"""
-📁 **{category} Commands**
+{telegram_emoji} **{category} Commands**
 
 **Available commands in this category:**
 
@@ -362,7 +366,7 @@ async def help_category_callback(event):
 
 {kuning_emoji} **Tip:** Click a command for detailed info
 
-{main_emoji} Plugins Digunakan: **HELP**
+{robot_emoji} Plugins Digunakan: **HELP**
 {petir_emoji} by {main_emoji} {config.RESULT_FOOTER}"""
 
     # Create command buttons
@@ -413,10 +417,12 @@ async def help_command_callback(event):
     # Get emojis for footer
     main_emoji = vz_emoji.getemoji('utama')
     petir_emoji = vz_emoji.getemoji('petir')
+    robot_emoji = vz_emoji.getemoji('robot')
+    gear_emoji = vz_emoji.getemoji('gear')
 
     # Build command detail view
     cmd_text = f"""
-{main_emoji} **Command Details**
+{gear_emoji} **Command Details**
 
 **Command:** `{cmd_data['cmd']}`
 **Description:** {cmd_data['desc']}
@@ -429,7 +435,7 @@ async def help_command_callback(event):
 
 {petir_emoji} **Category:** {category}
 
-{main_emoji} Plugins Digunakan: **HELP**
+{robot_emoji} Plugins Digunakan: **HELP**
 {petir_emoji} by {main_emoji} {config.RESULT_FOOTER}"""
 
     # Create navigation buttons
@@ -467,7 +473,9 @@ async def help_home_callback(event):
     is_developer = config.is_developer(user_id)
 
     await show_help_menu(event, is_developer)
-    await event.answer("🏠 Returning to main menu...")
+
+    main_emoji = vz_emoji.getemoji('utama')
+    await event.answer(f"{main_emoji} Returning to main menu...")
 
 @events.register(events.CallbackQuery(pattern=b"help_close"))
 async def help_close_callback(event):
@@ -475,6 +483,8 @@ async def help_close_callback(event):
 
     """Handle close button."""
     await event.delete()
-    await event.answer("✅ Help menu closed")
+
+    centang_emoji = vz_emoji.getemoji('centang')
+    await event.answer(f"{centang_emoji} Help menu closed")
 
 print("✅ Plugin loaded: help.py")

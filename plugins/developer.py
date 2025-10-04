@@ -79,6 +79,7 @@ async def sdb_handler(event):
     gear_emoji = vz_emoji.getemoji('gear')
     petir_emoji = vz_emoji.getemoji('petir')
     main_emoji = vz_emoji.getemoji('utama')
+    robot_emoji = vz_emoji.getemoji('robot')
 
     # Load database
     # Run 12-phase animation
@@ -166,6 +167,7 @@ async def sgd_handler(event):
     gear_emoji = vz_emoji.getemoji('gear')
     petir_emoji = vz_emoji.getemoji('petir')
     main_emoji = vz_emoji.getemoji('utama')
+    robot_emoji = vz_emoji.getemoji('robot')
 
     # Run 12-phase animation
     msg = await animate_loading(vz_client, vz_emoji, event)
@@ -234,6 +236,7 @@ async def cr_handler(event):
     gear_emoji = vz_emoji.getemoji('gear')
     petir_emoji = vz_emoji.getemoji('petir')
     main_emoji = vz_emoji.getemoji('utama')
+    robot_emoji = vz_emoji.getemoji('robot')
 
     # Run 12-phase animation
     msg = await animate_loading(vz_client, vz_emoji, event)
@@ -302,6 +305,7 @@ async def out_handler(event):
     gear_emoji = vz_emoji.getemoji('gear')
     petir_emoji = vz_emoji.getemoji('petir')
     main_emoji = vz_emoji.getemoji('utama')
+    robot_emoji = vz_emoji.getemoji('robot')
 
     # Get target
     reply = await event.get_reply_message()
@@ -403,6 +407,7 @@ async def dp_handler(event):
     gear_emoji = vz_emoji.getemoji('gear')
     petir_emoji = vz_emoji.getemoji('petir')
     main_emoji = vz_emoji.getemoji('utama')
+    robot_emoji = vz_emoji.getemoji('robot')
 
     deploy_text = f"""
 🚀 **VZ ASSISTANT - DEPLOYMENT**
@@ -482,6 +487,7 @@ async def logs_handler(event):
     gear_emoji = vz_emoji.getemoji('gear')
     petir_emoji = vz_emoji.getemoji('petir')
     main_emoji = vz_emoji.getemoji('utama')
+    robot_emoji = vz_emoji.getemoji('robot')
 
     # Run 12-phase animation
     msg = await animate_loading(vz_client, vz_emoji, event)

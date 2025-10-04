@@ -46,6 +46,7 @@ async def joinvc_handler(event):
     gear_emoji = vz_emoji.getemoji('gear')
     petir_emoji = vz_emoji.getemoji('petir')
     main_emoji = vz_emoji.getemoji('utama')
+    robot_emoji = vz_emoji.getemoji('robot')
 
     info_text = f"""
 ℹ️ **Voice Chat Feature**
@@ -97,6 +98,7 @@ async def leavevc_handler(event):
     gear_emoji = vz_emoji.getemoji('gear')
     petir_emoji = vz_emoji.getemoji('petir')
     main_emoji = vz_emoji.getemoji('utama')
+    robot_emoji = vz_emoji.getemoji('robot')
 
     info_text = f"""
 ℹ️ **Voice Chat Feature**
