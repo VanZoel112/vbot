@@ -157,6 +157,54 @@ def load_emoji_mapping() -> Dict:
     except FileNotFoundError:
         return {}
 
+# ============================================================================
+# GCAST BLACKLIST MANAGEMENT
+# ============================================================================
+
+def add_to_gcast_blacklist(chat_id: int) -> bool:
+    """Add chat ID to gcast blacklist."""
+    global GCAST_BLACKLIST
+    if chat_id not in GCAST_BLACKLIST:
+        GCAST_BLACKLIST.append(chat_id)
+        save_gcast_blacklist()
+        return True
+    return False
+
+def remove_from_gcast_blacklist(chat_id: int) -> bool:
+    """Remove chat ID from gcast blacklist."""
+    global GCAST_BLACKLIST
+    if chat_id in GCAST_BLACKLIST:
+        GCAST_BLACKLIST.remove(chat_id)
+        save_gcast_blacklist()
+        return True
+    return False
+
+def is_gcast_blacklisted(chat_id: int) -> bool:
+    """Check if chat ID is in gcast blacklist."""
+    return chat_id in GCAST_BLACKLIST
+
+def save_gcast_blacklist():
+    """Save GCAST_BLACKLIST to config file."""
+    try:
+        config_file = os.path.join(BASE_DIR, "config.py")
+        with open(config_file, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        # Find and replace GCAST_BLACKLIST line
+        import re
+        pattern = r'GCAST_BLACKLIST: List\[int\] = \[.*?\]'
+        replacement = f'GCAST_BLACKLIST: List[int] = {GCAST_BLACKLIST}'
+        content = re.sub(pattern, replacement, content)
+
+        with open(config_file, 'w', encoding='utf-8') as f:
+            f.write(content)
+    except Exception as e:
+        print(f"Error saving gcast blacklist: {e}")
+
+def load_gcast_blacklist():
+    """Load GCAST_BLACKLIST from config (already loaded on import)."""
+    pass  # GCAST_BLACKLIST is loaded when module imports
+
 def get_premium_emoji_id(emoji: str) -> str:
     """Get premium emoji ID from standard emoji."""
     mapping = load_emoji_mapping()
@@ -181,6 +229,9 @@ DEPLOY_BOT_TOKEN = os.getenv("DEPLOY_BOT_TOKEN", None)
 # ============================================================================
 GCAST_DELAY = 0.5  # Delay between broadcasts in seconds
 MAX_BROADCAST_RETRIES = 3
+
+# Gcast Blacklist (chat IDs to skip during broadcast)
+GCAST_BLACKLIST: List[int] = []
 
 # ============================================================================
 # VC SETTINGS (pytgcalls)

@@ -50,41 +50,34 @@ async def bl_handler(event):
     global vz_client, vz_emoji
 
     """
-    .bl - Add group to blacklist
+    .bl - Add chat to GLOBAL gcast blacklist (vzl2 pattern)
 
     Usage:
-        .bl                    (add current group)
-        .bl -1001234567890     (add specific group ID)
+        .bl                    (add current chat)
+        .bl -1001234567890     (add specific chat ID)
 
-    Blacklisted groups won't receive .gcast broadcasts.
+    Blacklisted chats won't receive .gcast (saved to config.py)
     """
-    user_id = event.sender_id
-
-    # Get premium emojis
-    gear_emoji = vz_emoji.getemoji('gear')
-    petir_emoji = vz_emoji.getemoji('petir')
-    main_emoji = vz_emoji.getemoji('utama')
-
     # Get chat ID
     chat_id = event.pattern_match.group(1)
 
     if chat_id:
-        chat_id = int(chat_id)
+        try:
+            chat_id = int(chat_id)
+        except:
+            merah_emoji = vz_emoji.getemoji('merah')
+            await vz_client.edit_with_premium_emoji(event, f"{merah_emoji} Invalid chat ID format")
+            return
     else:
         chat_id = event.chat_id
 
-    # Load blacklist
-    blacklist = load_blacklist(user_id)
+    # Add to GLOBAL blacklist (config.py)
+    added = config.add_to_gcast_blacklist(chat_id)
 
-    # Check if already blacklisted
-    if chat_id in blacklist:
+    if not added:
         kuning_emoji = vz_emoji.getemoji('kuning')
-        await vz_client.edit_with_premium_emoji(event, f"{kuning_emoji} Group `{chat_id}` is already blacklisted!")
+        await vz_client.edit_with_premium_emoji(event, f"{kuning_emoji} Chat `{chat_id}` sudah di blacklist!")
         return
-
-    # Add to blacklist
-    blacklist.append(chat_id)
-    save_blacklist(user_id, blacklist)
 
     # Get chat info
     try:
@@ -93,19 +86,22 @@ async def bl_handler(event):
     except:
         chat_name = 'Unknown'
 
+    # Get emojis
     centang_emoji = vz_emoji.getemoji('centang')
     telegram_emoji = vz_emoji.getemoji('telegram')
-    aktif_emoji = vz_emoji.getemoji('aktif')
-    proses_emoji = vz_emoji.getemoji('robot')
+    robot_emoji = vz_emoji.getemoji('robot')
+    petir_emoji = vz_emoji.getemoji('petir')
+    main_emoji = vz_emoji.getemoji('utama')
 
     result_text = f"""
-{centang_emoji} **Blacklist Added**
+{centang_emoji} **GCAST BLACKLIST ADDED**
 
-**{telegram_emoji} Group:** {chat_name}
-**{aktif_emoji} ID:** `{chat_id}`
-**{proses_emoji} Total Blacklisted:** {len(blacklist)}
+**{telegram_emoji} Chat:** {chat_name}
+**{robot_emoji} ID:** `{chat_id}`
+**{petir_emoji} Total Blacklisted:** {len(config.GCAST_BLACKLIST)}
 
-{robot_emoji} This group will be skipped during .gcast
+{robot_emoji} Chat akan di-skip saat .gcast
+{telegram_emoji} Tersimpan global di config.py
 
 {robot_emoji} Plugins Digunakan: **BROADCAST**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
@@ -122,39 +118,34 @@ async def dbl_handler(event):
     global vz_client, vz_emoji
 
     """
-    .dbl - Remove group from blacklist
+    .dbl - Remove chat from GLOBAL gcast blacklist (vzl2 pattern)
 
     Usage:
-        .dbl                   (remove current group)
-        .dbl -1001234567890    (remove specific group ID)
+        .dbl                   (remove current chat)
+        .dbl -1001234567890    (remove specific chat ID)
+
+    Removed chats will receive .gcast again
     """
-    user_id = event.sender_id
-
-    # Get premium emojis
-    gear_emoji = vz_emoji.getemoji('gear')
-    petir_emoji = vz_emoji.getemoji('petir')
-    main_emoji = vz_emoji.getemoji('utama')
-
     # Get chat ID
     chat_id = event.pattern_match.group(1)
 
     if chat_id:
-        chat_id = int(chat_id)
+        try:
+            chat_id = int(chat_id)
+        except:
+            merah_emoji = vz_emoji.getemoji('merah')
+            await vz_client.edit_with_premium_emoji(event, f"{merah_emoji} Invalid chat ID format")
+            return
     else:
         chat_id = event.chat_id
 
-    # Load blacklist
-    blacklist = load_blacklist(user_id)
+    # Remove from GLOBAL blacklist (config.py)
+    removed = config.remove_from_gcast_blacklist(chat_id)
 
-    # Check if in blacklist
-    if chat_id not in blacklist:
+    if not removed:
         kuning_emoji = vz_emoji.getemoji('kuning')
-        await vz_client.edit_with_premium_emoji(event, f"{kuning_emoji} Group `{chat_id}` is not blacklisted!")
+        await vz_client.edit_with_premium_emoji(event, f"{kuning_emoji} Chat `{chat_id}` tidak ada di blacklist!")
         return
-
-    # Remove from blacklist
-    blacklist.remove(chat_id)
-    save_blacklist(user_id, blacklist)
 
     # Get chat info
     try:
@@ -163,19 +154,22 @@ async def dbl_handler(event):
     except:
         chat_name = 'Unknown'
 
+    # Get emojis
     centang_emoji = vz_emoji.getemoji('centang')
     telegram_emoji = vz_emoji.getemoji('telegram')
-    aktif_emoji = vz_emoji.getemoji('aktif')
-    proses_emoji = vz_emoji.getemoji('robot')
+    robot_emoji = vz_emoji.getemoji('robot')
+    petir_emoji = vz_emoji.getemoji('petir')
+    main_emoji = vz_emoji.getemoji('utama')
 
     result_text = f"""
-{centang_emoji} **Blacklist Removed**
+{centang_emoji} **GCAST BLACKLIST REMOVED**
 
-**{telegram_emoji} Group:** {chat_name}
-**{aktif_emoji} ID:** `{chat_id}`
-**{proses_emoji} Total Blacklisted:** {len(blacklist)}
+**{telegram_emoji} Chat:** {chat_name}
+**{robot_emoji} ID:** `{chat_id}`
+**{petir_emoji} Total Blacklisted:** {len(config.GCAST_BLACKLIST)}
 
-{robot_emoji} This group will now receive .gcast broadcasts
+{robot_emoji} Chat akan menerima .gcast lagi
+{telegram_emoji} Dihapus dari config.py
 
 {robot_emoji} Plugins Digunakan: **BROADCAST**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan
@@ -232,8 +226,8 @@ async def gcast_handler(event):
         await vz_client.edit_with_premium_emoji(event, f"{merah_emoji} Usage: `.gcast <message>` or `.gcast` (reply to message)")
         return
 
-    # Load blacklist
-    blacklist = load_blacklist(user_id)
+    # Get blacklist from config (vzl2 pattern)
+    blacklist = config.GCAST_BLACKLIST
 
     # Animation phase 1: Process setup (vzl2 style)
     setup_frames = [
@@ -251,13 +245,14 @@ async def gcast_handler(event):
     # Get all dialogs (groups/channels)
     dialogs = await event.client.get_dialogs()
 
-    # Filter for groups and channels only
+    # Filter for groups and channels only (vzl2 pattern)
     groups = []
     for dialog in dialogs:
         entity = dialog.entity
         if isinstance(entity, (Channel, Chat)):
-            # Skip blacklisted
-            if entity.id not in blacklist and -entity.id not in blacklist:
+            # Skip blacklisted (check both positive and negative IDs)
+            chat_id = entity.id
+            if not config.is_gcast_blacklisted(chat_id) and not config.is_gcast_blacklisted(-chat_id):
                 groups.append(dialog)
 
     total_groups = len(groups)
@@ -378,32 +373,30 @@ async def bllist_handler(event):
     global vz_client, vz_emoji
 
     """
-    .bllist - View blacklisted groups
+    .bllist - View GLOBAL gcast blacklist (vzl2 pattern)
 
-    Shows all groups in blacklist with names.
+    Shows all chats in GCAST_BLACKLIST from config.py
     """
-    user_id = event.sender_id
-
-    # Get premium emojis
-    gear_emoji = vz_emoji.getemoji('gear')
-    petir_emoji = vz_emoji.getemoji('petir')
-    main_emoji = vz_emoji.getemoji('utama')
-
-    # Load blacklist
-    blacklist = load_blacklist(user_id)
+    # Get blacklist from config
+    blacklist = config.GCAST_BLACKLIST
 
     if not blacklist:
         telegram_emoji = vz_emoji.getemoji('telegram')
-        await vz_client.edit_with_premium_emoji(event, f"{telegram_emoji} Blacklist is empty!")
+        await vz_client.edit_with_premium_emoji(event, f"{telegram_emoji} Blacklist kosong!")
         return
 
     # Run 12-phase animation
     msg = await animate_loading(vz_client, vz_emoji, event)
 
-    # Get group names
+    # Get emojis
     merah_emoji = vz_emoji.getemoji('merah')
+    telegram_emoji = vz_emoji.getemoji('telegram')
+    robot_emoji = vz_emoji.getemoji('robot')
+    petir_emoji = vz_emoji.getemoji('petir')
+    main_emoji = vz_emoji.getemoji('utama')
+
     bl_text = f"""
-{merah_emoji} **Blacklist - {len(blacklist)} Groups**
+{merah_emoji} **GCAST BLACKLIST - {len(blacklist)} Chats**
 
 """
 
@@ -413,15 +406,16 @@ async def bllist_handler(event):
             chat_name = getattr(chat, 'title', 'Unknown')
             bl_text += f"{i}. **{chat_name}**\n   `{chat_id}`\n\n"
         except:
-            bl_text += f"{i}. Unknown Group\n   `{chat_id}`\n\n"
+            bl_text += f"{i}. Unknown Chat\n   `{chat_id}`\n\n"
 
-        # Limit to 20 groups
+        # Limit to 20 chats
         if i >= 20:
-            bl_text += f"... and {len(blacklist) - 20} more\n\n"
+            bl_text += f"... dan {len(blacklist) - 20} lagi\n\n"
             break
 
     bl_text += f"""
-{telegram_emoji} Use `.dbl <id>` to remove from blacklist
+{telegram_emoji} Use `.dbl <id>` untuk remove
+{robot_emoji} Tersimpan di config.py (global)
 
 {robot_emoji} Plugins Digunakan: **BROADCAST**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan"""
