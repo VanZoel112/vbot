@@ -260,12 +260,20 @@ async def help_handler(event):
 # HELP MENU FUNCTIONS
 # ============================================================================
 
-async def show_help_menu(event, is_developer=False):
+async def show_help_menu(event, is_developer=False, skip_animation=False):
     global vz_client, vz_emoji
 
     """Show main help menu."""
-    # Run 12-phase animation
-    msg = await animate_loading(vz_client, vz_emoji, event)
+    # Determine message object (events.NewMessage or events.CallbackQuery)
+    message = getattr(event, "message", event)
+
+    # Run 12-phase animation for the initial command only
+    if not skip_animation:
+        try:
+            message = await animate_loading(vz_client, vz_emoji, message)
+        except Exception:
+            # If animation fails (e.g. callback query edit limitations), fall back to original message
+            message = getattr(event, "message", event)
 
     categories = get_all_categories(is_developer)
     total_commands = count_total_commands(is_developer)
@@ -310,16 +318,20 @@ Select a category to view commands
 
     # Send or edit message
     try:
-        if hasattr(event, 'edit'):
-            await event.edit(help_text, buttons=buttons)
-        else:
+        if hasattr(message, 'edit'):
+            await message.edit(help_text, buttons=buttons)
+        elif hasattr(event, 'respond'):
             await event.respond(help_text, buttons=buttons)
-    except Exception as e:
-        # Fallback without buttons
-        if hasattr(event, 'edit'):
-            await vz_client.edit_with_premium_emoji(event, help_text)
-        else:
-            await event.respond(help_text)
+    except Exception:
+        # Fallback without buttons or premium emoji helper
+        try:
+            if hasattr(message, 'edit'):
+                await vz_client.edit_with_premium_emoji(message, help_text)
+            elif hasattr(event, 'respond'):
+                await vz_client.send_with_premium_emoji(event.chat_id, help_text)
+        except Exception:
+            if hasattr(event, 'respond'):
+                await event.respond(help_text)
 
 async def show_help_plugin_info(event, is_developer=False):
     global vz_client, vz_emoji
@@ -370,10 +382,12 @@ async def show_help_plugin_info(event, is_developer=False):
 
     buttons = kb.build()
 
+    message = getattr(event, "message", event)
+
     try:
-        await event.edit(plugin_text, buttons=buttons)
+        await message.edit(plugin_text, buttons=buttons)
     except Exception:
-        await vz_client.edit_with_premium_emoji(event, plugin_text)
+        await vz_client.edit_with_premium_emoji(message, plugin_text)
 
 # ============================================================================
 # CALLBACK HANDLERS
@@ -392,7 +406,7 @@ async def help_plugin_toggle_callback(event):
         await show_help_plugin_info(event, is_developer)
         await event.answer(f"{vz_emoji.getemoji('robot')} Menampilkan info plugin")
     else:
-        await show_help_menu(event, is_developer)
+        await show_help_menu(event, is_developer, skip_animation=True)
         await event.answer(f"{vz_emoji.getemoji('robot')} Kembali ke menu bantuan")
 
 @events.register(events.CallbackQuery(pattern=b"help_cat_.*"))
@@ -532,7 +546,7 @@ async def help_back_callback(event):
     user_id = event.sender_id
     is_developer = config.is_developer(user_id)
 
-    await show_help_menu(event, is_developer)
+    await show_help_menu(event, is_developer, skip_animation=True)
     await event.answer()
 
 @events.register(events.CallbackQuery(pattern=b"help_home"))
@@ -543,7 +557,7 @@ async def help_home_callback(event):
     user_id = event.sender_id
     is_developer = config.is_developer(user_id)
 
-    await show_help_menu(event, is_developer)
+    await show_help_menu(event, is_developer, skip_animation=True)
 
     main_emoji = vz_emoji.getemoji('utama')
     await event.answer(f"{main_emoji} Returning to main menu...")
