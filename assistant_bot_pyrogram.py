@@ -307,8 +307,8 @@ async def plugin_callback(client: Client, callback: CallbackQuery):
 """
 
     if commands:
-        for cmd in commands:
-            detail_text += f"• `{cmd}`\n"
+        formatted_commands = "\n".join(f"• {cmd}" for cmd in commands)
+        detail_text += f"{formatted_commands}\n"
     else:
         detail_text += "No commands documented\n"
 
