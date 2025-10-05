@@ -480,9 +480,9 @@ async def show_help_plugin_detail(event, plugin_id):
     buttons = kb.build()
 
     try:
-        await event.edit(plugin_text, buttons=buttons)
+        await message.edit(plugin_text, buttons=buttons)
     except Exception:
-        await vz_client.edit_with_premium_emoji(event, plugin_text)
+        await vz_client.edit_with_premium_emoji(message, plugin_text)
 
     await event.answer()
 
