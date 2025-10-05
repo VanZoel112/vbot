@@ -30,9 +30,13 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Import plugin loader
 from helpers.plugin_loader import load_plugins_info, chunk_list
+from helpers.vc_bridge import VCBridge
 
 # Load environment
 load_dotenv()
+
+# Initialize VC Bridge
+vc_bridge = VCBridge()
 
 # ============================================================================
 # LOGGING SETUP (Trio-style structured logging)
@@ -581,6 +585,203 @@ async def ping_handler(client: Client, message: Message):
         f"🤖 **Bot:** Pyrogram + Trio\n"
         f"⚡ **Status:** Fast & Stable"
     )
+
+# ============================================================================
+# VC COMMANDS
+# ============================================================================
+
+@app.on_message(filters.command("joinvc") & filters.private)
+async def joinvc_handler(client: Client, message: Message):
+    """Join voice chat silently."""
+    user_id = message.from_user.id
+
+    if not is_authorized(user_id):
+        await message.reply("❌ Access Denied")
+        return
+
+    await log_action(user_id, "joinvc")
+
+    # Get chat ID from command or reply
+    args = message.text.split(maxsplit=1)
+    chat_id = None
+
+    if len(args) > 1:
+        try:
+            chat_id = int(args[1])
+        except:
+            await message.reply("❌ **Invalid chat ID**\n\nUsage: `/joinvc <chat_id>`")
+            return
+    else:
+        await message.reply("❌ **Chat ID required**\n\nUsage: `/joinvc <chat_id>`")
+        return
+
+    status_msg = await message.reply("🎙 **Joining voice chat...**")
+
+    # Send command to userbot via bridge
+    command_id = await vc_bridge.send_command(
+        chat_id=chat_id,
+        command="join",
+        params={"silent": True}
+    )
+
+    # Wait for result
+    result = await vc_bridge.wait_for_result(command_id, timeout=30)
+
+    if result["status"] == "completed":
+        await status_msg.edit(
+            f"✅ **Joined voice chat!**\n\n"
+            f"📍 **Chat:** `{chat_id}`\n"
+            f"🎙 **Mode:** Silent (no admin required)\n"
+            f"⏱ **Status:** Active"
+        )
+    elif result["status"] == "error":
+        await status_msg.edit(
+            f"❌ **Failed to join VC**\n\n"
+            f"Error: `{result.get('error', 'Unknown error')}`"
+        )
+    else:
+        await status_msg.edit("⏳ **Request timeout** - Check userbot logs")
+
+@app.on_message(filters.command("play") & filters.private)
+async def play_handler(client: Client, message: Message):
+    """Play music in voice chat."""
+    user_id = message.from_user.id
+
+    if not is_authorized(user_id):
+        await message.reply("❌ Access Denied")
+        return
+
+    await log_action(user_id, "play")
+
+    # Get song title
+    args = message.text.split(maxsplit=1)
+    if len(args) < 2:
+        await message.reply("❌ **Song title required**\n\nUsage: `/play <song title>`")
+        return
+
+    song = args[1]
+    status_msg = await message.reply(f"🔍 **Searching:** {song}")
+
+    # Get active VC sessions
+    sessions = await vc_bridge.get_active_vc_sessions()
+
+    if not sessions:
+        await status_msg.edit(
+            "⚠️ **No active VC sessions**\n\n"
+            "Join VC first with `/joinvc <chat_id>`"
+        )
+        return
+
+    # Use first active session
+    chat_id = int(list(sessions.keys())[0])
+
+    # Send play command
+    command_id = await vc_bridge.send_command(
+        chat_id=chat_id,
+        command="play",
+        params={"song": song}
+    )
+
+    # Wait for result
+    result = await vc_bridge.wait_for_result(command_id, timeout=45)
+
+    if result["status"] == "completed":
+        song_info = result.get("result", {})
+        await status_msg.edit(
+            f"🎵 **Now Playing**\n\n"
+            f"🎼 **Title:** {song_info.get('title', song)}\n"
+            f"📍 **Chat:** `{chat_id}`\n"
+            f"⏱ **Duration:** {song_info.get('duration', 'Unknown')}"
+        )
+    elif result["status"] == "error":
+        await status_msg.edit(
+            f"❌ **Playback failed**\n\n"
+            f"Error: `{result.get('error', 'Unknown error')}`"
+        )
+    else:
+        await status_msg.edit("⏳ **Request timeout**")
+
+@app.on_message(filters.command(["leave", "stop"]) & filters.private)
+async def leave_handler(client: Client, message: Message):
+    """Leave voice chat."""
+    user_id = message.from_user.id
+
+    if not is_authorized(user_id):
+        await message.reply("❌ Access Denied")
+        return
+
+    command = message.text.split()[0].replace("/", "")
+    await log_action(user_id, command)
+
+    # Get active sessions
+    sessions = await vc_bridge.get_active_vc_sessions()
+
+    if not sessions:
+        await message.reply(
+            "⚠️ **No active VC sessions**\n\n"
+            "Not in any voice chat"
+        )
+        return
+
+    status_msg = await message.reply("🚪 **Leaving voice chat...**")
+
+    # Leave all active sessions
+    results = []
+    for chat_id in sessions.keys():
+        command_id = await vc_bridge.send_command(
+            chat_id=int(chat_id),
+            command="leave"
+        )
+        result = await vc_bridge.wait_for_result(command_id, timeout=15)
+        results.append((chat_id, result))
+
+    # Format response
+    response = "✅ **Left voice chat**\n\n"
+    for chat_id, result in results:
+        if result["status"] == "completed":
+            response += f"📍 Chat `{chat_id}`: ✓\n"
+        else:
+            response += f"📍 Chat `{chat_id}`: ✗ ({result.get('error', 'timeout')})\n"
+
+    await status_msg.edit(response)
+
+@app.on_message(filters.command("vcstatus") & filters.private)
+async def vcstatus_handler(client: Client, message: Message):
+    """Check VC status."""
+    user_id = message.from_user.id
+
+    if not is_authorized(user_id):
+        await message.reply("❌ Access Denied")
+        return
+
+    await log_action(user_id, "vcstatus")
+
+    sessions = await vc_bridge.get_active_vc_sessions()
+
+    if not sessions:
+        await message.reply(
+            "📊 **VC Status**\n\n"
+            "⚠️ No active sessions\n\n"
+            "**Commands:**\n"
+            "• `/joinvc <chat_id>` - Join VC\n"
+            "• `/play <song>` - Play music\n"
+            "• `/leave` or `/stop` - Leave VC"
+        )
+        return
+
+    status_text = "📊 **VC Status**\n\n"
+    for chat_id, session in sessions.items():
+        status_text += f"📍 **Chat:** `{chat_id}`\n"
+        status_text += f"🎙 **Status:** {session.get('status', 'Active')}\n"
+        if session.get('current_song'):
+            status_text += f"🎵 **Playing:** {session['current_song']}\n"
+        status_text += "\n"
+
+    status_text += "**Commands:**\n"
+    status_text += "• `/play <song>` - Play music\n"
+    status_text += "• `/leave` or `/stop` - Leave VC"
+
+    await message.reply(status_text)
 
 # ============================================================================
 # MAIN
