@@ -39,7 +39,16 @@ try:
     from pytgcalls import PyTgCalls, idle
     from pytgcalls.types import MediaStream, AudioQuality
     from pytgcalls.exceptions import NoActiveGroupCall, AlreadyJoinedError
-    import yt_dlp
+
+    # Try to import yt-dlp from vzoelupgrade first, fallback to pip
+    try:
+        import sys
+        vzoelupgrade_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'vzoelupgrade')
+        if vzoelupgrade_path not in sys.path:
+            sys.path.insert(0, vzoelupgrade_path)
+        import yt_dlp
+    except ImportError:
+        import yt_dlp
 
     PYTGCALLS_AVAILABLE = True
 except ImportError:
