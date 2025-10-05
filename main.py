@@ -164,6 +164,11 @@ async def main():
         print("\n📋 Configuring Logging...")
         await setup_log_handler(main_client)
 
+        # Setup assistant bot (auto-create if needed)
+        print("\n🤖 Setting up Assistant Bot...")
+        from helpers.botfather import setup_assistant_bot
+        await setup_assistant_bot(main_client.client)
+
         # Load plugins with event registration
         print("\n📦 Loading Plugins...")
         logger.info("Loading plugins...")

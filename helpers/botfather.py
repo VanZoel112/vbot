@@ -1,0 +1,281 @@
+"""
+VZ ASSISTANT v0.0.0.69
+BotFather Automation - Auto-create Assistant Bot
+
+2025© Vzoel Fox's Lutpan
+Founder & DEVELOPER : @VZLfxs
+"""
+
+import asyncio
+import random
+import os
+from telethon import TelegramClient
+from telethon.tl.functions.messages import SendMessageRequest
+from telethon.errors import FloodWaitError, UsernameOccupiedError
+
+
+class BotFatherClient:
+    """Auto-create bot via BotFather."""
+
+    BOTFATHER_USERNAME = "BotFather"
+    BOTFATHER_ID = 93372553
+
+    def __init__(self, client: TelegramClient):
+        self.client = client
+
+    async def create_assistant_bot(self, base_username="vzoelassistant"):
+        """
+        Auto-create assistant bot from BotFather.
+
+        Args:
+            base_username: Base username for bot (default: vzoelassistant)
+
+        Returns:
+            tuple: (bot_token, bot_username) or (None, None) if failed
+        """
+        try:
+            # Generate unique username
+            username = await self._generate_unique_username(base_username)
+
+            # Send /newbot command
+            await self.client.send_message(self.BOTFATHER_USERNAME, "/newbot")
+            await asyncio.sleep(1.5)
+
+            # Get response
+            response = await self._get_latest_message()
+            if not response or "Alright" not in response:
+                return None, None
+
+            # Send bot name
+            bot_name = "VZ Assistant"
+            await self.client.send_message(self.BOTFATHER_USERNAME, bot_name)
+            await asyncio.sleep(1.5)
+
+            # Get response
+            response = await self._get_latest_message()
+            if not response or "Good" not in response:
+                return None, None
+
+            # Send bot username
+            await self.client.send_message(self.BOTFATHER_USERNAME, username)
+            await asyncio.sleep(2)
+
+            # Get token response
+            response = await self._get_latest_message()
+
+            if not response:
+                return None, None
+
+            # Extract token from response
+            token = self._extract_token(response)
+            if not token:
+                # Check if username taken
+                if "already taken" in response.lower() or "occupied" in response.lower():
+                    # Retry with new username
+                    return await self.create_assistant_bot(base_username)
+                return None, None
+
+            # Set bot description
+            await self._set_bot_description(username)
+
+            return token, username
+
+        except FloodWaitError as e:
+            print(f"⚠️  Rate limited by Telegram. Wait {e.seconds}s")
+            await asyncio.sleep(e.seconds)
+            return await self.create_assistant_bot(base_username)
+
+        except Exception as e:
+            print(f"❌ Error creating bot: {e}")
+            return None, None
+
+    async def _generate_unique_username(self, base_username):
+        """Generate unique bot username."""
+        # Try base username first
+        username = f"{base_username}bot"
+
+        # Add random 4-digit number if needed
+        for _ in range(10):  # Max 10 retries
+            random_suffix = random.randint(1000, 9999)
+            username = f"{base_username}{random_suffix}bot"
+
+            # Check if username is available (simple check)
+            try:
+                await self.client.send_message(self.BOTFATHER_USERNAME, "/cancel")
+                await asyncio.sleep(0.5)
+                return username
+            except:
+                continue
+
+        return username
+
+    async def _get_latest_message(self):
+        """Get latest message from BotFather."""
+        try:
+            messages = await self.client.get_messages(self.BOTFATHER_USERNAME, limit=1)
+            if messages and len(messages) > 0:
+                return messages[0].text
+        except Exception as e:
+            print(f"❌ Error getting message: {e}")
+
+        return None
+
+    def _extract_token(self, message):
+        """Extract bot token from BotFather response."""
+        if not message:
+            return None
+
+        # Token format: 1234567890:ABCdefGHIjklMNOpqrsTUVwxyz
+        lines = message.split("\n")
+        for line in lines:
+            if ":" in line and len(line.split(":")) > 1:
+                potential_token = line.strip()
+                # Basic validation
+                parts = potential_token.split(":")
+                if len(parts) == 2 and parts[0].isdigit() and len(parts[1]) > 20:
+                    return potential_token
+
+        return None
+
+    async def _set_bot_description(self, username):
+        """Set bot description and about text."""
+        try:
+            # Set description
+            await self.client.send_message(self.BOTFATHER_USERNAME, "/setdescription")
+            await asyncio.sleep(1)
+
+            # Select bot
+            await self.client.send_message(self.BOTFATHER_USERNAME, f"@{username}")
+            await asyncio.sleep(1)
+
+            # Send description
+            description = "VZ Assistant Bot - Inline keyboard handler for VZ Userbot\n\nby VzBot"
+            await self.client.send_message(self.BOTFATHER_USERNAME, description)
+            await asyncio.sleep(1)
+
+            # Set about text
+            await self.client.send_message(self.BOTFATHER_USERNAME, "/setabouttext")
+            await asyncio.sleep(1)
+
+            # Select bot
+            await self.client.send_message(self.BOTFATHER_USERNAME, f"@{username}")
+            await asyncio.sleep(1)
+
+            # Send about
+            about = "by VzBot"
+            await self.client.send_message(self.BOTFATHER_USERNAME, about)
+            await asyncio.sleep(1)
+
+        except Exception as e:
+            print(f"⚠️  Could not set bot description: {e}")
+
+
+async def setup_assistant_bot(client: TelegramClient):
+    """
+    Setup assistant bot - create if not exists, start bot process.
+
+    Args:
+        client: Telethon client instance
+
+    Returns:
+        bool: True if bot is ready, False otherwise
+    """
+    # Check if token already exists
+    bot_token = os.getenv("ASSISTANT_BOT_TOKEN")
+
+    if not bot_token:
+        print("\n🤖 Assistant Bot Token not found")
+        print("📝 Auto-creating bot via BotFather...")
+
+        # Create bot via BotFather
+        botfather = BotFatherClient(client)
+        bot_token, bot_username = await botfather.create_assistant_bot()
+
+        if not bot_token:
+            print("❌ Failed to create assistant bot")
+            return False
+
+        print(f"✅ Bot created: @{bot_username}")
+        print(f"🔑 Token: {bot_token[:20]}...")
+
+        # Save to .env
+        env_path = os.path.join(os.getcwd(), ".env")
+
+        # Read existing .env
+        env_content = ""
+        if os.path.exists(env_path):
+            with open(env_path, "r") as f:
+                env_content = f.read()
+
+        # Add or update token
+        if "ASSISTANT_BOT_TOKEN=" in env_content:
+            # Update existing
+            lines = env_content.split("\n")
+            for i, line in enumerate(lines):
+                if line.startswith("ASSISTANT_BOT_TOKEN="):
+                    lines[i] = f"ASSISTANT_BOT_TOKEN={bot_token}"
+            env_content = "\n".join(lines)
+        else:
+            # Add new
+            env_content += f"\nASSISTANT_BOT_TOKEN={bot_token}\n"
+
+        # Write back
+        with open(env_path, "w") as f:
+            f.write(env_content)
+
+        print(f"✅ Token saved to .env")
+
+        # Update environment
+        os.environ["ASSISTANT_BOT_TOKEN"] = bot_token
+
+    else:
+        print(f"✅ Assistant Bot Token found: {bot_token[:20]}...")
+
+    # Start assistant bot process
+    print("🚀 Starting Assistant Bot...")
+
+    try:
+        import subprocess
+
+        script_path = os.path.join(os.getcwd(), "assistant_bot_pyrogram.py")
+
+        if not os.path.exists(script_path):
+            print(f"❌ Bot script not found: {script_path}")
+            return False
+
+        # Try PM2 first
+        try:
+            # Stop existing if running
+            subprocess.run(
+                ["pm2", "delete", "vz-assistant"],
+                capture_output=True,
+                stderr=subprocess.DEVNULL
+            )
+
+            # Start new
+            result = subprocess.run(
+                ["pm2", "start", script_path, "--name", "vz-assistant", "--interpreter", "python3"],
+                capture_output=True,
+                text=True
+            )
+
+            if result.returncode == 0:
+                print("✅ Assistant Bot started via PM2")
+                return True
+
+        except FileNotFoundError:
+            # PM2 not installed, use background process
+            subprocess.Popen(
+                ["python3", script_path],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True
+            )
+            print("✅ Assistant Bot started (background process)")
+            return True
+
+    except Exception as e:
+        print(f"❌ Error starting assistant bot: {e}")
+        return False
+
+    return True
