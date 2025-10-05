@@ -6,7 +6,11 @@ Help Plugin - Command Documentation & Navigation
 Founder & DEVELOPER : @VZLfxs
 """
 
-from telethon import events, Button
+import ast
+import os
+from typing import Dict, List
+
+from telethon import events
 import config
 from utils.animation import animate_loading
 # Note: help.py can use animate_loading as it's generic enough
@@ -16,6 +20,59 @@ from helpers.inline import KeyboardBuilder
 # Global variables (set by main.py)
 vz_client = None
 vz_emoji = None
+
+
+def _load_plugin_metadata() -> List[Dict[str, object]]:
+    """Load plugin metadata from module docstrings."""
+    plugin_dir = os.path.dirname(__file__)
+    metadata: List[Dict[str, object]] = []
+
+    for filename in sorted(os.listdir(plugin_dir)):
+        if not filename.endswith(".py") or filename == "__init__.py":
+            continue
+
+        file_id = filename[:-3]
+        file_path = os.path.join(plugin_dir, filename)
+
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                module = ast.parse(f.read())
+            docstring = ast.get_docstring(module) or ""
+        except (SyntaxError, OSError):
+            docstring = ""
+
+        doc_lines = [line.strip() for line in docstring.splitlines() if line.strip()]
+
+        summary = next((line for line in doc_lines if "Plugin" in line), "")
+        if not summary and doc_lines:
+            summary = doc_lines[0]
+
+        commands: List[str] = []
+        capture_commands = False
+        for line in doc_lines:
+            if line.lower().startswith("commands"):
+                capture_commands = True
+                continue
+            if capture_commands:
+                if line.startswith("-"):
+                    commands.append(line[1:].strip())
+                else:
+                    capture_commands = False
+
+        metadata.append(
+            {
+                "id": file_id,
+                "filename": filename,
+                "display_name": file_id.replace("_", " ").title(),
+                "summary": summary,
+                "commands": commands,
+            }
+        )
+
+    return metadata
+
+
+PLUGIN_METADATA: List[Dict[str, object]] = _load_plugin_metadata()
 
 # ============================================================================
 # COMMAND DATABASE
@@ -260,12 +317,20 @@ async def help_handler(event):
 # HELP MENU FUNCTIONS
 # ============================================================================
 
-async def show_help_menu(event, is_developer=False):
+async def show_help_menu(event, is_developer=False, skip_animation=False):
     global vz_client, vz_emoji
 
     """Show main help menu."""
-    # Run 12-phase animation
-    msg = await animate_loading(vz_client, vz_emoji, event)
+    # Determine message object (events.NewMessage or events.CallbackQuery)
+    message = getattr(event, "message", event)
+
+    # Run 12-phase animation for the initial command only
+    if not skip_animation:
+        try:
+            message = await animate_loading(vz_client, vz_emoji, message)
+        except Exception:
+            # If animation fails (e.g. callback query edit limitations), fall back to original message
+            message = getattr(event, "message", event)
 
     categories = get_all_categories(is_developer)
     total_commands = count_total_commands(is_developer)
@@ -310,63 +375,107 @@ Select a category to view commands
 
     # Send or edit message
     try:
-        if hasattr(event, 'edit'):
-            await event.edit(help_text, buttons=buttons)
-        else:
+        if hasattr(message, 'edit'):
+            await message.edit(help_text, buttons=buttons)
+        elif hasattr(event, 'respond'):
             await event.respond(help_text, buttons=buttons)
-    except Exception as e:
-        # Fallback without buttons
-        if hasattr(event, 'edit'):
-            await vz_client.edit_with_premium_emoji(event, help_text)
-        else:
-            await event.respond(help_text)
+    except Exception:
+        # Fallback without buttons or premium emoji helper
+        try:
+            if hasattr(message, 'edit'):
+                await vz_client.edit_with_premium_emoji(message, help_text)
+            elif hasattr(event, 'respond'):
+                await vz_client.send_with_premium_emoji(event.chat_id, help_text)
+        except Exception:
+            if hasattr(event, 'respond'):
+                await event.respond(help_text)
 
 async def show_help_plugin_info(event, is_developer=False):
     global vz_client, vz_emoji
 
-    """Show plugin metadata panel."""
-    categories = get_all_categories(is_developer)
-    total_commands = count_total_commands(is_developer)
-
-    # Prepare emoji assets
+    """Show plugin metadata list with inline buttons."""
     main_emoji = vz_emoji.getemoji('utama')
     robot_emoji = vz_emoji.getemoji('robot')
     petir_emoji = vz_emoji.getemoji('petir')
-    nyala_emoji = vz_emoji.getemoji('nyala')
     telegram_emoji = vz_emoji.getemoji('telegram')
-    centang_emoji = vz_emoji.getemoji('centang')
-    kuning_emoji = vz_emoji.getemoji('kuning')
+    nyala_emoji = vz_emoji.getemoji('nyala')
 
-    mapping_active = bool(vz_emoji and getattr(vz_emoji, 'available', False))
-    status_emoji = centang_emoji if mapping_active else kuning_emoji
-    mapping_text = "Aktif" if mapping_active else "Tidak tersedia"
-
-    category_line = f"{telegram_emoji} **Total Kategori:** {len(categories)} (Sudoer: {len(SUDOERS_COMMANDS)}"
-    if is_developer:
-        category_line += f", Developer: {len(DEVELOPER_COMMANDS)}"
-    category_line += ")"
+    total_plugins = len(PLUGIN_METADATA)
+    total_commands = count_total_commands(is_developer)
 
     plugin_text = f"""
-{robot_emoji} **HELP Plugin Overview**
+{robot_emoji} **HELP Plugin Directory**
 
-{main_emoji} **Plugin:** HELP (`.help`)
-{nyala_emoji} **Versi:** {config.BOT_VERSION}
-{category_line}
-{petir_emoji} **Total Commands:** {total_commands}
-{status_emoji} **Premium Emoji Mapping:** {mapping_text}
+{telegram_emoji} **Total Plugin:** {total_plugins}
+{petir_emoji} **Total Commands Terdata:** {total_commands}
 
-**Fitur Unggulan:**
-• Navigasi kategori dan detail command via inline button
-• Toggle informasi plugin langsung dari menu utama
-• Filter command otomatis mengikuti role pengguna
+{nyala_emoji} **Petunjuk:**
+Pilih salah satu plugin di bawah untuk melihat detail modul dan ringkasan perintah.
 
 {robot_emoji} Plugins Digunakan: **HELP**
 {petir_emoji} by {main_emoji} {config.RESULT_FOOTER}
 """
 
     kb = KeyboardBuilder()
+
+    for index, plugin in enumerate(PLUGIN_METADATA):
+        kb.add_button(
+            f"{robot_emoji} {plugin['display_name']}",
+            f"help_plugin_detail_{plugin['id']}",
+            same_row=(index % 2 == 1)
+        )
+
     kb.add_button("◀️ Kembali", "help_plugin_toggle_hide")
     kb.add_button("❌ Close", "help_close", same_row=True)
+
+    buttons = kb.build()
+
+    message = getattr(event, "message", event)
+
+    try:
+        await message.edit(plugin_text, buttons=buttons)
+    except Exception:
+        await vz_client.edit_with_premium_emoji(message, plugin_text)
+
+
+async def show_help_plugin_detail(event, plugin_id):
+    global vz_client, vz_emoji
+
+    """Show detailed metadata for a single plugin."""
+    plugin = next((item for item in PLUGIN_METADATA if item['id'] == plugin_id), None)
+
+    if not plugin:
+        await event.answer("❌ Plugin tidak ditemukan", alert=True)
+        return
+
+    main_emoji = vz_emoji.getemoji('utama')
+    robot_emoji = vz_emoji.getemoji('robot')
+    petir_emoji = vz_emoji.getemoji('petir')
+    nyala_emoji = vz_emoji.getemoji('nyala')
+    gear_emoji = vz_emoji.getemoji('gear')
+
+    plugin_text = f"""
+{robot_emoji} **{plugin['display_name']} Plugin Info**
+
+{gear_emoji} **File:** `{plugin['filename']}`
+{nyala_emoji} **Deskripsi:** {plugin['summary'] or 'Ringkasan belum tersedia'}
+"""
+
+    if plugin['commands']:
+        plugin_text += "\n**Perintah (Docstring):**\n"
+        for command in plugin['commands']:
+            plugin_text += f"• {command}\n"
+
+    plugin_text += f"""
+
+{robot_emoji} Plugins Digunakan: **{plugin['display_name'].upper()}**
+{petir_emoji} by {main_emoji} {config.RESULT_FOOTER}
+"""
+
+    kb = KeyboardBuilder()
+    kb.add_button("◀️ Daftar Plugin", "help_plugin_toggle_show")
+    kb.add_button("🏠 Menu", "help_home", same_row=True)
+    kb.add_button("❌ Close", "help_close")
 
     buttons = kb.build()
 
@@ -374,6 +483,8 @@ async def show_help_plugin_info(event, is_developer=False):
         await event.edit(plugin_text, buttons=buttons)
     except Exception:
         await vz_client.edit_with_premium_emoji(event, plugin_text)
+
+    await event.answer()
 
 # ============================================================================
 # CALLBACK HANDLERS
@@ -392,8 +503,17 @@ async def help_plugin_toggle_callback(event):
         await show_help_plugin_info(event, is_developer)
         await event.answer(f"{vz_emoji.getemoji('robot')} Menampilkan info plugin")
     else:
-        await show_help_menu(event, is_developer)
+        await show_help_menu(event, is_developer, skip_animation=True)
         await event.answer(f"{vz_emoji.getemoji('robot')} Kembali ke menu bantuan")
+
+
+@events.register(events.CallbackQuery(pattern=b"help_plugin_detail_.*"))
+async def help_plugin_detail_callback(event):
+    """Handle detailed plugin info requests."""
+
+    plugin_id = event.data.decode('utf-8').replace("help_plugin_detail_", "")
+    await show_help_plugin_detail(event, plugin_id)
+
 
 @events.register(events.CallbackQuery(pattern=b"help_cat_.*"))
 async def help_category_callback(event):
@@ -532,7 +652,7 @@ async def help_back_callback(event):
     user_id = event.sender_id
     is_developer = config.is_developer(user_id)
 
-    await show_help_menu(event, is_developer)
+    await show_help_menu(event, is_developer, skip_animation=True)
     await event.answer()
 
 @events.register(events.CallbackQuery(pattern=b"help_home"))
@@ -543,7 +663,7 @@ async def help_home_callback(event):
     user_id = event.sender_id
     is_developer = config.is_developer(user_id)
 
-    await show_help_menu(event, is_developer)
+    await show_help_menu(event, is_developer, skip_animation=True)
 
     main_emoji = vz_emoji.getemoji('utama')
     await event.answer(f"{main_emoji} Returning to main menu...")
