@@ -42,7 +42,7 @@ logger = logging.getLogger('VZAssistantBot')
 # ============================================================================
 
 # Bot token from environment
-BOT_TOKEN = os.getenv("ASSISTANT_BOT_TOKEN", "8314911312:AAEZTrlru95_QNycAt4TlYH_k-7q2f_PQ9c")
+BOT_TOKEN = os.getenv("ASSISTANT_BOT_TOKEN", "8200379693:AAHQa9WlTNB_ynWgXBk1PDy7r0CJYzZQUtE")
 
 # API credentials
 API_ID = 29919905
