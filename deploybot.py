@@ -16,7 +16,7 @@ from telethon.errors import SessionPasswordNeededError, PhoneCodeInvalidError
 import config
 from database.models import DatabaseManager
 from database.deploy_auth import DeployAuthDB
-from helpers.docker_manager import docker_manager
+from helpers.pm2_manager import pm2_manager
 
 # ============================================================================
 # DEPLOY BOT CONFIGURATION
@@ -149,18 +149,15 @@ class DeploymentSession:
             except Exception as e:
                 print(f"⚠️  Could not save session to JSON: {e}")
 
-            # 🚀 AUTONOMOUS DOCKER DEPLOYMENT
-            # Connect to Docker and deploy container automatically
+            # 🚀 AUTONOMOUS PM2 DEPLOYMENT
+            # Start PM2 process automatically for this sudoer
             try:
-                print(f"\n🐳 Starting autonomous Docker deployment for {me.first_name}...")
+                print(f"\n⚡ Starting autonomous PM2 deployment for {me.first_name}...")
 
-                # Connect to Docker
-                if await docker_manager.connect():
-                    # Build image if needed
-                    await docker_manager.build_image()
-
-                    # Create and start container
-                    success, message, container_id = await docker_manager.create_sudoer_container(
+                # Check if PM2 is installed
+                if await pm2_manager.is_pm2_installed():
+                    # Start PM2 process
+                    success, message = await pm2_manager.start_sudoer(
                         user_id=me.id,
                         session_string=self.session_string,
                         username=me.username,
@@ -168,22 +165,28 @@ class DeploymentSession:
                     )
 
                     if success:
-                        print(f"✅ Docker deployment successful: {container_id}")
-                        # Store container info in result
-                        me.container_id = container_id
-                        me.container_deployed = True
+                        print(f"✅ PM2 deployment successful: vz-sudoer-{me.id}")
+                        # Store PM2 info in result
+                        me.process_name = f"vz-sudoer-{me.id}"
+                        me.process_deployed = True
+
+                        # Get process status
+                        status = await pm2_manager.get_process_status(me.id)
+                        if status.get('exists'):
+                            me.process_status = status.get('status')
+                            me.process_pid = status.get('pid')
                     else:
-                        print(f"❌ Docker deployment failed: {message}")
-                        me.container_deployed = False
+                        print(f"❌ PM2 deployment failed: {message}")
+                        me.process_deployed = False
                         me.deployment_error = message
                 else:
-                    print("⚠️  Could not connect to Docker daemon")
-                    me.container_deployed = False
-                    me.deployment_error = "Docker daemon not available"
+                    print("⚠️  PM2 not installed - manual start required")
+                    me.process_deployed = False
+                    me.deployment_error = "PM2 not installed (npm install -g pm2)"
 
             except Exception as e:
-                print(f"❌ Docker deployment error: {e}")
-                me.container_deployed = False
+                print(f"❌ PM2 deployment error: {e}")
+                me.process_deployed = False
                 me.deployment_error = str(e)
 
             self.state = 'completed'
@@ -730,7 +733,7 @@ Use /cancel to cancel deployment
         if success:
             me = result
 
-            # Build success message with Docker info
+            # Build success message with PM2 process info
             success_text = f"""
 ✅ **Deployment Successful!**
 
@@ -746,27 +749,39 @@ Use /cancel to cancel deployment
 └ Status: Active ✅
 """
 
-            # Add Docker container info if deployed
-            if hasattr(me, 'container_deployed') and me.container_deployed:
+            # Add PM2 process info if deployed
+            if hasattr(me, 'process_deployed') and me.process_deployed:
                 success_text += f"""
-**🐳 Docker Container:**
-├ Container ID: `{me.container_id}`
-├ Status: Running ✅
+**⚡ PM2 Process:**
+├ Process Name: `{me.process_name}`
+├ Status: {me.process_status if hasattr(me, 'process_status') else 'Running'} ✅
+├ PID: `{me.process_pid if hasattr(me, 'process_pid') else 'N/A'}`
 ├ Mode: Autonomous Deploy
 └ Auto-restart: Enabled ✅
+
+**💡 Management:**
+• View: `pm2 list`
+• Logs: `pm2 logs {me.process_name}`
+• Stop: `pm2 stop {me.process_name}`
+• Restart: `pm2 restart {me.process_name}`
 """
             elif hasattr(me, 'deployment_error'):
                 success_text += f"""
-**⚠️ Docker Container:**
+**⚠️ PM2 Process:**
 ├ Deployment: Failed
 ├ Reason: {me.deployment_error}
-└ Session saved, but container not started
+└ Session saved, manual start required
+
+**🔧 Manual Start:**
+`python run_sudoer.py {me.id}`
+or
+`pm2 start run_sudoer.py --name vz-sudoer-{me.id} --interpreter python3 -- {me.id}`
 """
 
             success_text += f"""
 **🎉 You're all set!**
 
-Your VZ ASSISTANT is {' running in Docker container' if hasattr(me, 'container_deployed') and me.container_deployed else 'active'}.
+Your VZ ASSISTANT is {'running as PM2 process' if hasattr(me, 'process_deployed') and me.process_deployed else 'ready to start'}.
 Check your Saved Messages for updates.
 
 {config.BRANDING_FOOTER}
@@ -791,7 +806,7 @@ async def main():
     print(f"""
 ╔══════════════════════════════════════════════════════════╗
 ║              VZ ASSISTANT v{config.BOT_VERSION}                      ║
-║              Deploy Bot (Autonomous Docker)              ║
+║              Deploy Bot (PM2 Multi-User)                 ║
 ║                                                          ║
 ║              {config.BRANDING_FOOTER}                    ║
 ║              Founder & DEVELOPER : {config.FOUNDER_USERNAME}               ║
@@ -800,28 +815,29 @@ async def main():
 🤖 Starting Deploy Bot...
 """)
 
-    # Connect to Docker daemon
-    print("🐳 Connecting to Docker daemon...")
-    if await docker_manager.connect():
-        print("✅ Docker daemon connected")
-        # Build base image
-        print("🔨 Checking Docker image...")
-        await docker_manager.build_image()
+    # Check PM2 availability
+    print("⚡ Checking PM2 installation...")
+    if await pm2_manager.is_pm2_installed():
+        print("✅ PM2 is installed and ready")
+
+        # List existing sudoer processes
+        processes = await pm2_manager.list_all_sudoers()
+        if processes:
+            print(f"📊 Found {len(processes)} existing sudoer process(es)")
+            for proc in processes[:3]:  # Show first 3
+                print(f"   • {proc['name']} - {proc['status']}")
     else:
-        print("⚠️  Docker daemon not available - containers won't auto-deploy")
+        print("⚠️  PM2 not installed - auto-deployment disabled")
+        print("   Install: npm install -g pm2")
 
     await bot.start(bot_token=BOT_TOKEN)
 
     print("\n✅ Deploy Bot is running!")
     print("📱 Users can now deploy via @YourBotUsername")
-    print("🐳 Docker auto-deployment: ENABLED")
+    print("⚡ PM2 auto-deployment: ENABLED")
     print("\n🔄 Bot is active... (Press Ctrl+C to stop)\n")
 
-    try:
-        await bot.run_until_disconnected()
-    finally:
-        # Cleanup
-        await docker_manager.close()
+    await bot.run_until_disconnected()
 
 # ============================================================================
 # RUN
