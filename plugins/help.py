@@ -302,8 +302,9 @@ Select a category to view commands
         same_row = (i % 2 == 1)
         kb.add_button(f"{main_emoji} {category}", f"help_cat_{category}", same_row=same_row)
 
-    # Add close button
-    kb.add_button("❌ Close", "help_close")
+    # Add plugin info toggle + close button
+    kb.add_button(f"{robot_emoji} Plugin Info", "help_plugin_toggle_show")
+    kb.add_button("❌ Close", "help_close", same_row=True)
 
     buttons = kb.build()
 
@@ -320,9 +321,79 @@ Select a category to view commands
         else:
             await event.respond(help_text)
 
+async def show_help_plugin_info(event, is_developer=False):
+    global vz_client, vz_emoji
+
+    """Show plugin metadata panel."""
+    categories = get_all_categories(is_developer)
+    total_commands = count_total_commands(is_developer)
+
+    # Prepare emoji assets
+    main_emoji = vz_emoji.getemoji('utama')
+    robot_emoji = vz_emoji.getemoji('robot')
+    petir_emoji = vz_emoji.getemoji('petir')
+    nyala_emoji = vz_emoji.getemoji('nyala')
+    telegram_emoji = vz_emoji.getemoji('telegram')
+    centang_emoji = vz_emoji.getemoji('centang')
+    kuning_emoji = vz_emoji.getemoji('kuning')
+
+    mapping_active = bool(vz_emoji and getattr(vz_emoji, 'available', False))
+    status_emoji = centang_emoji if mapping_active else kuning_emoji
+    mapping_text = "Aktif" if mapping_active else "Tidak tersedia"
+
+    category_line = f"{telegram_emoji} **Total Kategori:** {len(categories)} (Sudoer: {len(SUDOERS_COMMANDS)}"
+    if is_developer:
+        category_line += f", Developer: {len(DEVELOPER_COMMANDS)}"
+    category_line += ")"
+
+    plugin_text = f"""
+{robot_emoji} **HELP Plugin Overview**
+
+{main_emoji} **Plugin:** HELP (`.help`)
+{nyala_emoji} **Versi:** {config.BOT_VERSION}
+{category_line}
+{petir_emoji} **Total Commands:** {total_commands}
+{status_emoji} **Premium Emoji Mapping:** {mapping_text}
+
+**Fitur Unggulan:**
+• Navigasi kategori dan detail command via inline button
+• Toggle informasi plugin langsung dari menu utama
+• Filter command otomatis mengikuti role pengguna
+
+{robot_emoji} Plugins Digunakan: **HELP**
+{petir_emoji} by {main_emoji} {config.RESULT_FOOTER}
+"""
+
+    kb = KeyboardBuilder()
+    kb.add_button("◀️ Kembali", "help_plugin_toggle_hide")
+    kb.add_button("❌ Close", "help_close", same_row=True)
+
+    buttons = kb.build()
+
+    try:
+        await event.edit(plugin_text, buttons=buttons)
+    except Exception:
+        await vz_client.edit_with_premium_emoji(event, plugin_text)
+
 # ============================================================================
 # CALLBACK HANDLERS
 # ============================================================================
+
+@events.register(events.CallbackQuery(pattern=b"help_plugin_toggle_(show|hide)"))
+async def help_plugin_toggle_callback(event):
+    global vz_client, vz_emoji
+
+    """Toggle plugin info panel visibility."""
+    data = event.data.decode('utf-8')
+    user_id = event.sender_id
+    is_developer = config.is_developer(user_id)
+
+    if data.endswith('show'):
+        await show_help_plugin_info(event, is_developer)
+        await event.answer(f"{vz_emoji.getemoji('robot')} Menampilkan info plugin")
+    else:
+        await show_help_menu(event, is_developer)
+        await event.answer(f"{vz_emoji.getemoji('robot')} Kembali ke menu bantuan")
 
 @events.register(events.CallbackQuery(pattern=b"help_cat_.*"))
 async def help_category_callback(event):
