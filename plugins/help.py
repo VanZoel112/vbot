@@ -291,7 +291,7 @@ def count_total_commands(is_developer=False):
     return count
 
 # ============================================================================
-# HELP COMMAND
+# HELP COMMAND (SUDOERS)
 # ============================================================================
 
 @events.register(events.NewMessage(pattern=r'^\.help$', outgoing=True))
@@ -299,382 +299,118 @@ async def help_handler(event):
     global vz_client, vz_emoji
 
     """
-    .help - Show command help menu
+    .help - Show sudoers command help (text-based)
 
-    Interactive inline button menu with:
-    - Category navigation
-    - Command list per category
-    - Detailed command info
-    - Developer-only commands (if developer)
+    Displays all available commands for sudoers:
+    - Basic commands
+    - Admin commands
+    - Broadcast commands
+    - Group commands
+    - Info commands
+    - Settings commands
     """
     user_id = event.sender_id
-    is_developer = config.is_developer(user_id)
 
-    # Show main help menu
-    await show_help_menu(event, is_developer)
-
-# ============================================================================
-# HELP MENU FUNCTIONS
-# ============================================================================
-
-async def show_help_menu(event, is_developer=False, skip_animation=False):
-    global vz_client, vz_emoji
-
-    """Show main help menu."""
-    # Determine message object (events.NewMessage or events.CallbackQuery)
-    message = getattr(event, "message", event)
-
-    # Run 12-phase animation for the initial command only
-    if not skip_animation:
-        try:
-            message = await animate_loading(vz_client, vz_emoji, message)
-        except Exception:
-            # If animation fails (e.g. callback query edit limitations), fall back to original message
-            message = getattr(event, "message", event)
-
-    categories = get_all_categories(is_developer)
-    total_commands = count_total_commands(is_developer)
-
-    # Get emojis for footer
-    gear_emoji = vz_emoji.getemoji('gear')
-    petir_emoji = vz_emoji.getemoji('petir')
+    # Get emojis
     main_emoji = vz_emoji.getemoji('utama')
+    petir_emoji = vz_emoji.getemoji('petir')
     robot_emoji = vz_emoji.getemoji('robot')
+    gear_emoji = vz_emoji.getemoji('gear')
+    owner_emoji = vz_emoji.getemoji('owner')
 
-    # Get additional emojis
-    owner_role_emoji = vz_emoji.getemoji('owner')
-    telegram_emoji = vz_emoji.getemoji('telegram')
+    # Count total commands
+    total_commands = count_total_commands(is_developer=False)
 
-    help_text = f"""
-{main_emoji} **VZ ASSISTANT - HELP MENU**
+    # Build help text
+    help_text = f"""{main_emoji} **VZ ASSISTANT - HELP MENU**
 
 {petir_emoji} **Total Commands:** {total_commands}
-{owner_role_emoji} **Role:** {'DEVELOPER' if is_developer else 'SUDOER'}
+{owner_emoji} **Role:** SUDOER
 {gear_emoji} **Prefix:** {config.DEFAULT_PREFIX}
 
-**{telegram_emoji} Categories:**
-Select a category to view commands
+"""
+
+    # Add all sudoers command categories
+    for category, commands in SUDOERS_COMMANDS.items():
+        help_text += f"\n**{petir_emoji} {category.upper()} COMMANDS:**\n"
+        for cmd_name, cmd_data in commands.items():
+            help_text += f"• `{cmd_data['cmd']}` - {cmd_data['desc']}\n"
+
+    help_text += f"""
+{gear_emoji} **Usage:** Type command for details
+{robot_emoji} **Example:** `.ping`, `.admin @user`, `.gcast hello`
 
 {robot_emoji} Plugins Digunakan: **HELP**
 {petir_emoji} by {main_emoji} {config.RESULT_FOOTER}
 """
 
-    # Create category buttons
-    kb = KeyboardBuilder()
-
-    # Add category buttons (2 per row)
-    for i, category in enumerate(categories):
-        same_row = (i % 2 == 1)
-        kb.add_button(f"{main_emoji} {category}", f"help_cat_{category}", same_row=same_row)
-
-    # Add plugin info toggle + close button
-    kb.add_button(f"{robot_emoji} Plugin Info", "help_plugin_toggle_show")
-    kb.add_button("❌ Close", "help_close", same_row=True)
-
-    buttons = kb.build()
-
-    # Send or edit message
-    try:
-        if hasattr(message, 'edit'):
-            await message.edit(help_text, buttons=buttons)
-        elif hasattr(event, 'respond'):
-            await event.respond(help_text, buttons=buttons)
-    except Exception:
-        # Fallback without buttons or premium emoji helper
-        try:
-            if hasattr(message, 'edit'):
-                await vz_client.edit_with_premium_emoji(message, help_text)
-            elif hasattr(event, 'respond'):
-                await vz_client.send_with_premium_emoji(event.chat_id, help_text)
-        except Exception:
-            if hasattr(event, 'respond'):
-                await event.respond(help_text)
-
-async def show_help_plugin_info(event, is_developer=False, expanded_plugin=None):
-    global vz_client, vz_emoji
-
-    """Show plugin metadata list with inline toggles."""
-    main_emoji = vz_emoji.getemoji('utama')
-    robot_emoji = vz_emoji.getemoji('robot')
-    petir_emoji = vz_emoji.getemoji('petir')
-    telegram_emoji = vz_emoji.getemoji('telegram')
-    nyala_emoji = vz_emoji.getemoji('nyala')
-    gear_emoji = vz_emoji.getemoji('gear')
-
-    total_plugins = len(PLUGIN_METADATA)
-    total_commands = count_total_commands(is_developer)
-
-    plugin_text = f"""
-{robot_emoji} **HELP Plugin Directory**
-
-{telegram_emoji} **Total Plugin:** {total_plugins}
-{petir_emoji} **Total Commands Terdata:** {total_commands}
-
-{nyala_emoji} **Petunjuk:**
-Klik plugin untuk expand/collapse detail.
-
-"""
-
-    kb = KeyboardBuilder()
-
-    for index, plugin in enumerate(PLUGIN_METADATA):
-        plugin_id = plugin['id']
-        is_expanded = (expanded_plugin == plugin_id)
-
-        # Determine toggle icon
-        toggle_icon = "▼" if is_expanded else "▶"
-
-        # Add plugin toggle button
-        kb.add_button(
-            f"{toggle_icon} {plugin['display_name']}",
-            f"help_plugin_toggle_{plugin_id}",
-            same_row=False
-        )
-
-        # If expanded, show details inline
-        if is_expanded:
-            plugin_text += f"\n{gear_emoji} **{plugin['display_name']} Details:**\n"
-            plugin_text += f"  • File: `{plugin['filename']}`\n"
-            plugin_text += f"  • Deskripsi: {plugin['summary'] or 'Ringkasan belum tersedia'}\n"
-
-            if plugin['commands']:
-                plugin_text += f"  • Perintah:\n"
-                for command in plugin['commands']:
-                    plugin_text += f"    - {command}\n"
-            plugin_text += "\n"
-
-    plugin_text += f"{robot_emoji} Plugins Digunakan: **HELP**\n"
-    plugin_text += f"{petir_emoji} by {main_emoji} {config.RESULT_FOOTER}"
-
-    kb.add_button("◀️ Kembali", "help_plugin_toggle_hide")
-    kb.add_button("❌ Close", "help_close", same_row=True)
-
-    buttons = kb.build()
-
-    message = getattr(event, "message", event)
-
-    try:
-        await message.edit(plugin_text, buttons=buttons)
-    except Exception:
-        await vz_client.edit_with_premium_emoji(message, plugin_text)
+    await vz_client.edit_with_premium_emoji(event, help_text)
 
 # ============================================================================
-# CALLBACK HANDLERS
+# HELPRO COMMAND (DEVELOPERS ONLY)
 # ============================================================================
 
-@events.register(events.CallbackQuery(pattern=b"help_plugin_toggle_(show|hide)"))
-async def help_plugin_toggle_callback(event):
+@events.register(events.NewMessage(pattern=r'^\.helpro$', outgoing=True))
+async def helpro_handler(event):
     global vz_client, vz_emoji
 
-    """Toggle plugin info panel visibility."""
-    data = event.data.decode('utf-8')
+    """
+    .helpro - Show developer command help (DEVELOPERS ONLY)
+
+    Displays all commands including developer-exclusive commands:
+    - All sudoers commands
+    - Developer commands (.vzoel, .dp, .cr, .out, .sdb, .sgd)
+    - Sudo prefix commands (.s*)
+    """
     user_id = event.sender_id
-    is_developer = config.is_developer(user_id)
 
-    if data.endswith('show'):
-        await show_help_plugin_info(event, is_developer)
-        await event.answer(f"{vz_emoji.getemoji('robot')} Menampilkan info plugin")
-    else:
-        await show_help_menu(event, is_developer, skip_animation=True)
-        await event.answer(f"{vz_emoji.getemoji('robot')} Kembali ke menu bantuan")
-
-
-@events.register(events.CallbackQuery(pattern=b"help_plugin_toggle_(?!show|hide).*"))
-async def help_plugin_toggle_inline_callback(event):
-    """Handle inline plugin toggle (expand/collapse)."""
-    global vz_client, vz_emoji
-
-    data = event.data.decode('utf-8')
-    plugin_id = data.replace("help_plugin_toggle_", "")
-
-    user_id = event.sender_id
-    is_developer = config.is_developer(user_id)
-
-    # Check if plugin exists
-    plugin = next((item for item in PLUGIN_METADATA if item['id'] == plugin_id), None)
-
-    if not plugin:
-        await event.answer("❌ Plugin tidak ditemukan", alert=True)
+    # Check if user is developer
+    if not config.is_developer(user_id):
+        merah_emoji = vz_emoji.getemoji('merah')
+        await vz_client.edit_with_premium_emoji(event, f"{merah_emoji} **Access Denied!** Developer only command.")
         return
 
-    # Toggle: if it's already expanded, collapse it (set to None), otherwise expand it
-    # We determine current state by checking the button text in the message
-    message_text = event.message.text if hasattr(event, 'message') else ""
-    is_currently_expanded = f"▼ {plugin['display_name']}" in message_text
-
-    expanded_plugin = None if is_currently_expanded else plugin_id
-
-    # Refresh the plugin info view with the new expanded state
-    await show_help_plugin_info(event, is_developer, expanded_plugin=expanded_plugin)
-
-    # Provide feedback
-    if expanded_plugin:
-        await event.answer(f"▼ {plugin['display_name']} expanded")
-    else:
-        await event.answer(f"▶ {plugin['display_name']} collapsed")
-
-
-@events.register(events.CallbackQuery(pattern=b"help_cat_.*"))
-async def help_category_callback(event):
-    global vz_client, vz_emoji
-
-    """Handle category button click."""
-    # Parse category name
-    data = event.data.decode('utf-8')
-    category = data.replace("help_cat_", "")
-
-    user_id = event.sender_id
-    is_developer = config.is_developer(user_id)
-
-    # Get commands in category
-    commands = get_category_commands(category, is_developer)
-
-    if not commands:
-        await event.answer("❌ Category not found", alert=True)
-        return
-
-    # Get emojis for footer
-    main_emoji = vz_emoji.getemoji('utama')
-    petir_emoji = vz_emoji.getemoji('petir')
-    robot_emoji = vz_emoji.getemoji('robot')
-    telegram_emoji = vz_emoji.getemoji('telegram')
-
-    # Build category view
-    category_text = f"""
-{telegram_emoji} **{category} Commands**
-
-**Available commands in this category:**
-
-"""
-
-    for cmd_name, cmd_data in commands.items():
-        category_text += f"• `{cmd_data['cmd']}` - {cmd_data['desc']}\n"
-
-    kuning_emoji = vz_emoji.getemoji('kuning')
-
-    category_text += f"""
-
-{kuning_emoji} **Tip:** Click a command for detailed info
-
-{robot_emoji} Plugins Digunakan: **HELP**
-{petir_emoji} by {main_emoji} {config.RESULT_FOOTER}"""
-
-    # Create command buttons
-    kb = KeyboardBuilder()
-
-    for cmd_name in commands.keys():
-        kb.add_button(f"{petir_emoji} {cmd_name}", f"help_cmd_{category}_{cmd_name}")
-
-    # Add navigation buttons
-    kb.add_button("◀️ Back", "help_back")
-    kb.add_button("❌ Close", "help_close", same_row=True)
-
-    buttons = kb.build()
-
-    try:
-        await event.edit(category_text, buttons=buttons)
-    except:
-        await vz_client.edit_with_premium_emoji(event, category_text)
-
-    await event.answer()
-
-@events.register(events.CallbackQuery(pattern=b"help_cmd_.*"))
-async def help_command_callback(event):
-    global vz_client, vz_emoji
-
-    """Handle command detail button click."""
-    # Parse command info
-    data = event.data.decode('utf-8')
-    parts = data.replace("help_cmd_", "").split("_", 1)
-
-    if len(parts) < 2:
-        await event.answer("❌ Invalid command", alert=True)
-        return
-
-    category, cmd_name = parts
-
-    user_id = event.sender_id
-    is_developer = config.is_developer(user_id)
-
-    # Get command data
-    commands = get_category_commands(category, is_developer)
-    cmd_data = commands.get(cmd_name)
-
-    if not cmd_data:
-        await event.answer("❌ Command not found", alert=True)
-        return
-
-    # Get emojis for footer
+    # Get emojis
     main_emoji = vz_emoji.getemoji('utama')
     petir_emoji = vz_emoji.getemoji('petir')
     robot_emoji = vz_emoji.getemoji('robot')
     gear_emoji = vz_emoji.getemoji('gear')
+    dev_emoji = vz_emoji.getemoji('developer')
 
-    # Build command detail view
-    cmd_text = f"""
-{gear_emoji} **Command Details**
+    # Count total commands
+    total_commands = count_total_commands(is_developer=True)
 
-**Command:** `{cmd_data['cmd']}`
-**Description:** {cmd_data['desc']}
+    # Build help text
+    help_text = f"""{main_emoji} **VZ ASSISTANT - DEVELOPER HELP**
 
-**Usage:**
-`{cmd_data['usage']}`
+{petir_emoji} **Total Commands:** {total_commands}
+{dev_emoji} **Role:** DEVELOPER
+{gear_emoji} **Prefix:** {config.DEFAULT_PREFIX}
 
-**Example:**
-`{cmd_data['example']}`
+"""
 
-{petir_emoji} **Category:** {category}
+    # Add all sudoers command categories
+    help_text += f"**{robot_emoji} SUDOERS COMMANDS:**\n"
+    for category, commands in SUDOERS_COMMANDS.items():
+        help_text += f"\n**{petir_emoji} {category}:**\n"
+        for cmd_name, cmd_data in commands.items():
+            help_text += f"• `{cmd_data['cmd']}` - {cmd_data['desc']}\n"
+
+    # Add developer command categories
+    help_text += f"\n**{dev_emoji} DEVELOPER EXCLUSIVE COMMANDS:**\n"
+    for category, commands in DEVELOPER_COMMANDS.items():
+        help_text += f"\n**{petir_emoji} {category}:**\n"
+        for cmd_name, cmd_data in commands.items():
+            help_text += f"• `{cmd_data['cmd']}` - {cmd_data['desc']}\n"
+
+    help_text += f"""
+{gear_emoji} **Privilege:** Full system access
+{robot_emoji} **Control:** All sudoer sessions
 
 {robot_emoji} Plugins Digunakan: **HELP**
-{petir_emoji} by {main_emoji} {config.RESULT_FOOTER}"""
+{petir_emoji} by {main_emoji} {config.RESULT_FOOTER}
+"""
 
-    # Create navigation buttons
-    kb = KeyboardBuilder()
-    kb.add_button("◀️ Back", f"help_cat_{category}")
-    kb.add_button("🏠 Home", "help_home", same_row=True)
-    kb.add_button("❌ Close", "help_close")
-
-    buttons = kb.build()
-
-    try:
-        await event.edit(cmd_text, buttons=buttons)
-    except:
-        await vz_client.edit_with_premium_emoji(event, cmd_text)
-
-    await event.answer()
-
-@events.register(events.CallbackQuery(pattern=b"help_back"))
-async def help_back_callback(event):
-    global vz_client, vz_emoji
-
-    """Handle back button."""
-    user_id = event.sender_id
-    is_developer = config.is_developer(user_id)
-
-    await show_help_menu(event, is_developer, skip_animation=True)
-    await event.answer()
-
-@events.register(events.CallbackQuery(pattern=b"help_home"))
-async def help_home_callback(event):
-    global vz_client, vz_emoji
-
-    """Handle home button."""
-    user_id = event.sender_id
-    is_developer = config.is_developer(user_id)
-
-    await show_help_menu(event, is_developer, skip_animation=True)
-
-    main_emoji = vz_emoji.getemoji('utama')
-    await event.answer(f"{main_emoji} Returning to main menu...")
-
-@events.register(events.CallbackQuery(pattern=b"help_close"))
-async def help_close_callback(event):
-    global vz_client, vz_emoji
-
-    """Handle close button."""
-    await event.delete()
-
-    centang_emoji = vz_emoji.getemoji('centang')
-    await event.answer(f"{centang_emoji} Help menu closed")
+    await vz_client.edit_with_premium_emoji(event, help_text)
 
 print("✅ Plugin loaded: help.py")

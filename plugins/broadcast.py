@@ -250,9 +250,29 @@ async def gcast_handler(event):
     for dialog in dialogs:
         entity = dialog.entity
         if isinstance(entity, (Channel, Chat)):
-            # Skip blacklisted (check both positive and negative IDs)
+            # Normalize chat ID to match blacklist format
+            # Telegram supergroups have -100 prefix: -1001234567890
+            # entity.id might return: 1234567890, -1234567890, or -1001234567890
             chat_id = entity.id
-            if not config.is_gcast_blacklisted(chat_id) and not config.is_gcast_blacklisted(-chat_id):
+
+            # Create all possible ID variations to check
+            ids_to_check = [
+                chat_id,
+                -chat_id,
+                -100_0000000000 - abs(chat_id) if abs(chat_id) < 100_0000000000 else chat_id,
+                # If already has -100 prefix, also check without it
+                int(str(abs(chat_id))[3:]) if str(abs(chat_id)).startswith('100') and len(str(abs(chat_id))) > 10 else None,
+                -int(str(abs(chat_id))[3:]) if str(abs(chat_id)).startswith('100') and len(str(abs(chat_id))) > 10 else None,
+            ]
+
+            # Skip if ANY variation is blacklisted
+            is_blacklisted = any(
+                config.is_gcast_blacklisted(id_var)
+                for id_var in ids_to_check
+                if id_var is not None
+            )
+
+            if not is_blacklisted:
                 groups.append(dialog)
 
     total_groups = len(groups)
