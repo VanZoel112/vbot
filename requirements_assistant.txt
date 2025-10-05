@@ -1,0 +1,20 @@
+# VZ ASSISTANT BOT - Pyrogram + Trio Implementation
+# Requirements for inline keyboard handler
+
+# Core dependencies
+pyrogram>=2.0.106
+TgCrypto>=1.2.5
+trio>=0.23.1
+
+# Environment
+python-dotenv>=1.0.0
+
+# Utilities
+aiofiles>=23.2.1
+
+# Voice chat support (.joinvc, .leavevc, .play, .pause)
+py-tgcalls>=0.9.7
+pytgcalls>=3.0.0.dev24
+cryptg>=0.4.0
+Pillow>=10.0.0
+ffmpeg-python>=0.2.0
