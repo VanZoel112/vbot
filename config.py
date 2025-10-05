@@ -37,6 +37,9 @@ FOUNDER_USERNAME = "@VZLfxs"
 FOUNDER_LINK = "t.me/VZLfxs"
 BRANDING_FOOTER = "2025© Vzoel Fox's Lutpan"
 
+# Deploy Bot Configuration
+DEPLOY_BOT_USERNAME = os.getenv("DEPLOY_BOT_USERNAME", "@VZDeployBot")  # Set in .env
+
 # ============================================================================
 # VZL2-STYLE RESPONSE FOOTERS
 # ============================================================================
