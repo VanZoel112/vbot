@@ -23,6 +23,61 @@ class BotFatherClient:
     def __init__(self, client: TelegramClient):
         self.client = client
 
+    async def get_bot_username_from_token(self, token):
+        """
+        Get bot username from token using Telegram Bot API.
+
+        Args:
+            token: Bot token
+
+        Returns:
+            str: Bot username or None
+        """
+        try:
+            # Use pyrogram to get bot info
+            from pyrogram import Client as PyrogramClient
+            import tempfile
+
+            # Create temporary pyrogram client
+            with tempfile.TemporaryDirectory() as tmpdir:
+                bot_client = PyrogramClient(
+                    "temp_bot",
+                    api_id=29919905,  # Use same API credentials
+                    api_hash="717957f0e3ae20a7db004d08b66bfd30",
+                    bot_token=token,
+                    workdir=tmpdir
+                )
+
+                await bot_client.start()
+                me = await bot_client.get_me()
+                username = me.username
+                await bot_client.stop()
+
+                return username
+
+        except Exception as e:
+            print(f"⚠️  Could not get bot username: {e}")
+            # Fallback: ask BotFather
+            try:
+                await self.client.send_message(self.BOTFATHER_USERNAME, "/mybots")
+                await asyncio.sleep(1.5)
+                response = await self._get_latest_message()
+
+                # Try to extract username from response
+                if response and "@" in response:
+                    lines = response.split("\n")
+                    for line in lines:
+                        if "@" in line and "bot" in line.lower():
+                            # Extract @username
+                            parts = line.split("@")
+                            if len(parts) > 1:
+                                username = parts[1].split()[0].strip()
+                                return username
+            except:
+                pass
+
+            return None
+
     async def create_assistant_bot(self, base_username="vzoelassistant"):
         """
         Auto-create assistant bot from BotFather.
@@ -140,34 +195,57 @@ class BotFatherClient:
     async def _set_bot_description(self, username):
         """Set bot description and about text."""
         try:
-            # Set description
-            await self.client.send_message(self.BOTFATHER_USERNAME, "/setdescription")
+            print(f"📝 Setting bot description for @{username}...")
+
+            # Cancel any ongoing operation
+            await self.client.send_message(self.BOTFATHER_USERNAME, "/cancel")
             await asyncio.sleep(1)
 
-            # Select bot
-            await self.client.send_message(self.BOTFATHER_USERNAME, f"@{username}")
-            await asyncio.sleep(1)
+            # Set description
+            await self.client.send_message(self.BOTFATHER_USERNAME, "/setdescription")
+            await asyncio.sleep(1.5)
+
+            # Get response and select bot
+            response = await self._get_latest_message()
+            if response and "Choose a bot" in response:
+                await self.client.send_message(self.BOTFATHER_USERNAME, f"@{username}")
+                await asyncio.sleep(1.5)
 
             # Send description
             description = "VZ Assistant Bot - Inline keyboard handler for VZ Userbot\n\nby VzBot"
             await self.client.send_message(self.BOTFATHER_USERNAME, description)
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
+
+            # Verify description set
+            response = await self._get_latest_message()
+            if response and "Success" in response:
+                print("✅ Description set")
 
             # Set about text
             await self.client.send_message(self.BOTFATHER_USERNAME, "/setabouttext")
-            await asyncio.sleep(1)
+            await asyncio.sleep(1.5)
 
-            # Select bot
-            await self.client.send_message(self.BOTFATHER_USERNAME, f"@{username}")
-            await asyncio.sleep(1)
+            # Get response and select bot
+            response = await self._get_latest_message()
+            if response and "Choose a bot" in response:
+                await self.client.send_message(self.BOTFATHER_USERNAME, f"@{username}")
+                await asyncio.sleep(1.5)
 
             # Send about
             about = "by VzBot"
             await self.client.send_message(self.BOTFATHER_USERNAME, about)
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
+
+            # Verify about set
+            response = await self._get_latest_message()
+            if response and "Success" in response:
+                print("✅ About text set")
+
+            return True
 
         except Exception as e:
             print(f"⚠️  Could not set bot description: {e}")
+            return False
 
 
 async def setup_assistant_bot(client: TelegramClient):
@@ -182,13 +260,13 @@ async def setup_assistant_bot(client: TelegramClient):
     """
     # Check if token already exists
     bot_token = os.getenv("ASSISTANT_BOT_TOKEN")
+    botfather = BotFatherClient(client)
 
     if not bot_token:
         print("\n🤖 Assistant Bot Token not found")
         print("📝 Auto-creating bot via BotFather...")
 
         # Create bot via BotFather
-        botfather = BotFatherClient(client)
         bot_token, bot_username = await botfather.create_assistant_bot()
 
         if not bot_token:
@@ -229,7 +307,19 @@ async def setup_assistant_bot(client: TelegramClient):
         os.environ["ASSISTANT_BOT_TOKEN"] = bot_token
 
     else:
+        # Token exists - skip creation, only set description
         print(f"✅ Assistant Bot Token found: {bot_token[:20]}...")
+        print("📝 Updating bot description...")
+
+        # Get bot username from token
+        bot_username = await botfather.get_bot_username_from_token(bot_token)
+
+        if bot_username:
+            print(f"🤖 Bot username: @{bot_username}")
+            # Set description
+            await botfather._set_bot_description(bot_username)
+        else:
+            print("⚠️  Could not get bot username - skipping description update")
 
     # Start assistant bot process
     print("🚀 Starting Assistant Bot...")
