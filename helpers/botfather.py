@@ -212,7 +212,7 @@ class BotFatherClient:
                 await asyncio.sleep(1.5)
 
             # Send description
-            description = "VZ Assistant Bot - Inline keyboard handler for VZ Userbot\n\nby VzBot"
+            description = "Asisten untuk VzUserbot.. dengan string Telethone + Uvloop dan Pyrogram + Trio\n\nContact Founder jika menemukan masalah.. OWNER : Vzoel Fox's ( Lutpan ) @VZLfxs @itspizolpoks"
             await self.client.send_message(self.BOTFATHER_USERNAME, description)
             await asyncio.sleep(2)
 

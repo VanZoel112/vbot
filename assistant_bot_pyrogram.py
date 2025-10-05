@@ -22,6 +22,12 @@ from pyrogram.types import (
 )
 from dotenv import load_dotenv
 
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+# Import plugin loader
+from helpers.plugin_loader import load_plugins_info, chunk_list
+
 # Load environment
 load_dotenv()
 
@@ -52,8 +58,8 @@ API_HASH = "717957f0e3ae20a7db004d08b66bfd30"
 DEVELOPER_IDS = [8024282347, 7553981355]
 OWNER_ID = int(os.getenv("OWNER_ID", "7553981355"))
 
-# Bridge file for userbot communication
-BRIDGE_FILE = "data/bot_bridge.json"
+# Pagination settings
+PLUGINS_PER_PAGE = 9  # 3x3 grid
 
 # ============================================================================
 # PYROGRAM CLIENT
@@ -68,6 +74,9 @@ app = Client(
     workdir="."
 )
 
+# Global plugins cache
+PLUGINS_CACHE = None
+
 # ============================================================================
 # HELPER FUNCTIONS
 # ============================================================================
@@ -79,6 +88,89 @@ def is_authorized(user_id: int) -> bool:
 async def log_action(user_id: int, action: str):
     """Log user actions."""
     logger.info(f"User {user_id} | Action: {action}")
+
+def get_plugins():
+    """Get plugins list (cached)."""
+    global PLUGINS_CACHE
+    if PLUGINS_CACHE is None:
+        PLUGINS_CACHE = load_plugins_info("plugins")
+    return PLUGINS_CACHE
+
+def build_plugins_keyboard(page: int = 0):
+    """
+    Build inline keyboard for plugins list.
+
+    Args:
+        page: Current page number (0-indexed)
+
+    Returns:
+        InlineKeyboardMarkup
+    """
+    plugins = get_plugins()
+
+    # Calculate pagination
+    total_plugins = len(plugins)
+    total_pages = (total_plugins + PLUGINS_PER_PAGE - 1) // PLUGINS_PER_PAGE
+    start_idx = page * PLUGINS_PER_PAGE
+    end_idx = min(start_idx + PLUGINS_PER_PAGE, total_plugins)
+
+    # Get plugins for current page
+    page_plugins = plugins[start_idx:end_idx]
+
+    # Build keyboard rows (3 plugins per row)
+    buttons = []
+    for i in range(0, len(page_plugins), 3):
+        row = []
+        for plugin in page_plugins[i:i+3]:
+            emoji = plugin.get("emoji", "🔧")
+            name = plugin.get("display_name", plugin["name"])
+            row.append(
+                InlineKeyboardButton(
+                    f"{emoji} {name}",
+                    callback_data=f"plugin:{plugin['name']}"
+                )
+            )
+        buttons.append(row)
+
+    # Pagination row
+    pagination_row = []
+    if page > 0:
+        pagination_row.append(
+            InlineKeyboardButton("◀️ Sebelumnya", callback_data=f"page:{page-1}")
+        )
+    if page < total_pages - 1:
+        pagination_row.append(
+            InlineKeyboardButton("Selanjutnya ▶️", callback_data=f"page:{page+1}")
+        )
+
+    if pagination_row:
+        buttons.append(pagination_row)
+
+    # VBot button
+    buttons.append([
+        InlineKeyboardButton("🎵 VBot", url="https://t.me/vmusic_vbot")
+    ])
+
+    # Developer button
+    buttons.append([
+        InlineKeyboardButton("👨‍💻 Developer", url="https://t.me/VZLfxs")
+    ])
+
+    return InlineKeyboardMarkup(buttons)
+
+def build_plugin_detail_keyboard():
+    """Build keyboard for plugin detail view."""
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("◀️ Kembali", callback_data="back_to_plugins")]
+    ])
+
+def get_plugin_by_name(name: str):
+    """Get plugin info by name."""
+    plugins = get_plugins()
+    for plugin in plugins:
+        if plugin["name"] == name:
+            return plugin
+    return None
 
 # ============================================================================
 # START COMMAND
@@ -105,12 +197,12 @@ async def start_handler(client: Client, message: Message):
 Hello {message.from_user.first_name}! I'm your personal assistant bot.
 
 **Features:**
-• ✨ Inline keyboards for all commands
-• 🚀 Fast response with Pyrogram
-• 🔒 Secure with Trio event loop
+• ✨ Inline keyboards for plugin help
+• 🚀 Fast response with Pyrogram + Trio
+• 🔒 Secure & authorized access
 
 **Available Commands:**
-/help - Interactive help menu
+/help - Interactive plugin help menu
 /alive - Bot status with buttons
 /ping - Check latency
 
@@ -120,12 +212,12 @@ Hello {message.from_user.first_name}! I'm your personal assistant bot.
     await message.reply(welcome_text)
 
 # ============================================================================
-# HELP COMMAND
+# HELP COMMAND WITH INLINE PLUGINS
 # ============================================================================
 
 @app.on_message(filters.command("help") & filters.private)
 async def help_handler(client: Client, message: Message):
-    """Show help menu with inline keyboard."""
+    """Show help menu with inline keyboard plugins."""
     user_id = message.from_user.id
 
     if not is_authorized(user_id):
@@ -134,183 +226,123 @@ async def help_handler(client: Client, message: Message):
 
     await log_action(user_id, "help")
 
-    help_text = """
+    # Get total plugins count
+    plugins = get_plugins()
+    total_plugins = len(plugins)
+
+    help_text = f"""
 🤩 **VZ ASSISTANT - HELP MENU**
 
-⛈ **Total Commands:** 27
-🌟 **Role:** SUDOER
+⛈ **Total Plugins:** {total_plugins}
+🌟 **Role:** {'DEVELOPER' if user_id in DEVELOPER_IDS else 'SUDOER'}
 ⚙️ **Prefix:** .
 
-**📋 Categories:**
-Select a category below to view commands
+**📋 Pilih Plugin:**
+Click plugin dibawah untuk melihat commands
 
 🤖 Powered by VzBot
 """
 
-    keyboard = InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton("📋 Basic", callback_data="help_cat_Basic"),
-            InlineKeyboardButton("👨‍💼 Admin", callback_data="help_cat_Admin")
-        ],
-        [
-            InlineKeyboardButton("📡 Broadcast", callback_data="help_cat_Broadcast"),
-            InlineKeyboardButton("👥 Group", callback_data="help_cat_Group")
-        ],
-        [
-            InlineKeyboardButton("ℹ️ Info", callback_data="help_cat_Info"),
-            InlineKeyboardButton("⚙️ Settings", callback_data="help_cat_Settings")
-        ],
-        [
-            InlineKeyboardButton("🔧 Plugins", callback_data="help_plugins"),
-            InlineKeyboardButton("👨‍💻 Dev", url="https://t.me/VZLfxs")
-        ],
-        [InlineKeyboardButton("❌ Close", callback_data="help_close")]
-    ])
-
+    keyboard = build_plugins_keyboard(page=0)
     await message.reply(help_text, reply_markup=keyboard)
 
 # ============================================================================
-# HELP CALLBACKS
+# CALLBACK HANDLERS
 # ============================================================================
 
-@app.on_callback_query(filters.regex(r"^help_cat_"))
-async def help_category_callback(client: Client, callback: CallbackQuery):
-    """Handle category selection."""
-    category = callback.data.replace("help_cat_", "")
+@app.on_callback_query(filters.regex(r"^page:\d+$"))
+async def page_callback(client: Client, callback: CallbackQuery):
+    """Handle pagination callback."""
+    page = int(callback.data.split(":")[1])
 
-    await log_action(callback.from_user.id, f"help_category:{category}")
+    await log_action(callback.from_user.id, f"page:{page}")
 
-    # Command database
-    commands_db = {
-        "Basic": [
-            ("`.ping`", "Check bot latency and uptime"),
-            ("`.alive`", "Show bot status and info"),
-            ("`.help`", "Show this help menu")
-        ],
-        "Admin": [
-            ("`.admin @user`", "Promote user to admin"),
-            ("`.unadmin @user`", "Demote admin to user")
-        ],
-        "Broadcast": [
-            ("`.gcast <msg>`", "Broadcast to all groups"),
-            ("`.bl`", "Add chat to blacklist"),
-            ("`.dbl`", "Remove from blacklist")
-        ],
-        "Group": [
-            ("`.tag <msg>`", "Tag all members"),
-            ("`.lock @user`", "Lock user messages"),
-            ("`.unlock @user`", "Unlock user")
-        ],
-        "Info": [
-            ("`.id`", "Get user/chat info"),
-            ("`.getfileid`", "Get media file ID")
-        ],
-        "Settings": [
-            ("`.prefix <new>`", "Change command prefix"),
-            ("`.pmon`", "Enable PM permit"),
-            ("`.pmoff`", "Disable PM permit")
-        ]
-    }
+    # Get total plugins count
+    plugins = get_plugins()
+    total_plugins = len(plugins)
 
-    commands = commands_db.get(category, [])
-
-    text = f"⛈ **{category} Commands**\n\n"
-    for cmd, desc in commands:
-        text += f"• {cmd} - {desc}\n"
-
-    text += "\n🤖 Use these commands in userbot"
-
-    keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("◀️ Back to Menu", callback_data="help_back")],
-        [InlineKeyboardButton("❌ Close", callback_data="help_close")]
-    ])
-
-    await callback.edit_message_text(text, reply_markup=keyboard)
-    await callback.answer()
-
-@app.on_callback_query(filters.regex(r"^help_plugins$"))
-async def help_plugins_callback(client: Client, callback: CallbackQuery):
-    """Show plugin list."""
-    await log_action(callback.from_user.id, "help_plugins")
-
-    text = """
-🤖 **VZ ASSISTANT - PLUGINS**
-
-📦 **Active Plugins:** 14
-
-✅ admin.py - Admin management
-✅ alive.py - Bot status display
-✅ broadcast.py - Group broadcast
-✅ group.py - Group utilities
-✅ help.py - Help system
-✅ info.py - Information commands
-✅ ping.py - Latency checker
-✅ settings.py - Bot settings
-✅ showjson.py - Message analyzer
-✅ payment.py - Payment info
-✅ approve.py - PM permit
-✅ developer.py - Dev commands
-✅ vc.py - Voice chat
-✅ broadcast_middleware.py
-
-🔧 All systems operational
-"""
-
-    keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("◀️ Back", callback_data="help_back")],
-        [InlineKeyboardButton("❌ Close", callback_data="help_close")]
-    ])
-
-    await callback.edit_message_text(text, reply_markup=keyboard)
-    await callback.answer()
-
-@app.on_callback_query(filters.regex(r"^help_back$"))
-async def help_back_callback(client: Client, callback: CallbackQuery):
-    """Return to main help menu."""
-    await log_action(callback.from_user.id, "help_back")
-
-    help_text = """
+    help_text = f"""
 🤩 **VZ ASSISTANT - HELP MENU**
 
-⛈ **Total Commands:** 27
-🌟 **Role:** SUDOER
+⛈ **Total Plugins:** {total_plugins}
+🌟 **Role:** {'DEVELOPER' if callback.from_user.id in DEVELOPER_IDS else 'SUDOER'}
 ⚙️ **Prefix:** .
 
-**📋 Categories:**
-Select a category below to view commands
+**📋 Pilih Plugin:**
+Click plugin dibawah untuk melihat commands
 
 🤖 Powered by VzBot
 """
 
-    keyboard = InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton("📋 Basic", callback_data="help_cat_Basic"),
-            InlineKeyboardButton("👨‍💼 Admin", callback_data="help_cat_Admin")
-        ],
-        [
-            InlineKeyboardButton("📡 Broadcast", callback_data="help_cat_Broadcast"),
-            InlineKeyboardButton("👥 Group", callback_data="help_cat_Group")
-        ],
-        [
-            InlineKeyboardButton("ℹ️ Info", callback_data="help_cat_Info"),
-            InlineKeyboardButton("⚙️ Settings", callback_data="help_cat_Settings")
-        ],
-        [
-            InlineKeyboardButton("🔧 Plugins", callback_data="help_plugins"),
-            InlineKeyboardButton("👨‍💻 Dev", url="https://t.me/VZLfxs")
-        ],
-        [InlineKeyboardButton("❌ Close", callback_data="help_close")]
-    ])
-
+    keyboard = build_plugins_keyboard(page=page)
     await callback.edit_message_text(help_text, reply_markup=keyboard)
-    await callback.answer("Returning to menu...")
+    await callback.answer()
 
-@app.on_callback_query(filters.regex(r"^help_close$"))
-async def help_close_callback(client: Client, callback: CallbackQuery):
-    """Close help menu."""
-    await log_action(callback.from_user.id, "help_close")
-    await callback.message.delete()
-    await callback.answer("Menu closed ✓")
+@app.on_callback_query(filters.regex(r"^plugin:"))
+async def plugin_callback(client: Client, callback: CallbackQuery):
+    """Handle plugin detail callback."""
+    plugin_name = callback.data.split(":", 1)[1]
+
+    await log_action(callback.from_user.id, f"plugin:{plugin_name}")
+
+    # Get plugin info
+    plugin = get_plugin_by_name(plugin_name)
+
+    if not plugin:
+        await callback.answer("Plugin not found", show_alert=True)
+        return
+
+    # Build detail text
+    emoji = plugin.get("emoji", "🔧")
+    display_name = plugin.get("display_name", plugin["name"])
+    description = plugin.get("description", "No description available")
+    commands = plugin.get("commands", [])
+
+    detail_text = f"""{emoji} **{display_name}**
+
+📝 **Description:**
+{description}
+
+⚡ **Commands:**
+"""
+
+    if commands:
+        for cmd in commands:
+            detail_text += f"• `{cmd}`\n"
+    else:
+        detail_text += "No commands documented\n"
+
+    detail_text += f"\n🤖 Use these commands in userbot"
+
+    keyboard = build_plugin_detail_keyboard()
+    await callback.edit_message_text(detail_text, reply_markup=keyboard)
+    await callback.answer()
+
+@app.on_callback_query(filters.regex(r"^back_to_plugins$"))
+async def back_callback(client: Client, callback: CallbackQuery):
+    """Handle back to plugins list."""
+    await log_action(callback.from_user.id, "back_to_plugins")
+
+    # Return to help menu
+    plugins = get_plugins()
+    total_plugins = len(plugins)
+
+    help_text = f"""
+🤩 **VZ ASSISTANT - HELP MENU**
+
+⛈ **Total Plugins:** {total_plugins}
+🌟 **Role:** {'DEVELOPER' if callback.from_user.id in DEVELOPER_IDS else 'SUDOER'}
+⚙️ **Prefix:** .
+
+**📋 Pilih Plugin:**
+Click plugin dibawah untuk melihat commands
+
+🤖 Powered by VzBot
+"""
+
+    keyboard = build_plugins_keyboard(page=0)
+    await callback.edit_message_text(help_text, reply_markup=keyboard)
+    await callback.answer("Kembali ke menu")
 
 # ============================================================================
 # ALIVE COMMAND
@@ -333,8 +365,8 @@ async def alive_handler(client: Client, message: Message):
 👨‍💻 **Founder:** Vzoel Fox's
 🌟 **Owner:** @itspizolpoks
 ⛈ **Versi:** 0.0.0.69
-👨‍💻 **Telethon × Python 3+**
-♾ **Total Plugin:** 14
+👨‍💻 **Pyrogram × Trio**
+♾ **Total Plugin:** Auto-loaded
 🎚 **Status:** ✅ Active
 
 🤩 Powered by VzBot
@@ -355,39 +387,24 @@ async def alive_help_callback(client: Client, callback: CallbackQuery):
     """Open help from alive button."""
     await log_action(callback.from_user.id, "alive_to_help")
 
-    help_text = """
+    # Show help menu
+    plugins = get_plugins()
+    total_plugins = len(plugins)
+
+    help_text = f"""
 🤩 **VZ ASSISTANT - HELP MENU**
 
-⛈ **Total Commands:** 27
-🌟 **Role:** SUDOER
+⛈ **Total Plugins:** {total_plugins}
+🌟 **Role:** {'DEVELOPER' if callback.from_user.id in DEVELOPER_IDS else 'SUDOER'}
 ⚙️ **Prefix:** .
 
-**📋 Categories:**
-Select a category below to view commands
+**📋 Pilih Plugin:**
+Click plugin dibawah untuk melihat commands
 
 🤖 Powered by VzBot
 """
 
-    keyboard = InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton("📋 Basic", callback_data="help_cat_Basic"),
-            InlineKeyboardButton("👨‍💼 Admin", callback_data="help_cat_Admin")
-        ],
-        [
-            InlineKeyboardButton("📡 Broadcast", callback_data="help_cat_Broadcast"),
-            InlineKeyboardButton("👥 Group", callback_data="help_cat_Group")
-        ],
-        [
-            InlineKeyboardButton("ℹ️ Info", callback_data="help_cat_Info"),
-            InlineKeyboardButton("⚙️ Settings", callback_data="help_cat_Settings")
-        ],
-        [
-            InlineKeyboardButton("🔧 Plugins", callback_data="help_plugins"),
-            InlineKeyboardButton("👨‍💻 Dev", url="https://t.me/VZLfxs")
-        ],
-        [InlineKeyboardButton("❌ Close", callback_data="help_close")]
-    ])
-
+    keyboard = build_plugins_keyboard(page=0)
     await callback.edit_message_text(help_text, reply_markup=keyboard)
     await callback.answer()
 
@@ -435,6 +452,11 @@ def main():
     logger.info(f"Bot Token: {BOT_TOKEN[:20]}...")
     logger.info(f"Owner ID: {OWNER_ID}")
     logger.info("Event Loop: Trio (Structured Concurrency)")
+
+    # Load plugins on startup
+    plugins = get_plugins()
+    logger.info(f"Loaded {len(plugins)} plugins")
+    print(f"✅ Loaded {len(plugins)} plugins")
     print()
 
     # Run bot with Trio (Pyrogram will use Trio automatically if available)
