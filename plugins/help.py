@@ -390,15 +390,16 @@ Select a category to view commands
             if hasattr(event, 'respond'):
                 await event.respond(help_text)
 
-async def show_help_plugin_info(event, is_developer=False):
+async def show_help_plugin_info(event, is_developer=False, expanded_plugin=None):
     global vz_client, vz_emoji
 
-    """Show plugin metadata list with inline buttons."""
+    """Show plugin metadata list with inline toggles."""
     main_emoji = vz_emoji.getemoji('utama')
     robot_emoji = vz_emoji.getemoji('robot')
     petir_emoji = vz_emoji.getemoji('petir')
     telegram_emoji = vz_emoji.getemoji('telegram')
     nyala_emoji = vz_emoji.getemoji('nyala')
+    gear_emoji = vz_emoji.getemoji('gear')
 
     total_plugins = len(PLUGIN_METADATA)
     total_commands = count_total_commands(is_developer)
@@ -410,20 +411,40 @@ async def show_help_plugin_info(event, is_developer=False):
 {petir_emoji} **Total Commands Terdata:** {total_commands}
 
 {nyala_emoji} **Petunjuk:**
-Pilih salah satu plugin di bawah untuk melihat detail modul dan ringkasan perintah.
+Klik plugin untuk expand/collapse detail.
 
-{robot_emoji} Plugins Digunakan: **HELP**
-{petir_emoji} by {main_emoji} {config.RESULT_FOOTER}
 """
 
     kb = KeyboardBuilder()
 
     for index, plugin in enumerate(PLUGIN_METADATA):
+        plugin_id = plugin['id']
+        is_expanded = (expanded_plugin == plugin_id)
+
+        # Determine toggle icon
+        toggle_icon = "▼" if is_expanded else "▶"
+
+        # Add plugin toggle button
         kb.add_button(
-            f"{robot_emoji} {plugin['display_name']}",
-            f"help_plugin_detail_{plugin['id']}",
-            same_row=(index % 2 == 1)
+            f"{toggle_icon} {plugin['display_name']}",
+            f"help_plugin_toggle_{plugin_id}",
+            same_row=False
         )
+
+        # If expanded, show details inline
+        if is_expanded:
+            plugin_text += f"\n{gear_emoji} **{plugin['display_name']} Details:**\n"
+            plugin_text += f"  • File: `{plugin['filename']}`\n"
+            plugin_text += f"  • Deskripsi: {plugin['summary'] or 'Ringkasan belum tersedia'}\n"
+
+            if plugin['commands']:
+                plugin_text += f"  • Perintah:\n"
+                for command in plugin['commands']:
+                    plugin_text += f"    - {command}\n"
+            plugin_text += "\n"
+
+    plugin_text += f"{robot_emoji} Plugins Digunakan: **HELP**\n"
+    plugin_text += f"{petir_emoji} by {main_emoji} {config.RESULT_FOOTER}"
 
     kb.add_button("◀️ Kembali", "help_plugin_toggle_hide")
     kb.add_button("❌ Close", "help_close", same_row=True)
@@ -436,55 +457,6 @@ Pilih salah satu plugin di bawah untuk melihat detail modul dan ringkasan perint
         await message.edit(plugin_text, buttons=buttons)
     except Exception:
         await vz_client.edit_with_premium_emoji(message, plugin_text)
-
-
-async def show_help_plugin_detail(event, plugin_id):
-    global vz_client, vz_emoji
-
-    """Show detailed metadata for a single plugin."""
-    plugin = next((item for item in PLUGIN_METADATA if item['id'] == plugin_id), None)
-
-    if not plugin:
-        await event.answer("❌ Plugin tidak ditemukan", alert=True)
-        return
-
-    main_emoji = vz_emoji.getemoji('utama')
-    robot_emoji = vz_emoji.getemoji('robot')
-    petir_emoji = vz_emoji.getemoji('petir')
-    nyala_emoji = vz_emoji.getemoji('nyala')
-    gear_emoji = vz_emoji.getemoji('gear')
-
-    plugin_text = f"""
-{robot_emoji} **{plugin['display_name']} Plugin Info**
-
-{gear_emoji} **File:** `{plugin['filename']}`
-{nyala_emoji} **Deskripsi:** {plugin['summary'] or 'Ringkasan belum tersedia'}
-"""
-
-    if plugin['commands']:
-        plugin_text += "\n**Perintah (Docstring):**\n"
-        for command in plugin['commands']:
-            plugin_text += f"• {command}\n"
-
-    plugin_text += f"""
-
-{robot_emoji} Plugins Digunakan: **{plugin['display_name'].upper()}**
-{petir_emoji} by {main_emoji} {config.RESULT_FOOTER}
-"""
-
-    kb = KeyboardBuilder()
-    kb.add_button("◀️ Daftar Plugin", "help_plugin_toggle_show")
-    kb.add_button("🏠 Menu", "help_home", same_row=True)
-    kb.add_button("❌ Close", "help_close")
-
-    buttons = kb.build()
-
-    try:
-        await message.edit(plugin_text, buttons=buttons)
-    except Exception:
-        await vz_client.edit_with_premium_emoji(message, plugin_text)
-
-    await event.answer()
 
 # ============================================================================
 # CALLBACK HANDLERS
@@ -507,12 +479,39 @@ async def help_plugin_toggle_callback(event):
         await event.answer(f"{vz_emoji.getemoji('robot')} Kembali ke menu bantuan")
 
 
-@events.register(events.CallbackQuery(pattern=b"help_plugin_detail_.*"))
-async def help_plugin_detail_callback(event):
-    """Handle detailed plugin info requests."""
+@events.register(events.CallbackQuery(pattern=b"help_plugin_toggle_(?!show|hide).*"))
+async def help_plugin_toggle_inline_callback(event):
+    """Handle inline plugin toggle (expand/collapse)."""
+    global vz_client, vz_emoji
 
-    plugin_id = event.data.decode('utf-8').replace("help_plugin_detail_", "")
-    await show_help_plugin_detail(event, plugin_id)
+    data = event.data.decode('utf-8')
+    plugin_id = data.replace("help_plugin_toggle_", "")
+
+    user_id = event.sender_id
+    is_developer = config.is_developer(user_id)
+
+    # Check if plugin exists
+    plugin = next((item for item in PLUGIN_METADATA if item['id'] == plugin_id), None)
+
+    if not plugin:
+        await event.answer("❌ Plugin tidak ditemukan", alert=True)
+        return
+
+    # Toggle: if it's already expanded, collapse it (set to None), otherwise expand it
+    # We determine current state by checking the button text in the message
+    message_text = event.message.text if hasattr(event, 'message') else ""
+    is_currently_expanded = f"▼ {plugin['display_name']}" in message_text
+
+    expanded_plugin = None if is_currently_expanded else plugin_id
+
+    # Refresh the plugin info view with the new expanded state
+    await show_help_plugin_info(event, is_developer, expanded_plugin=expanded_plugin)
+
+    # Provide feedback
+    if expanded_plugin:
+        await event.answer(f"▼ {plugin['display_name']} expanded")
+    else:
+        await event.answer(f"▶ {plugin['display_name']} collapsed")
 
 
 @events.register(events.CallbackQuery(pattern=b"help_cat_.*"))
