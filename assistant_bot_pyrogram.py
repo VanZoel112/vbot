@@ -18,6 +18,9 @@ from pyrogram.types import (
     InlineKeyboardMarkup,
     InlineKeyboardButton,
     CallbackQuery,
+    InlineQuery,
+    InlineQueryResultArticle,
+    InputTextMessageContent,
     Message
 )
 from dotenv import load_dotenv
@@ -164,6 +167,25 @@ def build_plugin_detail_keyboard():
         [InlineKeyboardButton("◀️ Kembali", callback_data="back_to_plugins")]
     ])
 
+
+def build_help_text(user_id: int, total_plugins: int, page: int = 0, total_pages: int = 1) -> str:
+    """Build the help text message for inline and command responses."""
+    role = 'DEVELOPER' if user_id in DEVELOPER_IDS else 'SUDOER'
+    help_text = (
+        "🤩 **VZ ASSISTANT - HELP MENU**\n\n"
+        f"⛈ **Total Plugins:** {total_plugins}\n"
+        f"🌟 **Role:** {role}\n"
+        "⚙️ **Prefix:** .\n\n"
+        "**📋 Pilih Plugin:**\n"
+        "Click plugin dibawah untuk melihat commands\n\n"
+        "🤖 Powered by VzBot"
+    )
+
+    if total_pages > 1:
+        help_text += f"\n\n📄 **Halaman:** {page + 1}/{total_pages}"
+
+    return help_text
+
 def get_plugin_by_name(name: str):
     """Get plugin info by name."""
     plugins = get_plugins()
@@ -229,22 +251,55 @@ async def help_handler(client: Client, message: Message):
     # Get total plugins count
     plugins = get_plugins()
     total_plugins = len(plugins)
+    total_pages = max((total_plugins + PLUGINS_PER_PAGE - 1) // PLUGINS_PER_PAGE, 1)
 
-    help_text = f"""
-🤩 **VZ ASSISTANT - HELP MENU**
-
-⛈ **Total Plugins:** {total_plugins}
-🌟 **Role:** {'DEVELOPER' if user_id in DEVELOPER_IDS else 'SUDOER'}
-⚙️ **Prefix:** .
-
-**📋 Pilih Plugin:**
-Click plugin dibawah untuk melihat commands
-
-🤖 Powered by VzBot
-"""
-
+    help_text = build_help_text(user_id, total_plugins, page=0, total_pages=total_pages)
     keyboard = build_plugins_keyboard(page=0)
     await message.reply(help_text, reply_markup=keyboard)
+
+# ============================================================================
+# INLINE QUERY HANDLER
+# ============================================================================
+
+@app.on_inline_query()
+async def inline_help_query(client: Client, inline_query: InlineQuery):
+    """Provide inline help result for authorized users."""
+    user_id = inline_query.from_user.id
+
+    if not is_authorized(user_id):
+        await inline_query.answer([], cache_time=5, is_personal=True)
+        return
+
+    query = (inline_query.query or "").strip().lower()
+    page = 0
+
+    if query.startswith("page:"):
+        try:
+            page = max(int(query.split(":", 1)[1]), 0)
+        except ValueError:
+            page = 0
+
+    plugins = get_plugins()
+    total_plugins = len(plugins)
+    total_pages = max((total_plugins + PLUGINS_PER_PAGE - 1) // PLUGINS_PER_PAGE, 1)
+    page = min(page, total_pages - 1)
+
+    await log_action(user_id, f"inline_help:{query or 'default'}")
+
+    help_text = build_help_text(user_id, total_plugins, page=page, total_pages=total_pages)
+    keyboard = build_plugins_keyboard(page=page)
+
+    result = InlineQueryResultArticle(
+        title=f"VZ Assistant Help (Halaman {page + 1})",
+        description="Buka menu bantuan plugin interaktif",
+        input_message_content=InputTextMessageContent(
+            help_text,
+            parse_mode="markdown",
+        ),
+        reply_markup=keyboard,
+    )
+
+    await inline_query.answer([result], cache_time=0, is_personal=True)
 
 # ============================================================================
 # CALLBACK HANDLERS
@@ -260,20 +315,9 @@ async def page_callback(client: Client, callback: CallbackQuery):
     # Get total plugins count
     plugins = get_plugins()
     total_plugins = len(plugins)
+    total_pages = max((total_plugins + PLUGINS_PER_PAGE - 1) // PLUGINS_PER_PAGE, 1)
 
-    help_text = f"""
-🤩 **VZ ASSISTANT - HELP MENU**
-
-⛈ **Total Plugins:** {total_plugins}
-🌟 **Role:** {'DEVELOPER' if callback.from_user.id in DEVELOPER_IDS else 'SUDOER'}
-⚙️ **Prefix:** .
-
-**📋 Pilih Plugin:**
-Click plugin dibawah untuk melihat commands
-
-🤖 Powered by VzBot
-"""
-
+    help_text = build_help_text(callback.from_user.id, total_plugins, page=page, total_pages=total_pages)
     keyboard = build_plugins_keyboard(page=page)
     await callback.edit_message_text(help_text, reply_markup=keyboard)
     await callback.answer()
@@ -326,20 +370,9 @@ async def back_callback(client: Client, callback: CallbackQuery):
     # Return to help menu
     plugins = get_plugins()
     total_plugins = len(plugins)
+    total_pages = max((total_plugins + PLUGINS_PER_PAGE - 1) // PLUGINS_PER_PAGE, 1)
 
-    help_text = f"""
-🤩 **VZ ASSISTANT - HELP MENU**
-
-⛈ **Total Plugins:** {total_plugins}
-🌟 **Role:** {'DEVELOPER' if callback.from_user.id in DEVELOPER_IDS else 'SUDOER'}
-⚙️ **Prefix:** .
-
-**📋 Pilih Plugin:**
-Click plugin dibawah untuk melihat commands
-
-🤖 Powered by VzBot
-"""
-
+    help_text = build_help_text(callback.from_user.id, total_plugins, page=0, total_pages=total_pages)
     keyboard = build_plugins_keyboard(page=0)
     await callback.edit_message_text(help_text, reply_markup=keyboard)
     await callback.answer("Kembali ke menu")
@@ -390,20 +423,9 @@ async def alive_help_callback(client: Client, callback: CallbackQuery):
     # Show help menu
     plugins = get_plugins()
     total_plugins = len(plugins)
+    total_pages = max((total_plugins + PLUGINS_PER_PAGE - 1) // PLUGINS_PER_PAGE, 1)
 
-    help_text = f"""
-🤩 **VZ ASSISTANT - HELP MENU**
-
-⛈ **Total Plugins:** {total_plugins}
-🌟 **Role:** {'DEVELOPER' if callback.from_user.id in DEVELOPER_IDS else 'SUDOER'}
-⚙️ **Prefix:** .
-
-**📋 Pilih Plugin:**
-Click plugin dibawah untuk melihat commands
-
-🤖 Powered by VzBot
-"""
-
+    help_text = build_help_text(callback.from_user.id, total_plugins, page=0, total_pages=total_pages)
     keyboard = build_plugins_keyboard(page=0)
     await callback.edit_message_text(help_text, reply_markup=keyboard)
     await callback.answer()

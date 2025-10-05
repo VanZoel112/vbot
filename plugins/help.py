@@ -7,19 +7,19 @@ Founder & DEVELOPER : @VZLfxs
 """
 
 import ast
+import logging
 import os
 from typing import Dict, List
 
 from telethon import events
 import config
-from utils.animation import animate_loading
-# Note: help.py can use animate_loading as it's generic enough
-# or can create help-specific animation in utils/animation.py later
-from helpers.inline import KeyboardBuilder
 
 # Global variables (set by main.py)
 vz_client = None
 vz_emoji = None
+
+
+logger = logging.getLogger(__name__)
 
 
 def _load_plugin_metadata() -> List[Dict[str, object]]:
@@ -290,6 +290,39 @@ def count_total_commands(is_developer=False):
         count += sum(len(cmds) for cmds in DEVELOPER_COMMANDS.values())
     return count
 
+
+def build_sudoer_help_text(emoji_manager) -> str:
+    """Build the static sudoer help text."""
+    main_emoji = emoji_manager.getemoji('utama')
+    petir_emoji = emoji_manager.getemoji('petir')
+    robot_emoji = emoji_manager.getemoji('robot')
+    gear_emoji = emoji_manager.getemoji('gear')
+    owner_emoji = emoji_manager.getemoji('owner')
+
+    total_commands = count_total_commands(is_developer=False)
+
+    help_text = f"""{main_emoji} **VZ ASSISTANT - HELP MENU**
+
+{petir_emoji} **Total Commands:** {total_commands}
+{owner_emoji} **Role:** SUDOER
+{gear_emoji} **Prefix:** {config.DEFAULT_PREFIX}
+
+"""
+
+    for category, commands in SUDOERS_COMMANDS.items():
+        help_text += f"\n**{petir_emoji} {category.upper()} COMMANDS:**\n"
+        for cmd_data in commands.values():
+            help_text += f"• `{cmd_data['cmd']}` - {cmd_data['desc']}\n"
+
+    help_text += f"""{gear_emoji} **Usage:** Type command for details
+{robot_emoji} **Example:** `.ping`, `.admin @user`, `.gcast hello`
+
+{robot_emoji} Plugins Digunakan: **HELP**
+{petir_emoji} by {main_emoji} {config.RESULT_FOOTER}
+"""
+
+    return help_text
+
 # ============================================================================
 # HELP COMMAND (SUDOERS)
 # ============================================================================
@@ -299,52 +332,66 @@ async def help_handler(event):
     global vz_client, vz_emoji
 
     """
-    .help - Show sudoers command help (text-based)
+    .help - Open interactive help via assistant bot.
 
-    Displays all available commands for sudoers:
-    - Basic commands
-    - Admin commands
-    - Broadcast commands
-    - Group commands
-    - Info commands
-    - Settings commands
+    Tries to launch the assistant bot inline browser and falls back to
+    the static command list if the assistant is unavailable.
     """
-    user_id = event.sender_id
-
-    # Get emojis
-    main_emoji = vz_emoji.getemoji('utama')
-    petir_emoji = vz_emoji.getemoji('petir')
-    robot_emoji = vz_emoji.getemoji('robot')
+    warning_emoji = vz_emoji.getemoji('merah')
     gear_emoji = vz_emoji.getemoji('gear')
-    owner_emoji = vz_emoji.getemoji('owner')
+    robot_emoji = vz_emoji.getemoji('robot')
 
-    # Count total commands
-    total_commands = count_total_commands(is_developer=False)
+    assistant_username = getattr(config, 'ASSISTANT_BOT_USERNAME', None)
+    fallback_prefix = None
+    fallback_target = event
 
-    # Build help text
-    help_text = f"""{main_emoji} **VZ ASSISTANT - HELP MENU**
+    if assistant_username:
+        opening_text = (
+            f"{robot_emoji} **Membuka inline help...**\n"
+            f"{gear_emoji} Mohon tunggu sebentar."
+        )
+        status_msg = await vz_client.edit_with_premium_emoji(event, opening_text)
+        fallback_target = status_msg
 
-{petir_emoji} **Total Commands:** {total_commands}
-{owner_emoji} **Role:** SUDOER
-{gear_emoji} **Prefix:** {config.DEFAULT_PREFIX}
+        try:
+            results = await event.client.inline_query(assistant_username, 'help')
+            if not results:
+                raise RuntimeError('Assistant bot returned no inline results')
 
-"""
+            await results[0].click(
+                event.chat_id,
+                reply_to=event.reply_to_msg_id,
+                hide_via=True,
+                clear_draft=True,
+            )
 
-    # Add all sudoers command categories
-    for category, commands in SUDOERS_COMMANDS.items():
-        help_text += f"\n**{petir_emoji} {category.upper()} COMMANDS:**\n"
-        for cmd_name, cmd_data in commands.items():
-            help_text += f"• `{cmd_data['cmd']}` - {cmd_data['desc']}\n"
+            await status_msg.delete()
+            return
+        except Exception as inline_error:
+            logger.warning(
+                'Failed to open inline help via %s: %s',
+                assistant_username,
+                inline_error,
+            )
+            fallback_prefix = (
+                f"{warning_emoji} **Inline help tidak tersedia saat ini.**\n"
+                f"{gear_emoji} Menampilkan menu bantuan standar.\n\n"
+            )
 
-    help_text += f"""
-{gear_emoji} **Usage:** Type command for details
-{robot_emoji} **Example:** `.ping`, `.admin @user`, `.gcast hello`
+    if fallback_prefix is None:
+        if assistant_username:
+            fallback_prefix = (
+                f"{warning_emoji} **Tidak dapat menampilkan inline help.**\n"
+                f"{gear_emoji} Menampilkan menu bantuan standar.\n\n"
+            )
+        else:
+            fallback_prefix = (
+                f"{warning_emoji} **Assistant bot belum dikonfigurasi.**\n"
+                f"{gear_emoji} Set `ASSISTANT_BOT_USERNAME` untuk mengaktifkan inline help.\n\n"
+            )
 
-{robot_emoji} Plugins Digunakan: **HELP**
-{petir_emoji} by {main_emoji} {config.RESULT_FOOTER}
-"""
-
-    await vz_client.edit_with_premium_emoji(event, help_text)
+    fallback_text = fallback_prefix + build_sudoer_help_text(vz_emoji)
+    await vz_client.edit_with_premium_emoji(fallback_target, fallback_text)
 
 # ============================================================================
 # HELPRO COMMAND (DEVELOPERS ONLY)

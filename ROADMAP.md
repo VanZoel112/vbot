@@ -240,6 +240,7 @@ databases/
 - [ ] Sudoers get triggered by developer's PM permit
 
 #### 3.11 HELP (.help)
+- [x] Userbot `.help` membuka inline browser via assistant bot (fallback otomatis bila offline)
 - [ ] Inline button interface
 - [ ] List all plugins + functions
 - [ ] Hide developer-only plugins for sudoers
