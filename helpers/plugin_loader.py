@@ -75,6 +75,33 @@ def parse_plugin_file(filepath: str, plugin_name: str) -> Dict[str, any]:
 
         # Extract commands
         commands = []
+        seen_commands = set()
+
+        def add_command_line(line: str):
+            cleaned = line.strip()
+            if cleaned and cleaned not in seen_commands:
+                commands.append(cleaned)
+                seen_commands.add(cleaned)
+
+        # Collect commands from handler docstrings
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                if any(_is_events_register_decorator(dec) for dec in node.decorator_list):
+                    handler_doc = ast.get_docstring(node) or ""
+                    handler_lines = [ln.strip() for ln in handler_doc.split("\n")]
+
+                    collected = []
+                    for ln in handler_lines:
+                        stripped = ln.strip()
+                        if not stripped:
+                            if collected:
+                                break
+                            continue
+                        collected.append(stripped)
+                    for collected_line in collected:
+                        add_command_line(collected_line)
+
+        # Extract commands from module docstring ("Commands" section)
         in_commands_section = False
 
         for line in lines:
@@ -86,10 +113,10 @@ def parse_plugin_file(filepath: str, plugin_name: str) -> Dict[str, any]:
                 if line.startswith("-") or line.startswith("•"):
                     # Remove bullet point
                     cmd_line = line.lstrip("-•").strip()
-                    commands.append(cmd_line)
+                    add_command_line(cmd_line)
                 elif line.startswith("."):
                     # Direct command
-                    commands.append(line)
+                    add_command_line(line)
                 else:
                     # End of commands section
                     if commands:
@@ -109,6 +136,19 @@ def parse_plugin_file(filepath: str, plugin_name: str) -> Dict[str, any]:
     except Exception as e:
         print(f"Error parsing {filepath}: {e}")
         return None
+
+
+def _is_events_register_decorator(decorator: ast.AST) -> bool:
+    """Return True if decorator targets events.register."""
+    target = decorator
+    if isinstance(decorator, ast.Call):
+        target = decorator.func
+
+    if isinstance(target, ast.Attribute):
+        value = target.value
+        if isinstance(value, ast.Name):
+            return value.id == "events" and target.attr == "register"
+    return False
 
 
 def get_plugin_emoji(plugin_name: str) -> str:
