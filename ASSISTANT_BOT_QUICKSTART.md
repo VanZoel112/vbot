@@ -20,6 +20,7 @@ Update `.env` dengan token assistant bot:
 ```env
 ASSISTANT_BOT_TOKEN=8314911312:AAEZTrlru95_QNycAt4TlYH_k-7q2f_PQ9c
 OWNER_ID=7553981355
+ASSISTANT_BOT_USERNAME=VzAssistantBot
 ```
 
 ### 3. Run Assistant Bot
@@ -60,13 +61,13 @@ screen -dmS assistant python3 assistant_bot_pyrogram.py
 ### Test Inline Keyboards
 1. Start bot: `python3 assistant_bot_pyrogram.py`
 2. Open Telegram dan chat dengan bot
-3. Kirim `/help`
+3. Kirim `/help` *(atau jalankan `.help` di userbot untuk membuka inline browser)*
 4. Click category buttons untuk navigate
 5. Test `/alive` untuk debug
 
 ### Debug Commands
 Bot ini dibuat khusus untuk debug:
-- `.help` - debug help menu
+- `.help` - inline help menu (dipicu dari userbot & bot)
 - `.alive` - debug alive message
 - `.joinvc` - debug voice chat
 

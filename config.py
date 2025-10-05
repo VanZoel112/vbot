@@ -37,6 +37,9 @@ FOUNDER_USERNAME = "@VZLfxs"
 FOUNDER_LINK = "t.me/VZLfxs"
 BRANDING_FOOTER = "2025© Vzoel Fox's Lutpan"
 
+# Assistant bot bridge
+ASSISTANT_BOT_USERNAME = os.getenv("ASSISTANT_BOT_USERNAME")
+
 # Deploy Bot Configuration
 DEPLOY_BOT_USERNAME = os.getenv("DEPLOY_BOT_USERNAME", "@VZDeployBot")  # Set in .env
 
