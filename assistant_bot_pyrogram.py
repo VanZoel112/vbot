@@ -61,6 +61,14 @@ API_HASH = "717957f0e3ae20a7db004d08b66bfd30"
 DEVELOPER_IDS = [8024282347, 7553981355]
 OWNER_ID = int(os.getenv("OWNER_ID", "7553981355"))
 
+# Log group
+LOG_GROUP_ID = os.getenv("LOG_GROUP_ID")
+if LOG_GROUP_ID:
+    try:
+        LOG_GROUP_ID = int(LOG_GROUP_ID)
+    except ValueError:
+        LOG_GROUP_ID = None
+
 # Pagination settings
 PLUGINS_PER_PAGE = 9  # 3x3 grid
 
@@ -429,6 +437,122 @@ async def alive_help_callback(client: Client, callback: CallbackQuery):
     keyboard = build_plugins_keyboard(page=0)
     await callback.edit_message_text(help_text, reply_markup=keyboard)
     await callback.answer()
+
+# ============================================================================
+# LOG MANAGER COMMANDS
+# ============================================================================
+
+@app.on_message(filters.command("log") & filters.private)
+async def log_command_handler(client: Client, message: Message):
+    """Send log to log group."""
+    user_id = message.from_user.id
+
+    if not is_authorized(user_id):
+        await message.reply("❌ Access Denied")
+        return
+
+    if not LOG_GROUP_ID:
+        await message.reply(
+            "⚠️ **Log Group tidak dikonfigurasi**\n\n"
+            "Set `LOG_GROUP_ID` di `.env` untuk enable logging"
+        )
+        return
+
+    # Get log message
+    log_text = message.text.split(maxsplit=1)[1] if len(message.text.split()) > 1 else None
+
+    if not log_text:
+        await message.reply("❌ **Usage:** `/log <message>`")
+        return
+
+    await log_action(user_id, f"manual_log")
+
+    # Format log
+    log_msg = f"""
+📝 **Manual Log**
+
+👤 **From:** {message.from_user.first_name} (@{message.from_user.username or 'no_username'})
+🆔 **User ID:** `{user_id}`
+📅 **Time:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+💬 **Message:**
+{log_text}
+
+🤖 via VZ Assistant Bot
+"""
+
+    try:
+        await client.send_message(LOG_GROUP_ID, log_msg)
+        await message.reply("✅ **Log sent to group**")
+    except Exception as e:
+        await message.reply(f"❌ **Failed to send log:** `{str(e)}`")
+        logger.error(f"Failed to send log: {e}")
+
+@app.on_message(filters.command("logs") & filters.private)
+async def logs_list_handler(client: Client, message: Message):
+    """Show recent logs info."""
+    user_id = message.from_user.id
+
+    if not is_authorized(user_id):
+        await message.reply("❌ Access Denied")
+        return
+
+    await log_action(user_id, "logs_info")
+
+    if not LOG_GROUP_ID:
+        logs_text = """
+📊 **Log Manager**
+
+⚠️ **Status:** Not Configured
+
+Set `LOG_GROUP_ID` di `.env` untuk enable logging
+
+**Commands:**
+• `/log <msg>` - Send log manual
+• `/logs` - Log manager info
+
+🤖 VZ Assistant Bot
+"""
+    else:
+        logs_text = f"""
+📊 **Log Manager**
+
+✅ **Status:** Active
+📍 **Log Group:** `{LOG_GROUP_ID}`
+
+**Commands:**
+• `/log <msg>` - Send log manual
+• `/logs` - Log manager info
+
+🤖 Semua command logs otomatis dikirim ke group
+"""
+
+    await message.reply(logs_text)
+
+# ============================================================================
+# AUTO LOG HELPER
+# ============================================================================
+
+async def send_command_log(client: Client, user_id: int, username: str, first_name: str, command: str):
+    """Helper to send command log to log group."""
+    if not LOG_GROUP_ID:
+        return
+
+    log_msg = f"""
+⚡ **Command Log**
+
+👤 **User:** {first_name} (@{username or 'no_username'})
+🆔 **ID:** `{user_id}`
+💬 **Command:** `{command}`
+📅 **Time:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+🤖 via VZ Assistant Bot
+"""
+
+    try:
+        await client.send_message(LOG_GROUP_ID, log_msg)
+    except Exception as e:
+        logger.error(f"Failed to send command log: {e}")
 
 # ============================================================================
 # PING COMMAND
