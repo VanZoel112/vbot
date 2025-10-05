@@ -78,6 +78,78 @@ class BotFatherClient:
 
             return None
 
+    async def find_existing_bot(self, pattern="vzoelassistant"):
+        """
+        Find existing bot matching pattern from BotFather.
+
+        Args:
+            pattern: Username pattern to match
+
+        Returns:
+            str: Bot username if found, None otherwise
+        """
+        try:
+            # Send /mybots
+            await self.client.send_message(self.BOTFATHER_USERNAME, "/mybots")
+            await asyncio.sleep(1.5)
+
+            response = await self._get_latest_message()
+            if not response:
+                return None
+
+            # Parse bot list
+            lines = response.split("\n")
+            for line in lines:
+                if "@" in line and pattern in line.lower():
+                    # Extract @username
+                    parts = line.split("@")
+                    if len(parts) > 1:
+                        username = parts[1].split()[0].strip().rstrip(".")
+                        return username
+
+            return None
+
+        except Exception as e:
+            print(f"⚠️  Error finding existing bot: {e}")
+            return None
+
+    async def get_token_from_botfather(self, username):
+        """
+        Get bot token from BotFather for specific username.
+
+        Args:
+            username: Bot username
+
+        Returns:
+            str: Bot token if found, None otherwise
+        """
+        try:
+            # Send /token
+            await self.client.send_message(self.BOTFATHER_USERNAME, "/token")
+            await asyncio.sleep(1.5)
+
+            # Get bot list
+            response = await self._get_latest_message()
+            if not response or "Choose a bot" not in response:
+                return None
+
+            # Send bot username
+            await self.client.send_message(self.BOTFATHER_USERNAME, f"@{username}")
+            await asyncio.sleep(2)
+
+            # Get token response
+            response = await self._get_latest_message()
+            if not response:
+                return None
+
+            # Extract token
+            token = self._extract_token(response)
+            return token
+
+        except Exception as e:
+            print(f"⚠️  Error getting token from BotFather: {e}")
+            return None
+
     async def create_assistant_bot(self, base_username="vzoelassistant"):
         """
         Auto-create assistant bot from BotFather.
@@ -252,6 +324,13 @@ async def setup_assistant_bot(client: TelegramClient):
     """
     Setup assistant bot - create if not exists, start bot process.
 
+    Flow:
+    1. Check .env for ASSISTANT_BOT_TOKEN
+    2. If exists → verify & update description
+    3. If not exists → check existing bots in BotFather
+    4. If found existing → get token & save
+    5. If not found → create new bot
+
     Args:
         client: Telethon client instance
 
@@ -261,55 +340,12 @@ async def setup_assistant_bot(client: TelegramClient):
     # Check if token already exists
     bot_token = os.getenv("ASSISTANT_BOT_TOKEN")
     botfather = BotFatherClient(client)
+    bot_username = None
 
-    if not bot_token:
-        print("\n🤖 Assistant Bot Token not found")
-        print("📝 Auto-creating bot via BotFather...")
-
-        # Create bot via BotFather
-        bot_token, bot_username = await botfather.create_assistant_bot()
-
-        if not bot_token:
-            print("❌ Failed to create assistant bot")
-            return False
-
-        print(f"✅ Bot created: @{bot_username}")
-        print(f"🔑 Token: {bot_token[:20]}...")
-
-        # Save to .env
-        env_path = os.path.join(os.getcwd(), ".env")
-
-        # Read existing .env
-        env_content = ""
-        if os.path.exists(env_path):
-            with open(env_path, "r") as f:
-                env_content = f.read()
-
-        # Add or update token
-        if "ASSISTANT_BOT_TOKEN=" in env_content:
-            # Update existing
-            lines = env_content.split("\n")
-            for i, line in enumerate(lines):
-                if line.startswith("ASSISTANT_BOT_TOKEN="):
-                    lines[i] = f"ASSISTANT_BOT_TOKEN={bot_token}"
-            env_content = "\n".join(lines)
-        else:
-            # Add new
-            env_content += f"\nASSISTANT_BOT_TOKEN={bot_token}\n"
-
-        # Write back
-        with open(env_path, "w") as f:
-            f.write(env_content)
-
-        print(f"✅ Token saved to .env")
-
-        # Update environment
-        os.environ["ASSISTANT_BOT_TOKEN"] = bot_token
-
-    else:
-        # Token exists - skip creation, only set description
+    if bot_token:
+        # Token exists - verify and update description
         print(f"✅ Assistant Bot Token found: {bot_token[:20]}...")
-        print("📝 Updating bot description...")
+        print("📝 Verifying bot...")
 
         # Get bot username from token
         bot_username = await botfather.get_bot_username_from_token(bot_token)
@@ -319,7 +355,74 @@ async def setup_assistant_bot(client: TelegramClient):
             # Set description
             await botfather._set_bot_description(bot_username)
         else:
-            print("⚠️  Could not get bot username - skipping description update")
+            print("⚠️  Could not verify bot - token might be invalid")
+            # Reset token to try fallback
+            bot_token = None
+
+    if not bot_token:
+        print("\n🤖 Assistant Bot Token not configured")
+        print("🔍 Checking existing bots...")
+
+        # Check for existing bot
+        existing_bot = await botfather.find_existing_bot("vzoelassistant")
+
+        if existing_bot:
+            print(f"✅ Found existing bot: @{existing_bot}")
+            print("🔑 Getting token from BotFather...")
+
+            # Try to get token
+            bot_token = await botfather.get_token_from_botfather(existing_bot)
+
+            if bot_token:
+                bot_username = existing_bot
+                print(f"✅ Token retrieved: {bot_token[:20]}...")
+                print("📝 Updating description...")
+                await botfather._set_bot_description(bot_username)
+            else:
+                print("⚠️  Could not retrieve token - will create new bot")
+                existing_bot = None
+
+        if not existing_bot:
+            print("📝 Creating new bot via BotFather...")
+
+            # Create bot via BotFather
+            bot_token, bot_username = await botfather.create_assistant_bot()
+
+            if not bot_token:
+                print("❌ Failed to create assistant bot")
+                return False
+
+            print(f"✅ Bot created: @{bot_username}")
+            print(f"🔑 Token: {bot_token[:20]}...")
+
+        # Save token to .env
+        if bot_token:
+            env_path = os.path.join(os.getcwd(), ".env")
+
+            # Read existing .env
+            env_content = ""
+            if os.path.exists(env_path):
+                with open(env_path, "r") as f:
+                    env_content = f.read()
+
+            # Add or update token
+            if "ASSISTANT_BOT_TOKEN=" in env_content:
+                lines = env_content.split("\n")
+                for i, line in enumerate(lines):
+                    if line.startswith("ASSISTANT_BOT_TOKEN="):
+                        lines[i] = f"ASSISTANT_BOT_TOKEN={bot_token}"
+                env_content = "\n".join(lines)
+            else:
+                env_content += f"\nASSISTANT_BOT_TOKEN={bot_token}\n"
+
+            # Write back
+            with open(env_path, "w") as f:
+                f.write(env_content)
+
+            print(f"✅ Token saved to .env")
+
+            # Update environment
+            os.environ["ASSISTANT_BOT_TOKEN"] = bot_token
 
     # Start assistant bot process
     print("🚀 Starting Assistant Bot...")
