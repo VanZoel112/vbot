@@ -1,7 +1,7 @@
 """Utility helpers for premium emoji conversion."""
 
-from typing import Dict, List, Optional, Tuple
 import re
+from typing import Dict, List, Optional, Tuple
 
 from telethon.tl.types import (
     MessageEntityCustomEmoji,
