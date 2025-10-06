@@ -333,10 +333,19 @@ async def joinvc_handler(event):
     status_msg = await vz_client.edit_with_premium_emoji(event, f"{robot_emoji} **Joining voice chat...**")
 
     if not PYTGCALLS_AVAILABLE:
+        error_emoji = vz_emoji.getemoji('merah')
+        gear_emoji = vz_emoji.getemoji('gear')
+        petir_emoji = vz_emoji.getemoji('petir')
+        main_emoji = vz_emoji.getemoji('utama')
+
         await vz_client.edit_with_premium_emoji(
             status_msg,
-            "❌ **pytgcalls not installed**\n\n"
-            "Run: `pip install py-tgcalls yt-dlp`"
+            f"{error_emoji} **pytgcalls not installed**\n\n"
+            f"{gear_emoji} **Install Required:**\n"
+            "`.install pytgcalls yt-dlp`\n\n"
+            f"{petir_emoji} **Alternative:**\n"
+            "`.install py-tgcalls`\n\n"
+            f"{main_emoji} After install, restart bot"
         )
         return
 
