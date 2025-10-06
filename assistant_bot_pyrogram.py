@@ -139,11 +139,11 @@ def build_plugins_keyboard(page: int = 0):
     # Get plugins for current page
     page_plugins = plugins[start_idx:end_idx]
 
-    # Build keyboard rows (3 plugins per row)
+    # Build keyboard rows (2 plugins per row for 1:1 ratio - more square)
     buttons = []
-    for i in range(0, len(page_plugins), 3):
+    for i in range(0, len(page_plugins), 2):
         row = []
-        for plugin in page_plugins[i:i+3]:
+        for plugin in page_plugins[i:i+2]:
             # Remove emoji - inline keyboards don't support premium emoji
             name = plugin.get("display_name", plugin["name"])
             row.append(
@@ -154,24 +154,30 @@ def build_plugins_keyboard(page: int = 0):
             )
         buttons.append(row)
 
-    # Pagination row (pangkas ukuran)
-    pagination_row = []
+    # Pagination + About row (compact)
+    nav_row = []
     if page > 0:
-        pagination_row.append(
+        nav_row.append(
             InlineKeyboardButton("◀️", callback_data=f"page:{page-1}")
         )
+
+    # About button (compact)
+    nav_row.append(
+        InlineKeyboardButton("ℹ️", callback_data="about")
+    )
+
     if page < total_pages - 1:
-        pagination_row.append(
+        nav_row.append(
             InlineKeyboardButton("▶️", callback_data=f"page:{page+1}")
         )
 
-    if pagination_row:
-        buttons.append(pagination_row)
+    if nav_row:
+        buttons.append(nav_row)
 
-    # VBot & Developer buttons (lebih compact)
+    # VBot & Developer buttons (compact 1:1)
     buttons.append([
-        InlineKeyboardButton("🤖 VBot", url="https://t.me/vmusic_vbot"),
-        InlineKeyboardButton("👨‍💻 Dev", url="https://t.me/VZLfxs")
+        InlineKeyboardButton("🤖", url="https://t.me/vmusic_vbot"),
+        InlineKeyboardButton("👨‍💻", url="https://t.me/VZLfxs")
     ])
 
     return InlineKeyboardMarkup(buttons)
@@ -474,6 +480,44 @@ async def back_callback(client: Client, callback: CallbackQuery):
     keyboard = build_plugins_keyboard(page=0)
     await callback.edit_message_text(help_text, reply_markup=keyboard)
     await callback.answer("Kembali ke menu")
+
+@app.on_callback_query(filters.regex(r"^about$"))
+async def about_callback(client: Client, callback: CallbackQuery):
+    """Handle about button."""
+    await log_action(callback.from_user.id, "about")
+
+    # Build about text
+    about_text = """
+ℹ️ **ABOUT VZBOT**
+
+**Dibuat oleh:**
+Vzoel Fox's (Lutpan)
+
+**Library:**
+• Telethon
+• Pyrogram
+
+**Bahasa:**
+Python 3+
+
+**Sistem:**
+• Trio Async
+• Uvloop
+
+**Fitur:**
+Simple fitur untuk kebutuhan standar
+
+🤖 Powered by VzBot
+👨‍💻 Developer: @VZLfxs
+"""
+
+    # Back button
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("◀️ Back", callback_data="back_to_plugins")]
+    ])
+
+    await callback.edit_message_text(about_text, reply_markup=keyboard)
+    await callback.answer("About VzBot")
 
 # ============================================================================
 # ALIVE COMMAND
