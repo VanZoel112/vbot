@@ -95,7 +95,7 @@ class BotFatherClient:
 
             # Send /mybots
             await self.client.send_message(self.BOTFATHER_USERNAME, "/mybots")
-            await asyncio.sleep(2)  # Longer delay for rate limit
+            await asyncio.sleep(2)  # Wait for response
 
             response = await self._get_latest_message()
             if not response:
@@ -143,7 +143,7 @@ class BotFatherClient:
 
             # Send /token
             await self.client.send_message(self.BOTFATHER_USERNAME, "/token")
-            await asyncio.sleep(2)  # Longer delay
+            await asyncio.sleep(2)  # Wait for response
 
             # Get bot list
             response = await self._get_latest_message()
