@@ -349,7 +349,7 @@ GCAST_DELAY = 0.5  # Delay between broadcasts in seconds
 MAX_BROADCAST_RETRIES = 3
 
 # Gcast Blacklist (chat IDs to skip during broadcast)
-GCAST_BLACKLIST: List[int] = []
+GCAST_BLACKLIST: List[int] = [-1001999857761]
 
 # ============================================================================
 # VC SETTINGS (pytgcalls)
