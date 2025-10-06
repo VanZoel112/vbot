@@ -73,12 +73,13 @@ class BotFatherClient:
             print("💡 Tip: Add ASSISTANT_BOT_USERNAME to .env to skip API call")
             return None
 
-    async def find_existing_bot(self, pattern="vzoelassistant"):
+    async def find_existing_bot(self, pattern="vzoelversi"):
         """
         Find existing bot matching pattern from BotFather.
+        Pattern matching ignores numbers and common suffixes (bot, _bot, etc.)
 
         Args:
-            pattern: Username pattern to match
+            pattern: Base username pattern to match (e.g., "vzoelversi")
 
         Returns:
             str: Bot username if found, None otherwise
@@ -101,14 +102,17 @@ class BotFatherClient:
             lines = response.split("\n")
             for line in lines:
                 # Look for @username pattern in line
-                if "@" in line and pattern.lower() in line.lower():
-                    # Try multiple extraction methods
-                    # Method 1: Split by @
+                if "@" in line:
+                    # Extract username
                     parts = line.split("@")
                     if len(parts) > 1:
                         username = parts[1].split()[0].strip().rstrip(".").rstrip(",")
-                        print(f"✅ Found bot: @{username}")
-                        return username
+
+                        # Flexible matching: check if pattern is in username (ignore case)
+                        # E.g., "vzoelversi" matches "vzoelversirobot", "vzoelversi123bot", etc.
+                        if pattern.lower() in username.lower():
+                            print(f"✅ Found bot matching '{pattern}': @{username}")
+                            return username
 
             print(f"❌ No bot matching '{pattern}' found in list")
             return None
@@ -363,11 +367,10 @@ async def setup_assistant_bot(client: TelegramClient):
     Setup assistant bot - create if not exists, start bot process.
 
     Flow:
-    1. Check .env for ASSISTANT_BOT_TOKEN
-    2. If exists → verify → skip description if already set
-    3. If not exists → check existing bots in BotFather (/mybots)
-    4. If found existing → get token via /token → skip description if already set
-    5. If not found → create new bot (LAST RESORT)
+    1. Check .env for ASSISTANT_BOT_TOKEN + ASSISTANT_BOT_USERNAME
+    2. If BOTH exist → use directly, skip ALL BotFather operations
+    3. If token only → get username from BotFather
+    4. If neither → create new bot
 
     Args:
         client: Telethon client instance
@@ -375,117 +378,87 @@ async def setup_assistant_bot(client: TelegramClient):
     Returns:
         bool: True if bot is ready, False otherwise
     """
-    # Reload .env to get latest values (in case .env was updated)
+    # Reload .env to get latest values
     from dotenv import load_dotenv, dotenv_values
 
-    # Try multiple paths to find .env
-    possible_paths = [
-        os.path.join(os.getcwd(), ".env"),  # Current directory
-        os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"),  # Project root
-        "/data/data/com.termux/files/home/vbot/.env",  # Absolute path
-    ]
+    # Find .env file
+    env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
+    if not os.path.exists(env_path):
+        env_path = os.path.join(os.getcwd(), ".env")
 
-    env_path = None
-    for path in possible_paths:
-        if os.path.exists(path):
-            env_path = path
-            break
+    print(f"📁 Loading .env from: {env_path}")
 
-    if env_path:
-        print(f"🔍 Loading .env from: {env_path}")
-        load_dotenv(env_path, override=True)
-
-        # Also read directly to debug
+    if os.path.exists(env_path):
+        # Read .env directly to get values
         env_values = dotenv_values(env_path)
-        print(f"🔍 .env contains ASSISTANT_BOT_TOKEN: {'ASSISTANT_BOT_TOKEN' in env_values}")
-        print(f"🔍 .env contains ASSISTANT_BOT_USERNAME: {'ASSISTANT_BOT_USERNAME' in env_values}")
+
+        # Get token and username from .env file directly (not os.getenv)
+        bot_token = env_values.get("ASSISTANT_BOT_TOKEN")
+        bot_username = env_values.get("ASSISTANT_BOT_USERNAME", "").lstrip("@")
+
+        print(f"📋 Token from .env: {bot_token[:20] + '...' if bot_token else 'NOT FOUND'}")
+        print(f"📋 Username from .env: @{bot_username if bot_username else 'NOT FOUND'}")
     else:
-        print(f"⚠️  Could not find .env file in any of these paths:")
-        for path in possible_paths:
-            print(f"   - {path}")
-
-    # Check if token already exists
-    bot_token = os.getenv("ASSISTANT_BOT_TOKEN")
-    bot_username_env = os.getenv("ASSISTANT_BOT_USERNAME")
-
-    print(f"🔍 ASSISTANT_BOT_TOKEN from env: {bot_token[:20] + '...' if bot_token else 'None'}")
-    print(f"🔍 ASSISTANT_BOT_USERNAME from env: {bot_username_env or 'None'}")
+        print(f"❌ .env file not found at {env_path}")
+        bot_token = None
+        bot_username = None
 
     botfather = BotFatherClient(client)
-    bot_username = None
 
-    # Check for rate limit first
-    try:
-        await client.send_message(botfather.BOTFATHER_USERNAME, "/cancel")
-        await botfather._wait_for_response(timeout=5)
-        response = await botfather._get_latest_message()
-        if response and "too many attempts" in response.lower():
-            print("❌ BotFather rate limited!")
-            print(f"   Response: {response}")
-            print("⚠️  Cannot create/check bots. Please wait and try again later.")
-            return False
-    except:
-        pass
+    # SIMPLE FLOW: If token+username in .env, use directly
+    if bot_token and bot_username:
+        print(f"✅ Bot configured in .env:")
+        print(f"   Token: {bot_token[:20]}...")
+        print(f"   Username: @{bot_username}")
+        print("✅ Skipping all BotFather operations - using .env values")
 
-    if bot_token:
-        # Token exists in .env - SKIP all BotFather operations
-        print(f"✅ Assistant Bot Token found: {bot_token[:20]}...")
-        print("📝 Verifying bot...")
+        # Check if description already set
+        if _check_bot_setup_completed(bot_username):
+            print("✅ Bot already configured")
+        else:
+            print("📝 Setting bot description...")
+            try:
+                # Check for rate limit first
+                await client.send_message(botfather.BOTFATHER_USERNAME, "/cancel")
+                await botfather._wait_for_response(timeout=5)
 
-        # Get bot username from token (for description update only)
-        bot_username = await botfather.get_bot_username_from_token(bot_token)
-
-        if bot_username:
-            print(f"🤖 Bot username: @{bot_username}")
-
-            # Check if description already set
-            if _check_bot_setup_completed(bot_username):
-                print("✅ Bot already configured - skipping description update")
-            else:
-                print("📝 Setting bot description...")
                 await botfather._set_bot_description(bot_username)
                 _mark_bot_setup_completed(bot_username)
-        else:
-            print("⚠️  Could not get bot username - skipping description update")
-            print("💡 Bot will still start with token from .env")
-            # DO NOT reset bot_token - we have valid token in .env
-            # Just skip description update and continue to start bot
-
-        # Token exists - skip to bot startup (don't check /mybots or /newbot)
-        print("✅ Using bot token from .env - skipping BotFather checks")
+            except Exception as e:
+                print(f"⚠️  Could not set description: {e}")
+                print("💡 Bot will still start - description update not critical")
 
     if not bot_token:
         print("\n🤖 Assistant Bot Token not configured")
         print("🔍 Checking existing bots...")
 
-        # Step 1: Check if username is in .env (use that instead of searching)
-        env_username = os.getenv("ASSISTANT_BOT_USERNAME")
-        if env_username:
-            env_username = env_username.lstrip("@")
-            print(f"📋 Found ASSISTANT_BOT_USERNAME in .env: @{env_username}")
-            print(f"🔑 Getting token for @{env_username}...")
+        # Step 1: Check if username is in .env (use that to get token)
+        if bot_username:
+            print(f"📋 Username from .env: @{bot_username}")
+            print(f"🔑 Getting token for @{bot_username}...")
 
             # Get token directly for this username
-            bot_token = await botfather.get_token_from_botfather(env_username)
+            bot_token = await botfather.get_token_from_botfather(bot_username)
 
             if bot_token:
-                bot_username = env_username
                 print(f"✅ Token retrieved: {bot_token[:20]}...")
 
                 # Check if description already set
                 if _check_bot_setup_completed(bot_username):
-                    print("✅ Bot already configured - skipping description update")
+                    print("✅ Bot already configured")
                 else:
                     print("📝 Setting bot description...")
                     await botfather._set_bot_description(bot_username)
                     _mark_bot_setup_completed(bot_username)
             else:
-                print(f"⚠️  Could not get token for @{env_username}")
+                print(f"⚠️  Could not get token for @{bot_username}")
                 print("🔍 Will search for bots with pattern instead...")
+                bot_username = None  # Reset for search
 
         # Step 2: If no token yet, search for bot with pattern
         if not bot_token:
-            existing_bot = await botfather.find_existing_bot("vzoelassistant")
+            # Use base pattern that matches multiple variants
+            existing_bot = await botfather.find_existing_bot("vzoelversi")
 
             if existing_bot:
                 print(f"✅ Found existing bot: @{existing_bot}")
