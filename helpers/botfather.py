@@ -327,6 +327,23 @@ class BotFatherClient:
             if response and "Success" in response:
                 print("✅ About text set")
 
+            # Enable inline mode
+            await self.client.send_message(self.BOTFATHER_USERNAME, "/setinline")
+            response = await self._wait_for_response(timeout=10)
+
+            # Select bot if prompted
+            if response and "Choose a bot" in response:
+                await self.client.send_message(self.BOTFATHER_USERNAME, f"@{username}")
+                await self._wait_for_response(timeout=10)
+
+            # Set inline placeholder text
+            inline_placeholder = "Type 'help' for plugin list..."
+            await self.client.send_message(self.BOTFATHER_USERNAME, inline_placeholder)
+            response = await self._wait_for_response(timeout=10)
+
+            if response and "Success" in response:
+                print("✅ Inline mode enabled")
+
             return True
 
         except Exception as e:
