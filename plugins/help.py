@@ -211,6 +211,52 @@ SUDOERS_COMMANDS = {
             "usage": ".setpm <message>",
             "example": ".setpm Please wait for approval"
         }
+    },
+    "Tools": {
+        "install": {
+            "cmd": ".install",
+            "desc": "Install Python packages",
+            "usage": ".install <package> | .install reply to requirements.txt",
+            "example": ".install pillow"
+        },
+        "uninstall": {
+            "cmd": ".uninstall",
+            "desc": "Uninstall Python package",
+            "usage": ".uninstall <package>",
+            "example": ".uninstall pillow"
+        },
+        "piplist": {
+            "cmd": ".piplist",
+            "desc": "List installed packages",
+            "usage": ".piplist [search]",
+            "example": ".piplist pytgcalls"
+        },
+        "restart": {
+            "cmd": ".restart",
+            "desc": "Restart bot (apply changes)",
+            "usage": ".restart",
+            "example": ".restart"
+        }
+    },
+    "Customization": {
+        "setlogo": {
+            "cmd": ".setlogo",
+            "desc": "Set custom logo for help/alive",
+            "usage": ".setlogo (reply to image)",
+            "example": ".setlogo"
+        },
+        "resetlogo": {
+            "cmd": ".resetlogo",
+            "desc": "Reset logo to default",
+            "usage": ".resetlogo",
+            "example": ".resetlogo"
+        },
+        "getlogo": {
+            "cmd": ".getlogo",
+            "desc": "Get current logo",
+            "usage": ".getlogo",
+            "example": ".getlogo"
+        }
     }
 }
 
@@ -252,6 +298,26 @@ DEVELOPER_COMMANDS = {
             "desc": "Get data from reply context",
             "usage": ".sgd reply",
             "example": ".sgd"
+        }
+    },
+    "Git Tools": {
+        "pull": {
+            "cmd": ".pull",
+            "desc": "Pull latest changes from GitHub",
+            "usage": ".pull",
+            "example": ".pull"
+        },
+        "push": {
+            "cmd": ".push",
+            "desc": "Push changes to GitHub",
+            "usage": ".push [message]",
+            "example": ".push Update features"
+        },
+        "settoken": {
+            "cmd": ".settoken",
+            "desc": "Set GitHub personal access token",
+            "usage": ".settoken <token>",
+            "example": ".settoken ghp_xxxxx"
         }
     },
     "Sudo": {
