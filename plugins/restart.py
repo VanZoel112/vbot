@@ -25,18 +25,31 @@ vz_emoji = None
 @events.register(events.NewMessage(pattern=r'^\.restart$', outgoing=True))
 async def restart_handler(event):
     """
-    .restart - Restart bot
+    .restart - Restart bot and reload configuration
 
-    Restarts the bot to apply changes.
+    Restarts the bot to apply changes from:
+    - GitHub updates (.pull)
+    - .env changes
+    - config.py changes
+    - New plugins
+
+    Preserved per user:
+    - Blacklist groups
+    - Lock users
+    - PM permit settings
+    - Custom prefix
+    - Custom logo
+
     Available for all roles (USER, ADMIN, DEVELOPER).
 
     Usage:
         .restart
 
     After restart:
-    - New plugins will be loaded
-    - Configuration changes applied
-    - Memory cleared
+    - .env reloaded
+    - config.py reloaded
+    - Plugins reloaded
+    - User data preserved (blacklist, lock, etc)
     """
     global vz_client, vz_emoji
 
@@ -58,7 +71,19 @@ async def restart_handler(event):
 
 {role_emoji} **User:** {event.sender.first_name}
 {gear_emoji} **Role:** {user_role}
-{petir_emoji} **Action:** Bot restart
+{petir_emoji} **Action:** Full restart
+
+{nyala_emoji} **Reloading:**
+• .env configuration
+• config.py settings
+• All plugins
+• Connections
+
+{gear_emoji} **Preserved:**
+• Blacklist groups
+• Lock users
+• PM permit settings
+• Custom prefix & logo
 
 {nyala_emoji} **Please wait...**
 Bot will reconnect in a few seconds
@@ -72,6 +97,32 @@ Bot will reconnect in a few seconds
     from helpers import logger
     logger.info(f"Bot restart initiated by {user_id} ({user_role})")
 
+    # Reload .env before restart
+    try:
+        from dotenv import load_dotenv
+        logger.info("Reloading .env...")
+        load_dotenv(override=True)  # Override existing vars with new values
+        logger.info("✅ .env reloaded")
+    except Exception as e:
+        logger.warning(f"Failed to reload .env: {e}")
+
+    # Reload config module
+    try:
+        import importlib
+        logger.info("Reloading config.py...")
+        importlib.reload(config)
+        logger.info("✅ config.py reloaded")
+    except Exception as e:
+        logger.warning(f"Failed to reload config: {e}")
+
+    # Note: User data is automatically preserved on restart:
+    # - SQLite databases per user: database/sudoers/{user_id}.db
+    # - Gcast blacklist: data/gcast_blacklist.json
+    # - Lock users: database/sudoers/{user_id}.db
+    # - PM permit: database/sudoers/{user_id}.db
+    # - Custom settings: database/sudoers/{user_id}.db
+    # All file-based storage is preserved across restarts
+
     # Stop assistant bot if running
     try:
         import subprocess
@@ -83,6 +134,7 @@ Bot will reconnect in a few seconds
     # Restart using execv (replaces current process)
     try:
         python = sys.executable
+        logger.info(f"Restarting with: {python} {sys.argv}")
         os.execv(python, [python] + sys.argv)
     except Exception as e:
         error_emoji = vz_emoji.getemoji('merah')
