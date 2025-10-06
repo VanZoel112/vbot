@@ -192,6 +192,11 @@ async def setup_error_handler(client: VZClient):
 
     import traceback as tb
 
+    # Store original exception handler
+    original_handle_exception = None
+    if hasattr(client.client, '_handle_exception'):
+        original_handle_exception = client.client._handle_exception
+
     async def send_error_log(error_msg: str):
         """Send error log to log group."""
         try:
@@ -199,27 +204,21 @@ async def setup_error_handler(client: VZClient):
         except Exception as e:
             logger.error(f"Failed to send error log: {e}")
 
-    # Monkey-patch client to catch all errors
-    original_handle_update = client.client._handle_update
+    def custom_exception_handler(exception):
+        """Custom exception handler for Telethon."""
+        # Log locally
+        logger.error(f"Unhandled exception: {exception}", exc_info=True)
 
-    async def handle_update_with_error_logging(update):
-        """Wrapper to catch and log all errors."""
-        try:
-            await original_handle_update(update)
-        except Exception as e:
-            # Log locally
-            logger.error(f"Error handling update: {e}", exc_info=True)
+        # Get traceback
+        tb_lines = tb.format_exception(type(exception), exception, exception.__traceback__)
+        tb_text = ''.join(tb_lines)
 
-            # Get traceback
-            tb_lines = tb.format_exception(type(e), e, e.__traceback__)
-            tb_text = ''.join(tb_lines)
-
-            # Build error message
-            error_msg = f"""
+        # Build error message
+        error_msg = f"""
 ❌ **ERROR OCCURRED**
 
-⚠️ **Error Type:** `{type(e).__name__}`
-📝 **Error Message:** `{str(e)}`
+⚠️ **Error Type:** `{type(exception).__name__}`
+📝 **Error Message:** `{str(exception)}`
 
 **Traceback:**
 ```python
@@ -229,13 +228,23 @@ async def setup_error_handler(client: VZClient):
 🕐 **Time:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 """
 
-            # Send to log group
-            await send_error_log(error_msg)
+        # Send to log group (async in sync context)
+        import asyncio
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                loop.create_task(send_error_log(error_msg))
+            else:
+                loop.run_until_complete(send_error_log(error_msg))
+        except Exception as e:
+            logger.error(f"Failed to send error log: {e}")
 
-            # Re-raise to maintain normal error flow
-            raise
+        # Call original handler if exists
+        if original_handle_exception:
+            original_handle_exception(exception)
 
-    client.client._handle_update = handle_update_with_error_logging
+    # Set custom exception handler
+    client.client._handle_exception = custom_exception_handler
 
     logger.info("Global error handler configured")
     print("✅ Error handler configured - all errors → log group")
