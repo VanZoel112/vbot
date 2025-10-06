@@ -13,7 +13,7 @@ import os
 import time
 from typing import Dict, Optional, List
 from pathlib import Path
-from config import Config
+import config
 
 logger = logging.getLogger(__name__)
 

@@ -52,6 +52,14 @@ async def send_startup_log(client: VZClient, plugin_count: int):
         return
 
     try:
+        # Try to get log group entity first
+        try:
+            log_entity = await client.client.get_entity(config.LOG_GROUP_ID)
+        except Exception as entity_error:
+            logger.warning(f"Cannot access log group {config.LOG_GROUP_ID}: {entity_error}")
+            print(f"⚠️  Log group not accessible - bot may not be member. Join the group first.")
+            return
+
         role = "DEVELOPER" if client.is_developer else "SUDOER"
         startup_msg = f"""
 🚀 **VZ ASSISTANT DEPLOYED**
