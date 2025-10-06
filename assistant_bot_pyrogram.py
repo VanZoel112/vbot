@@ -86,7 +86,7 @@ app = Client(
     api_hash=API_HASH,
     bot_token=BOT_TOKEN,
     workers=4,  # Trio-compatible workers
-    workdir="."
+    workdir="sessions"  # Separate session directory to avoid lock conflicts
 )
 
 # Global plugins cache
