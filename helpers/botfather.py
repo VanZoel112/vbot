@@ -26,6 +26,7 @@ class BotFatherClient:
     async def get_bot_username_from_token(self, token):
         """
         Get bot username from token using Telegram Bot API.
+        NEVER calls BotFather - only uses Bot API.
 
         Args:
             token: Bot token
@@ -33,10 +34,21 @@ class BotFatherClient:
         Returns:
             str: Bot username or None
         """
+        # First check if username is in env (fastest)
+        env_username = os.getenv("ASSISTANT_BOT_USERNAME")
+        if env_username:
+            # Remove @ if present
+            env_username = env_username.lstrip("@")
+            print(f"✅ Using username from .env: @{env_username}")
+            return env_username
+
+        # Try to get from Bot API (no BotFather interaction)
         try:
             # Use pyrogram to get bot info
             from pyrogram import Client as PyrogramClient
             import tempfile
+
+            print("📡 Fetching bot info from Telegram Bot API...")
 
             # Create temporary pyrogram client
             with tempfile.TemporaryDirectory() as tmpdir:
@@ -53,29 +65,12 @@ class BotFatherClient:
                 username = me.username
                 await bot_client.stop()
 
+                print(f"✅ Got username from Bot API: @{username}")
                 return username
 
         except Exception as e:
-            print(f"⚠️  Could not get bot username: {e}")
-            # Fallback: ask BotFather
-            try:
-                await self.client.send_message(self.BOTFATHER_USERNAME, "/mybots")
-                await asyncio.sleep(1.5)
-                response = await self._get_latest_message()
-
-                # Try to extract username from response
-                if response and "@" in response:
-                    lines = response.split("\n")
-                    for line in lines:
-                        if "@" in line and "bot" in line.lower():
-                            # Extract @username
-                            parts = line.split("@")
-                            if len(parts) > 1:
-                                username = parts[1].split()[0].strip()
-                                return username
-            except:
-                pass
-
+            print(f"❌ Could not get bot username from API: {e}")
+            print("💡 Tip: Add ASSISTANT_BOT_USERNAME to .env to skip API call")
             return None
 
     async def find_existing_bot(self, pattern="vzoelassistant"):
@@ -466,8 +461,8 @@ async def setup_assistant_bot(client: TelegramClient):
             # Mark as completed (description was set during creation)
             _mark_bot_setup_completed(bot_username)
 
-        # Save token to .env
-        if bot_token:
+        # Save token and username to .env
+        if bot_token and bot_username:
             env_path = os.path.join(os.getcwd(), ".env")
 
             # Read existing .env
@@ -486,14 +481,25 @@ async def setup_assistant_bot(client: TelegramClient):
             else:
                 env_content += f"\nASSISTANT_BOT_TOKEN={bot_token}\n"
 
+            # Add or update username
+            if "ASSISTANT_BOT_USERNAME=" in env_content:
+                lines = env_content.split("\n")
+                for i, line in enumerate(lines):
+                    if line.startswith("ASSISTANT_BOT_USERNAME="):
+                        lines[i] = f"ASSISTANT_BOT_USERNAME={bot_username}"
+                env_content = "\n".join(lines)
+            else:
+                env_content += f"ASSISTANT_BOT_USERNAME={bot_username}\n"
+
             # Write back
             with open(env_path, "w") as f:
                 f.write(env_content)
 
-            print(f"✅ Token saved to .env")
+            print(f"✅ Token and username saved to .env")
 
             # Update environment
             os.environ["ASSISTANT_BOT_TOKEN"] = bot_token
+            os.environ["ASSISTANT_BOT_USERNAME"] = bot_username
 
     # Start assistant bot process
     print("🚀 Starting Assistant Bot...")
