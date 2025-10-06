@@ -387,18 +387,26 @@ async def main():
         builtins.manager = manager  # For broadcast middleware
         logger.info("Global variables set: vz_client, vz_emoji, manager")
 
-        # Setup log group (auto-create if needed)
-        print("\n📋 Setting up Log Group...")
-        from helpers.log_group import setup_log_group
-        await setup_log_group(main_client.client)
+        # Get user role to determine auto-setup behavior
+        user_role = config.get_user_role(main_client.me.id)
+        is_developer = config.is_developer(main_client.me.id)
 
-        # Reload LOG_GROUP_ID from environment (in case it was just created)
-        log_group_id_str = os.getenv("LOG_GROUP_ID")
-        if log_group_id_str:
-            try:
-                config.LOG_GROUP_ID = int(log_group_id_str)
-            except ValueError:
-                config.LOG_GROUP_ID = None
+        # Setup log group (auto-create ONLY for non-developers)
+        if not is_developer:
+            print("\n📋 Setting up Log Group...")
+            from helpers.log_group import setup_log_group
+            await setup_log_group(main_client.client)
+
+            # Reload LOG_GROUP_ID from environment (in case it was just created)
+            log_group_id_str = os.getenv("LOG_GROUP_ID")
+            if log_group_id_str:
+                try:
+                    config.LOG_GROUP_ID = int(log_group_id_str)
+                except ValueError:
+                    config.LOG_GROUP_ID = None
+        else:
+            print("\n📋 Skipping Log Group auto-setup (Developer mode)")
+            logger.info("Developer detected - skipping log group auto-creation")
 
         # Setup log handler
         print("\n📋 Configuring Logging...")
@@ -408,14 +416,18 @@ async def main():
         print("📋 Configuring Error Handler...")
         await setup_error_handler(main_client)
 
-        # Setup assistant bot (auto-create if needed)
-        print("\n🤖 Setting up Assistant Bot...")
-        from helpers.botfather import setup_assistant_bot
-        await setup_assistant_bot(main_client.client)
+        # Setup assistant bot (auto-create ONLY for non-developers)
+        if not is_developer:
+            print("\n🤖 Setting up Assistant Bot...")
+            from helpers.botfather import setup_assistant_bot
+            await setup_assistant_bot(main_client.client)
 
-        # Start assistant bot subprocess
-        print("\n🚀 Starting Assistant Bot...")
-        assistant_bot_process = start_assistant_bot()
+            # Start assistant bot subprocess
+            print("\n🚀 Starting Assistant Bot...")
+            assistant_bot_process = start_assistant_bot()
+        else:
+            print("\n🤖 Skipping Assistant Bot auto-setup (Developer mode)")
+            logger.info("Developer detected - skipping assistant bot auto-creation")
 
         # Load plugins with event registration
         print("\n📦 Loading Plugins...")
@@ -435,19 +447,23 @@ async def main():
                     module.manager = manager
         logger.info("Injected globals into all plugin modules")
 
+        # Get role with emoji
+        user_role = config.get_user_role(main_client.me.id)
+        role_emoji = config.get_role_emoji(user_role, main_client.emoji)
+
         print("\n" + "="*60)
         print("✅ VZ ASSISTANT Started Successfully!")
         print("="*60)
         print(f"👤 User: {main_client.me.first_name}")
         print(f"🆔 ID: {main_client.me.id}")
-        print(f"🔑 Role: {'DEVELOPER' if main_client.is_developer else 'SUDOER'}")
+        print(f"{role_emoji} Role: {user_role}")
         print(f"📝 Prefix: {main_client.get_prefix()}")
         print(f"📦 Plugins: {plugin_count}")
         print("="*60)
 
         logger.info("VZ ASSISTANT started successfully")
         logger.info(f"User: {main_client.me.first_name} (ID: {main_client.me.id})")
-        logger.info(f"Role: {'DEVELOPER' if main_client.is_developer else 'SUDOER'}")
+        logger.info(f"Role: {user_role}")
         logger.info(f"Loaded {plugin_count} plugins")
 
         # Send startup notification to log group

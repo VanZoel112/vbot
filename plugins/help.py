@@ -297,20 +297,20 @@ def build_sudoer_help_text(emoji_manager, user_id=None) -> str:
     petir_emoji = emoji_manager.getemoji('petir')
     robot_emoji = emoji_manager.getemoji('robot')
     gear_emoji = emoji_manager.getemoji('gear')
-    owner_emoji = emoji_manager.getemoji('owner')
-    dev_emoji = emoji_manager.getemoji('developer')
 
-    # Detect if user is developer
+    # Get user role using config system
+    user_role = config.get_user_role(user_id) if user_id else "USER"
+    role_emoji = config.get_role_emoji(user_role, emoji_manager)
+
+    # Developers see developer commands
     is_developer = config.is_developer(user_id) if user_id else False
-    role = "DEVELOPER" if is_developer else "SUDOER"
-    role_emoji = dev_emoji if is_developer else owner_emoji
 
     total_commands = count_total_commands(is_developer=is_developer)
 
     help_text = f"""{main_emoji} **VZ ASSISTANT - HELP MENU**
 
 {petir_emoji} **Total Commands:** {total_commands}
-{role_emoji} **Role:** {role}
+{role_emoji} **Role:** {user_role}
 {gear_emoji} **Prefix:** {config.DEFAULT_PREFIX}
 
 """

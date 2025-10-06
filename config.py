@@ -37,6 +37,17 @@ FOUNDER_USERNAME = "@VZLfxs"
 FOUNDER_LINK = "t.me/VZLfxs"
 BRANDING_FOOTER = "2025© Vzoel Fox's Lutpan"
 
+# ============================================================================
+# OWNER/ADMIN CONFIGURATION
+# ============================================================================
+# Role Hierarchy System:
+# - DEVELOPER (Founders): Full access, skip auto-create bot/logger, can sudo ADMIN+USER
+# - ADMIN (Owner): Cannot sudo anyone, cannot be sudo'd, auto-create enabled
+# - USER (Sudoers): Can sudo other USER, cannot sudo ADMIN/DEVELOPER, auto-create enabled
+#
+# OWNER_ID - User with ADMIN role (middle tier between DEVELOPER and USER)
+OWNER_ID = int(os.getenv("OWNER_ID", 0)) if os.getenv("OWNER_ID") else None
+
 # Assistant bot bridge
 ASSISTANT_BOT_USERNAME = os.getenv("ASSISTANT_BOT_USERNAME")
 
@@ -172,6 +183,89 @@ def get_sudoer_json_path(user_id: int, json_name: str) -> str:
 def is_developer(user_id: int) -> bool:
     """Check if user is a developer."""
     return user_id in DEVELOPER_IDS
+
+def is_owner(user_id: int) -> bool:
+    """Check if user is the owner (ADMIN role)."""
+    return OWNER_ID and user_id == OWNER_ID
+
+def is_admin(user_id: int) -> bool:
+    """Check if user is admin (owner or developer)."""
+    return is_owner(user_id) or is_developer(user_id)
+
+def get_user_role(user_id: int) -> str:
+    """
+    Get user role based on hierarchy.
+
+    Returns:
+        "DEVELOPER" - Developers/Founders
+        "ADMIN" - Owner (OWNER_ID)
+        "USER" - Regular sudoer
+    """
+    if is_developer(user_id):
+        return "DEVELOPER"
+    elif is_owner(user_id):
+        return "ADMIN"
+    else:
+        return "USER"
+
+def get_role_emoji(role: str, emoji_manager=None) -> str:
+    """
+    Get emoji for role.
+
+    Role emojis:
+    - USER (Sudoer): 🤖
+    - ADMIN (Owner): 🤖⚡
+    - DEVELOPER: 👨‍💻
+    """
+    if not emoji_manager:
+        # Fallback to simple emojis
+        role_emojis = {
+            "USER": "🤖",
+            "ADMIN": "🤖⚡",
+            "DEVELOPER": "👨‍💻"
+        }
+        return role_emojis.get(role, "🤖")
+
+    # Use premium emojis from emoji_manager
+    if role == "DEVELOPER":
+        return emoji_manager.getemoji('developer')
+    elif role == "ADMIN":
+        return emoji_manager.getemoji('robot') + emoji_manager.getemoji('petir')
+    else:  # USER
+        return emoji_manager.getemoji('robot')
+
+def can_sudo(sudoer_id: int, target_id: int) -> bool:
+    """
+    Check if sudoer can execute commands on behalf of target.
+
+    Hierarchy:
+    - DEVELOPER/FOUNDER: Can sudo ADMIN and USER, cannot be sudo'd
+    - ADMIN: Cannot sudo anyone, cannot be sudo'd
+    - USER: Can sudo other USER, cannot sudo ADMIN/DEVELOPER
+
+    Args:
+        sudoer_id: User who wants to sudo
+        target_id: Target user to sudo
+
+    Returns:
+        bool: True if allowed, False otherwise
+    """
+    sudoer_role = get_user_role(sudoer_id)
+    target_role = get_user_role(target_id)
+
+    # Developer/Founder can sudo everyone except other developers
+    if sudoer_role in ["DEVELOPER", "FOUNDER"]:
+        return target_role in ["ADMIN", "USER"]
+
+    # Admin cannot sudo anyone
+    if sudoer_role == "ADMIN":
+        return False
+
+    # Regular user can only sudo other regular users
+    if sudoer_role == "USER":
+        return target_role == "USER"
+
+    return False
 
 def load_emoji_mapping() -> Dict:
     """Load emoji premium mapping from JSON."""

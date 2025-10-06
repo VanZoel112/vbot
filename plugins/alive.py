@@ -74,6 +74,9 @@ async def alive_handler(event):
     plugin_count = count_plugins()
     owner_username = get_owner_username(event)
 
+    # Get user role and emoji
+    user_role = config.get_user_role(event.sender_id)
+
     # Get premium emojis - more variety!
     main_emoji = vz_emoji.getemoji('utama')
     nyala_emoji = vz_emoji.getemoji('nyala')
@@ -83,6 +86,16 @@ async def alive_handler(event):
     gear_emoji = vz_emoji.getemoji('gear')
     loading_emoji = vz_emoji.getemoji('loading')
     petir_emoji = vz_emoji.getemoji('petir')
+    hijau_emoji = vz_emoji.getemoji('hijau')
+    pesan_emoji = vz_emoji.getemoji('telegram')
+
+    # Build role display with emoji mapping
+    if user_role == "DEVELOPER":
+        role_display = f"{main_emoji} Founder   {robot_emoji} {dev_emoji}"
+    elif user_role == "ADMIN":
+        role_display = f"Admin {robot_emoji} {petir_emoji}"
+    else:  # USER
+        role_display = f"User  {robot_emoji}"
 
     # Build alive message with vzl2-style footer
     alive_text = f"""
@@ -90,10 +103,11 @@ async def alive_handler(event):
 
 {dev_emoji} **{config.FOUNDER_TEXT}**
 {owner_emoji} **Owner**            : @{owner_username}
+{hijau_emoji} **Role**               : [ {role_display} ]
 {petir_emoji} **Versi**              : {config.BOT_VERSION}
-{dev_emoji} **Telethon × Python 3+**
 {loading_emoji} **Total Plugin**  : {plugin_count}
 {nyala_emoji} **Waktu Nyala** : {uptime}
+{pesan_emoji} **Library** : Telethon + Uvloop × Pyrogram v2 + Trio Async
 
 {main_emoji} Plugins Digunakan: **ALIVE**
 {petir_emoji} by {main_emoji} {config.RESULT_FOOTER}

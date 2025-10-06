@@ -81,9 +81,12 @@ class VZClient:
             is_sudoer=not self.is_developer
         )
 
+        # Get user role
+        user_role = config.get_user_role(self.me.id)
+
         print(f"✅ Client started for: {self.me.first_name} (@{self.me.username})")
         print(f"👤 User ID: {self.me.id}")
-        print(f"🔑 Role: {'DEVELOPER' if self.is_developer else 'SUDOER'}")
+        print(f"🔑 Role: {user_role}")
 
         return self
 

@@ -61,6 +61,22 @@ async def ping_handler(event):
     if event.sender:
         owner_username = event.sender.username if event.sender.username else 'Unknown'
 
+    # Get user role
+    user_role = config.get_user_role(event.sender_id)
+
+    # Get additional emojis
+    hijau_emoji = vz_emoji.getemoji('hijau')
+    pesan_emoji = vz_emoji.getemoji('telegram')
+    robot_emoji = vz_emoji.getemoji('robot')
+
+    # Build role display with emoji mapping
+    if user_role == "DEVELOPER":
+        role_display = f"{main_emoji} Founder   {robot_emoji} {dev_emoji}"
+    elif user_role == "ADMIN":
+        role_display = f"Admin {robot_emoji} {petir_emoji}"
+    else:  # USER
+        role_display = f"User  {robot_emoji}"
+
     # Build response with vzl2-style footer
     response = f"""
 {main_emoji}{status_emoji} **VZ ASSISTANT - PING**
@@ -68,7 +84,9 @@ async def ping_handler(event):
 {petir_emoji} **Latency:** `{latency_ms}ms`
 {nyala_emoji} **Uptime:** `{uptime}`
 {owner_emoji} **Owner:** @{owner_username}
+{hijau_emoji} **Role:** [ {role_display} ]
 {dev_emoji} **{config.FOUNDER_TEXT}**
+{pesan_emoji} **Library:** Telethon + Uvloop × Pyrogram v2 + Trio Async
 
 {main_emoji} Plugins Digunakan: **PING**
 {petir_emoji} by {main_emoji} {config.RESULT_FOOTER}
