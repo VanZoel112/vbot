@@ -38,7 +38,7 @@ bridge_monitor_task = None
 try:
     from pytgcalls import PyTgCalls, idle
     from pytgcalls.types import MediaStream, AudioQuality
-    from pytgcalls.exceptions import NoActiveGroupCall, AlreadyJoinedError
+    from pytgcalls.exceptions import NoActiveGroupCall, NotInCallError
 
     # Try to import yt-dlp from vzoelupgrade first, fallback to pip
     try:
@@ -51,9 +51,9 @@ try:
         import yt_dlp
 
     PYTGCALLS_AVAILABLE = True
-except ImportError:
+except ImportError as e:
     PYTGCALLS_AVAILABLE = False
-    print("⚠️  pytgcalls not installed - VC features disabled")
+    print(f"⚠️  pytgcalls not available: {e}")
 
 # PyTgCalls client (initialized on first use)
 py_tgcalls = None
@@ -241,9 +241,10 @@ async def join_vc_silent(chat_id: int) -> bool:
 
         return True
 
-    except AlreadyJoinedError:
-        return True  # Already joined
     except Exception as e:
+        error_msg = str(e).lower()
+        if "already" in error_msg or "joined" in error_msg:
+            return True  # Already joined
         print(f"Error joining VC: {e}")
         return False
 
