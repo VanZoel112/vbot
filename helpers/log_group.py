@@ -145,16 +145,19 @@ def _mark_log_group_setup_completed():
 
 async def setup_log_group(client: TelegramClient):
     """
-    Setup log group - create if not exists, join if exists.
+    Setup log group - verify or create for assistant bot logging.
+
+    IMPORTANT: This function does NOT make user account join the group.
+    Only the ASSISTANT BOT will join and send logs.
 
     Flow:
     1. Check .env for LOG_GROUP_ID
-    2. If exists → verify & join → skip creation
-    3. If not exists → create new group with username vzlog
+    2. If exists → verify only (no join) → skip creation
+    3. If not exists → create new group for bot to join later
     4. Save to .env
 
     Args:
-        client: Telethon client instance
+        client: Telethon client instance (for verification only)
 
     Returns:
         bool: True if log group is ready, False otherwise

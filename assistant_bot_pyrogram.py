@@ -96,6 +96,9 @@ app = Client(
 # Global plugins cache
 PLUGINS_CACHE = None
 
+# Startup flag for log group join
+_log_group_joined = False
+
 # ============================================================================
 # HELPER FUNCTIONS
 # ============================================================================
@@ -214,6 +217,46 @@ def get_plugin_by_name(name: str):
         if plugin["name"] == name:
             return plugin
     return None
+
+# ============================================================================
+# STARTUP - AUTO JOIN LOG GROUP
+# ============================================================================
+
+@app.on_message(filters.private, group=-1)
+async def startup_join_log_group(client: Client, message: Message):
+    """Auto-join log group on first message (runs once)."""
+    global _log_group_joined
+
+    # Only run once
+    if _log_group_joined or not LOG_GROUP_ID:
+        return
+
+    _log_group_joined = True
+
+    try:
+        # Try to join the log group
+        chat = await client.join_chat(LOG_GROUP_ID)
+        logger.info(f"✅ Bot joined log group: {chat.title}")
+
+        # Get bot info
+        bot_me = await client.get_me()
+
+        # Send startup log
+        startup_msg = f"""
+🤖 **VZ Assistant Bot Started**
+
+**Bot:** @{bot_me.username}
+**Owner:** {OWNER_ID}
+**Time:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+✅ Bot is online and ready to serve!
+"""
+        await client.send_message(LOG_GROUP_ID, startup_msg)
+        logger.info("✅ Startup log sent to group")
+
+    except Exception as e:
+        # Already in group or permission error
+        logger.warning(f"Log group startup: {e}")
 
 # ============================================================================
 # START COMMAND
