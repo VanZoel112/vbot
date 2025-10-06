@@ -13,7 +13,7 @@ import sys
 import json
 import logging
 from datetime import datetime
-from pyrogram import Client, filters
+from pyrogram import Client, filters, enums
 from pyrogram.types import (
     InlineKeyboardMarkup,
     InlineKeyboardButton,
@@ -306,7 +306,7 @@ async def inline_help_query(client: Client, inline_query: InlineQuery):
         description="Buka menu bantuan plugin interaktif",
         input_message_content=InputTextMessageContent(
             help_text,
-            parse_mode="markdown",
+            parse_mode=enums.ParseMode.MARKDOWN,
         ),
         reply_markup=keyboard,
     )
