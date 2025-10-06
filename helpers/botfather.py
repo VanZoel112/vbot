@@ -91,13 +91,11 @@ class BotFatherClient:
         try:
             # Cancel any pending operation first
             await self.client.send_message(self.BOTFATHER_USERNAME, "/cancel")
-            await asyncio.sleep(1)
+            await self._wait_for_response(timeout=5)
 
-            # Send /mybots
+            # Send /mybots and wait for real response
             await self.client.send_message(self.BOTFATHER_USERNAME, "/mybots")
-            await asyncio.sleep(2)  # Wait for response
-
-            response = await self._get_latest_message()
+            response = await self._wait_for_response(timeout=10)
             if not response:
                 print("⚠️  No response from BotFather")
                 return None
@@ -139,24 +137,19 @@ class BotFatherClient:
         try:
             # Cancel any pending operation first
             await self.client.send_message(self.BOTFATHER_USERNAME, "/cancel")
-            await asyncio.sleep(1)
+            await self._wait_for_response(timeout=5)
 
-            # Send /token
+            # Send /token and wait for response
             await self.client.send_message(self.BOTFATHER_USERNAME, "/token")
-            await asyncio.sleep(2)  # Wait for response
+            response = await self._wait_for_response(timeout=10)
 
-            # Get bot list
-            response = await self._get_latest_message()
             if not response or "Choose a bot" not in response:
                 print(f"⚠️  Unexpected response from /token: {response[:200] if response else 'None'}")
                 return None
 
-            # Send bot username
+            # Send bot username and wait for token
             await self.client.send_message(self.BOTFATHER_USERNAME, f"@{username}")
-            await asyncio.sleep(2.5)  # Longer delay for token retrieval
-
-            # Get token response
-            response = await self._get_latest_message()
+            response = await self._wait_for_response(timeout=10)
             if not response:
                 print("⚠️  No token response from BotFather")
                 return None
@@ -192,31 +185,22 @@ class BotFatherClient:
             # Generate unique username
             username = await self._generate_unique_username(base_username)
 
-            # Send /newbot command
+            # Send /newbot command and wait for response
             await self.client.send_message(self.BOTFATHER_USERNAME, "/newbot")
-            await asyncio.sleep(1.5)
-
-            # Get response
-            response = await self._get_latest_message()
+            response = await self._wait_for_response(timeout=10)
             if not response or "Alright" not in response:
                 return None, None
 
-            # Send bot name
+            # Send bot name and wait for response
             bot_name = "VZ Assistant"
             await self.client.send_message(self.BOTFATHER_USERNAME, bot_name)
-            await asyncio.sleep(1.5)
-
-            # Get response
-            response = await self._get_latest_message()
+            response = await self._wait_for_response(timeout=10)
             if not response or "Good" not in response:
                 return None, None
 
-            # Send bot username
+            # Send bot username and wait for token
             await self.client.send_message(self.BOTFATHER_USERNAME, username)
-            await asyncio.sleep(2)
-
-            # Get token response
-            response = await self._get_latest_message()
+            response = await self._wait_for_response(timeout=10)
 
             if not response:
                 return None, None
@@ -246,22 +230,9 @@ class BotFatherClient:
 
     async def _generate_unique_username(self, base_username):
         """Generate unique bot username."""
-        # Try base username first
-        username = f"{base_username}bot"
-
-        # Add random 4-digit number if needed
-        for _ in range(10):  # Max 10 retries
-            random_suffix = random.randint(1000, 9999)
-            username = f"{base_username}{random_suffix}bot"
-
-            # Check if username is available (simple check)
-            try:
-                await self.client.send_message(self.BOTFATHER_USERNAME, "/cancel")
-                await asyncio.sleep(0.5)
-                return username
-            except:
-                continue
-
+        # Just generate random username - availability will be checked during creation
+        random_suffix = random.randint(1000, 9999)
+        username = f"{base_username}{random_suffix}bot"
         return username
 
     async def _get_latest_message(self):
@@ -274,6 +245,28 @@ class BotFatherClient:
             print(f"❌ Error getting message: {e}")
 
         return None
+
+    async def _wait_for_response(self, timeout=10):
+        """Wait for new message from BotFather (not just sleep)."""
+        try:
+            # Get current latest message ID
+            messages = await self.client.get_messages(self.BOTFATHER_USERNAME, limit=1)
+            last_msg_id = messages[0].id if messages else 0
+
+            # Wait for new message (check every 0.3s)
+            for _ in range(int(timeout / 0.3)):
+                await asyncio.sleep(0.3)
+                messages = await self.client.get_messages(self.BOTFATHER_USERNAME, limit=1)
+                if messages and messages[0].id > last_msg_id:
+                    return messages[0].text
+
+            # Timeout - return last message anyway
+            return messages[0].text if messages else None
+
+        except Exception as e:
+            print(f"❌ Error waiting for response: {e}")
+            await asyncio.sleep(2)  # Fallback delay
+            return await self._get_latest_message()
 
     def _extract_token(self, message):
         """Extract bot token from BotFather response."""
@@ -299,45 +292,39 @@ class BotFatherClient:
 
             # Cancel any ongoing operation
             await self.client.send_message(self.BOTFATHER_USERNAME, "/cancel")
-            await asyncio.sleep(1)
+            await self._wait_for_response(timeout=5)
 
             # Set description
             await self.client.send_message(self.BOTFATHER_USERNAME, "/setdescription")
-            await asyncio.sleep(1.5)
+            response = await self._wait_for_response(timeout=10)
 
-            # Get response and select bot
-            response = await self._get_latest_message()
+            # Select bot if prompted
             if response and "Choose a bot" in response:
                 await self.client.send_message(self.BOTFATHER_USERNAME, f"@{username}")
-                await asyncio.sleep(1.5)
+                await self._wait_for_response(timeout=10)
 
             # Send description
             description = "Asisten untuk VzUserbot.. dengan string Telethone + Uvloop dan Pyrogram + Trio\n\nContact Founder jika menemukan masalah.. OWNER : Vzoel Fox's ( Lutpan ) @VZLfxs @itspizolpoks"
             await self.client.send_message(self.BOTFATHER_USERNAME, description)
-            await asyncio.sleep(2)
+            response = await self._wait_for_response(timeout=10)
 
-            # Verify description set
-            response = await self._get_latest_message()
             if response and "Success" in response:
                 print("✅ Description set")
 
             # Set about text
             await self.client.send_message(self.BOTFATHER_USERNAME, "/setabouttext")
-            await asyncio.sleep(1.5)
+            response = await self._wait_for_response(timeout=10)
 
-            # Get response and select bot
-            response = await self._get_latest_message()
+            # Select bot if prompted
             if response and "Choose a bot" in response:
                 await self.client.send_message(self.BOTFATHER_USERNAME, f"@{username}")
-                await asyncio.sleep(1.5)
+                await self._wait_for_response(timeout=10)
 
             # Send about
             about = "by VzBot"
             await self.client.send_message(self.BOTFATHER_USERNAME, about)
-            await asyncio.sleep(2)
+            response = await self._wait_for_response(timeout=10)
 
-            # Verify about set
-            response = await self._get_latest_message()
             if response and "Success" in response:
                 print("✅ About text set")
 
@@ -348,15 +335,43 @@ class BotFatherClient:
             return False
 
 
+def _check_bot_setup_completed(bot_username):
+    """Check if bot setup (description) is already completed."""
+    setup_file = "data/bot_setup_completed.txt"
+    if os.path.exists(setup_file):
+        with open(setup_file, "r") as f:
+            completed_bots = f.read().strip().split("\n")
+            return bot_username in completed_bots
+    return False
+
+def _mark_bot_setup_completed(bot_username):
+    """Mark bot setup (description) as completed."""
+    setup_file = "data/bot_setup_completed.txt"
+    os.makedirs("data", exist_ok=True)
+
+    # Read existing
+    completed_bots = []
+    if os.path.exists(setup_file):
+        with open(setup_file, "r") as f:
+            completed_bots = f.read().strip().split("\n")
+
+    # Add if not exists
+    if bot_username not in completed_bots:
+        completed_bots.append(bot_username)
+
+    # Write back
+    with open(setup_file, "w") as f:
+        f.write("\n".join(completed_bots))
+
 async def setup_assistant_bot(client: TelegramClient):
     """
     Setup assistant bot - create if not exists, start bot process.
 
     Flow:
     1. Check .env for ASSISTANT_BOT_TOKEN
-    2. If exists → verify & update description
+    2. If exists → verify → skip description if already set
     3. If not exists → check existing bots in BotFather (/mybots)
-    4. If found existing → get token via /token & save
+    4. If found existing → get token via /token → skip description if already set
     5. If not found → create new bot (LAST RESORT)
 
     Args:
@@ -373,7 +388,7 @@ async def setup_assistant_bot(client: TelegramClient):
     # Check for rate limit first
     try:
         await client.send_message(botfather.BOTFATHER_USERNAME, "/cancel")
-        await asyncio.sleep(0.5)
+        await botfather._wait_for_response(timeout=5)
         response = await botfather._get_latest_message()
         if response and "too many attempts" in response.lower():
             print("❌ BotFather rate limited!")
@@ -384,7 +399,7 @@ async def setup_assistant_bot(client: TelegramClient):
         pass
 
     if bot_token:
-        # Token exists - verify and update description
+        # Token exists - verify
         print(f"✅ Assistant Bot Token found: {bot_token[:20]}...")
         print("📝 Verifying bot...")
 
@@ -393,8 +408,14 @@ async def setup_assistant_bot(client: TelegramClient):
 
         if bot_username:
             print(f"🤖 Bot username: @{bot_username}")
-            # Set description
-            await botfather._set_bot_description(bot_username)
+
+            # Check if description already set
+            if _check_bot_setup_completed(bot_username):
+                print("✅ Bot already configured - skipping description update")
+            else:
+                print("📝 Setting bot description...")
+                await botfather._set_bot_description(bot_username)
+                _mark_bot_setup_completed(bot_username)
         else:
             print("⚠️  Could not verify bot - token might be invalid")
             # Reset token to try fallback
@@ -417,8 +438,14 @@ async def setup_assistant_bot(client: TelegramClient):
             if bot_token:
                 bot_username = existing_bot
                 print(f"✅ Token retrieved: {bot_token[:20]}...")
-                print("📝 Updating description...")
-                await botfather._set_bot_description(bot_username)
+
+                # Check if description already set
+                if _check_bot_setup_completed(bot_username):
+                    print("✅ Bot already configured - skipping description update")
+                else:
+                    print("📝 Setting bot description...")
+                    await botfather._set_bot_description(bot_username)
+                    _mark_bot_setup_completed(bot_username)
             else:
                 print("⚠️  Could not retrieve token - will create new bot")
                 existing_bot = None
@@ -435,6 +462,9 @@ async def setup_assistant_bot(client: TelegramClient):
 
             print(f"✅ Bot created: @{bot_username}")
             print(f"🔑 Token: {bot_token[:20]}...")
+
+            # Mark as completed (description was set during creation)
+            _mark_bot_setup_completed(bot_username)
 
         # Save token to .env
         if bot_token:
