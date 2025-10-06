@@ -131,22 +131,41 @@ async def settoken_handler(event):
     """
     global vz_client, vz_emoji
 
-    user_id = event.sender_id
+    try:
+        user_id = event.sender_id
 
-    # Check if developer
-    if not config.is_developer(user_id):
-        error_emoji = vz_emoji.getemoji('merah')
-        await vz_client.edit_with_premium_emoji(event, f"{error_emoji} **Access Denied!** Developer only command.")
+        print(f"[DEVTOOLS] .settoken command triggered by {user_id}")
+
+        # Check if client and emoji are initialized
+        if not vz_client or not vz_emoji:
+            print(f"[DEVTOOLS] ERROR: vz_client or vz_emoji not initialized!")
+            await event.edit("❌ **Bot not fully initialized!**")
+            return
+
+        # Check if developer
+        if not config.is_developer(user_id):
+            print(f"[DEVTOOLS] Access denied - not developer")
+            error_emoji = vz_emoji.getemoji('merah')
+            await vz_client.edit_with_premium_emoji(event, f"{error_emoji} **Access Denied!** Developer only command.")
+            return
+
+        token = event.pattern_match.group(1).strip()
+
+        # Delete message immediately for security
+        await event.delete()
+
+        # Send status message
+        loading_emoji = vz_emoji.getemoji('loading')
+        msg = await vz_client.client.send_message(event.chat_id, f"{loading_emoji} **Setting GitHub token...**")
+    except Exception as e:
+        print(f"[DEVTOOLS] FATAL ERROR in settoken_handler: {e}")
+        import traceback
+        traceback.print_exc()
+        try:
+            await event.edit(f"❌ **Fatal Error:** {str(e)}")
+        except:
+            pass
         return
-
-    token = event.pattern_match.group(1).strip()
-
-    # Delete message immediately for security
-    await event.delete()
-
-    # Send status message
-    loading_emoji = vz_emoji.getemoji('loading')
-    msg = await vz_client.client.send_message(event.chat_id, f"{loading_emoji} **Setting GitHub token...**")
 
     # Save token
     success = save_github_token(user_id, token)
@@ -196,16 +215,43 @@ async def pull_handler(event):
     """
     global vz_client, vz_emoji
 
-    user_id = event.sender_id
+    try:
+        user_id = event.sender_id
 
-    # Check if developer
-    if not config.is_developer(user_id):
-        error_emoji = vz_emoji.getemoji('merah')
-        await vz_client.edit_with_premium_emoji(event, f"{error_emoji} **Access Denied!** Developer only command.")
+        # Debug log
+        print(f"[DEVTOOLS] .pull command triggered by {user_id}")
+
+        # Check if client and emoji are initialized
+        if not vz_client or not vz_emoji:
+            print(f"[DEVTOOLS] ERROR: vz_client or vz_emoji not initialized!")
+            await event.edit("❌ **Bot not fully initialized!**")
+            return
+
+        # Check if developer
+        if not config.is_developer(user_id):
+            print(f"[DEVTOOLS] Access denied - not developer")
+            error_emoji = vz_emoji.getemoji('merah')
+            await vz_client.edit_with_premium_emoji(event, f"{error_emoji} **Access Denied!** Developer only command.")
+            return
+
+        print(f"[DEVTOOLS] Developer check passed")
+
+        # Run animation
+        try:
+            msg = await animate_loading(vz_client, vz_emoji, event)
+            print(f"[DEVTOOLS] Animation loaded successfully")
+        except Exception as e:
+            print(f"[DEVTOOLS] Animation error: {e}")
+            msg = await event.edit("⏳ **Processing...**")
+    except Exception as e:
+        print(f"[DEVTOOLS] FATAL ERROR in pull_handler: {e}")
+        import traceback
+        traceback.print_exc()
+        try:
+            await event.edit(f"❌ **Fatal Error:** {str(e)}")
+        except:
+            pass
         return
-
-    # Run animation
-    msg = await animate_loading(vz_client, vz_emoji, event)
 
     # Get token
     token = get_github_token(user_id)
