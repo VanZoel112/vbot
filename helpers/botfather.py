@@ -375,6 +375,10 @@ async def setup_assistant_bot(client: TelegramClient):
     Returns:
         bool: True if bot is ready, False otherwise
     """
+    # Reload .env to get latest values (in case .env was updated)
+    from dotenv import load_dotenv
+    load_dotenv(override=True)
+
     # Check if token already exists
     bot_token = os.getenv("ASSISTANT_BOT_TOKEN")
     botfather = BotFatherClient(client)
@@ -424,18 +428,18 @@ async def setup_assistant_bot(client: TelegramClient):
         print("\n🤖 Assistant Bot Token not configured")
         print("🔍 Checking existing bots...")
 
-        # Check for existing bot
-        existing_bot = await botfather.find_existing_bot("vzoelassistant")
+        # Step 1: Check if username is in .env (use that instead of searching)
+        env_username = os.getenv("ASSISTANT_BOT_USERNAME")
+        if env_username:
+            env_username = env_username.lstrip("@")
+            print(f"📋 Found ASSISTANT_BOT_USERNAME in .env: @{env_username}")
+            print(f"🔑 Getting token for @{env_username}...")
 
-        if existing_bot:
-            print(f"✅ Found existing bot: @{existing_bot}")
-            print("🔑 Getting token from BotFather...")
-
-            # Try to get token
-            bot_token = await botfather.get_token_from_botfather(existing_bot)
+            # Get token directly for this username
+            bot_token = await botfather.get_token_from_botfather(env_username)
 
             if bot_token:
-                bot_username = existing_bot
+                bot_username = env_username
                 print(f"✅ Token retrieved: {bot_token[:20]}...")
 
                 # Check if description already set
@@ -446,10 +450,36 @@ async def setup_assistant_bot(client: TelegramClient):
                     await botfather._set_bot_description(bot_username)
                     _mark_bot_setup_completed(bot_username)
             else:
-                print("⚠️  Could not retrieve token - will create new bot")
-                existing_bot = None
+                print(f"⚠️  Could not get token for @{env_username}")
+                print("🔍 Will search for bots with pattern instead...")
 
-        if not existing_bot:
+        # Step 2: If no token yet, search for bot with pattern
+        if not bot_token:
+            existing_bot = await botfather.find_existing_bot("vzoelassistant")
+
+            if existing_bot:
+                print(f"✅ Found existing bot: @{existing_bot}")
+                print("🔑 Getting token from BotFather...")
+
+                # Try to get token
+                bot_token = await botfather.get_token_from_botfather(existing_bot)
+
+                if bot_token:
+                    bot_username = existing_bot
+                    print(f"✅ Token retrieved: {bot_token[:20]}...")
+
+                    # Check if description already set
+                    if _check_bot_setup_completed(bot_username):
+                        print("✅ Bot already configured - skipping description update")
+                    else:
+                        print("📝 Setting bot description...")
+                        await botfather._set_bot_description(bot_username)
+                        _mark_bot_setup_completed(bot_username)
+                else:
+                    print("⚠️  Could not retrieve token")
+
+        # Step 3: If still no token, create new bot (LAST RESORT)
+        if not bot_token:
             print("📝 Creating new bot via BotFather...")
 
             # Create bot via BotFather
