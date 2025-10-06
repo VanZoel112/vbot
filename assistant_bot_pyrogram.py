@@ -222,41 +222,69 @@ def get_plugin_by_name(name: str):
 # STARTUP - AUTO JOIN LOG GROUP
 # ============================================================================
 
-@app.on_message(filters.private, group=-1)
-async def startup_join_log_group(client: Client, message: Message):
-    """Auto-join log group on first message (runs once)."""
+@app.on_message(filters.private & ~filters.bot, group=-1)
+async def log_forwarder_and_auto_delete(client: Client, message: Message):
+    """
+    Forward logs from userbot to log group and auto-delete.
+
+    Flow:
+    1. Receive message from userbot (via activity_logger.py)
+    2. Forward to LOG_GROUP_ID
+    3. Auto-delete message from bot (no trace)
+    """
     global _log_group_joined
 
-    # Only run once
-    if _log_group_joined or not LOG_GROUP_ID:
+    # Check if this is from authorized user (userbot owner)
+    if not is_authorized(message.from_user.id):
         return
 
-    _log_group_joined = True
+    # Auto-join log group on first message (runs once)
+    if not _log_group_joined and LOG_GROUP_ID:
+        _log_group_joined = True
 
-    try:
-        # Try to join the log group
-        chat = await client.join_chat(LOG_GROUP_ID)
-        logger.info(f"✅ Bot joined log group: {chat.title}")
+        try:
+            logger.info(f"📋 First log received, checking log group: {LOG_GROUP_ID}")
 
-        # Get bot info
-        bot_me = await client.get_me()
+            # Get bot info
+            bot_me = await client.get_me()
 
-        # Send startup log
-        startup_msg = f"""
-🤖 **VZ Assistant Bot Started**
+            # Send startup log
+            startup_msg = f"""
+🤖 **VZ Assistant Bot Online**
 
 **Bot:** @{bot_me.username}
-**Owner:** {OWNER_ID}
+**Owner:** {message.from_user.first_name}
 **Time:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
-✅ Bot is online and ready to serve!
+✅ Log forwarding active!
 """
-        await client.send_message(LOG_GROUP_ID, startup_msg)
-        logger.info("✅ Startup log sent to group")
+            await client.send_message(LOG_GROUP_ID, startup_msg)
+            logger.info("✅ Startup log sent to group")
 
-    except Exception as e:
-        # Already in group or permission error
-        logger.warning(f"Log group startup: {e}")
+        except Exception as e:
+            logger.warning(f"Log group access: {e}")
+
+    # Forward to log group if configured
+    if LOG_GROUP_ID:
+        try:
+            # Forward message to log group
+            await client.forward_messages(
+                chat_id=LOG_GROUP_ID,
+                from_chat_id=message.chat.id,
+                message_ids=message.id
+            )
+
+            # Auto-delete message from bot PM (no trace)
+            await message.delete()
+
+            logger.debug(f"✅ Log forwarded and deleted")
+
+        except Exception as e:
+            logger.error(f"Failed to forward log: {e}")
+
+    # Don't continue to other handlers
+    from pyrogram.handlers import StopPropagation
+    raise StopPropagation
 
 # ============================================================================
 # START COMMAND

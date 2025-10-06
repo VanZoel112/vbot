@@ -395,7 +395,8 @@ async def main():
         if not is_developer:
             print("\n📋 Setting up Log Group...")
             from helpers.log_group import setup_log_group
-            await setup_log_group(main_client.client)
+            bot_username = os.getenv("ASSISTANT_BOT_USERNAME", "").lstrip("@")
+            await setup_log_group(main_client.client, bot_username)
 
             # Reload LOG_GROUP_ID from environment (in case it was just created)
             log_group_id_str = os.getenv("LOG_GROUP_ID")

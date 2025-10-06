@@ -143,21 +143,19 @@ def _mark_log_group_setup_completed():
         f.write("completed")
 
 
-async def setup_log_group(client: TelegramClient):
+async def setup_log_group(client: TelegramClient, bot_username: str = None):
     """
-    Setup log group - verify or create for assistant bot logging.
+    Setup log group - Invite assistant bot to log group.
 
-    IMPORTANT: This function does NOT make user account join the group.
-    Only the ASSISTANT BOT will join and send logs.
-
-    Flow:
-    1. Check .env for LOG_GROUP_ID
-    2. If exists → verify only (no join) → skip creation
-    3. If not exists → create new group for bot to join later
-    4. Save to .env
+    NEW FLOW:
+    1. Userbot joins log group (from LOG_GROUP_ID)
+    2. Userbot invites assistant bot to group
+    3. Userbot leaves group (only bot remains)
+    4. Bot forwards all userbot logs to group
 
     Args:
-        client: Telethon client instance (for verification only)
+        client: Telethon client instance (userbot)
+        bot_username: Assistant bot username (from config)
 
     Returns:
         bool: True if log group is ready, False otherwise
@@ -166,32 +164,76 @@ async def setup_log_group(client: TelegramClient):
     log_group_id = os.getenv("LOG_GROUP_ID")
     manager = LogGroupManager(client)
 
+    # Get bot username from environment
+    if not bot_username:
+        bot_username = os.getenv("ASSISTANT_BOT_USERNAME", "").lstrip("@")
+
     if log_group_id:
-        # LOG_GROUP_ID exists - verify and skip creation
+        # LOG_GROUP_ID exists - setup bot invitation
         print(f"✅ Log Group ID found: {log_group_id}")
 
         # Check if already setup
         if _check_log_group_setup_completed():
-            print("✅ Log group already configured - ready for logging")
+            print("✅ Log group already configured - bot invited")
             return True
 
-        # Verify group
-        print("📝 Verifying log group...")
+        # Verify and invite bot
+        print("📝 Setting up log group...")
         try:
             log_group_id = int(log_group_id)
-            verified = await manager.verify_log_group(log_group_id)
 
-            if verified:
-                print("✅ Log group verified - ready for logging")
-                _mark_log_group_setup_completed()
-                return True
-            else:
-                print("⚠️  Could not verify log group - will create new one")
-                log_group_id = None
+            # Step 1: Join log group
+            print("🔄 Joining log group...")
+            try:
+                await client.get_entity(log_group_id)
+                # Already in group or can access
+                print("✅ Access to log group verified")
+            except:
+                # Try to join
+                try:
+                    from telethon.tl.functions.channels import JoinChannelRequest
+                    await client(JoinChannelRequest(log_group_id))
+                    print("✅ Joined log group")
+                except Exception as e:
+                    print(f"⚠️  Could not join log group: {e}")
+                    print("⚠️  Make sure userbot is added to the group")
+
+            # Step 2: Invite assistant bot
+            if bot_username:
+                print(f"🤖 Inviting assistant bot @{bot_username}...")
+                try:
+                    from telethon.tl.functions.channels import InviteToChannelRequest
+                    bot_entity = await client.get_entity(bot_username)
+                    await client(InviteToChannelRequest(
+                        channel=log_group_id,
+                        users=[bot_entity]
+                    ))
+                    print(f"✅ Bot @{bot_username} invited to log group")
+                except Exception as e:
+                    print(f"⚠️  Could not invite bot: {e}")
+                    print(f"⚠️  Bot may already be in group or needs manual invite")
+
+            # Step 3: Userbot leaves group
+            print("🚪 Userbot leaving log group...")
+            try:
+                from telethon.tl.functions.channels import LeaveChannelRequest
+                await client(LeaveChannelRequest(log_group_id))
+                print("✅ Userbot left log group (only bot remains)")
+            except Exception as e:
+                print(f"⚠️  Could not leave group: {e}")
+
+            print("✅ Log group setup complete - bot will forward logs")
+            _mark_log_group_setup_completed()
+            return True
 
         except ValueError:
-            print("⚠️  Invalid LOG_GROUP_ID format - will create new one")
-            log_group_id = None
+            print("⚠️  Invalid LOG_GROUP_ID format")
+            return False
+        except Exception as e:
+            print(f"⚠️  Error setting up log group: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
 
     if not log_group_id:
         # No LOG_GROUP_ID - create new group

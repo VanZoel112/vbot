@@ -320,12 +320,18 @@ DEVELOPER_COMMANDS = {
             "example": ".settoken ghp_xxxxx"
         }
     },
-    "Sudo": {
-        "s{command}": {
-            "cmd": ".s<command>",
-            "desc": "Execute sudoer command as developer",
-            "usage": ".s<command> (example: .sgcast)",
-            "example": ".sgcast Hello from developer!"
+    "Broadcast to Sudoers": {
+        "..command": {
+            "cmd": "..<command>",
+            "desc": "Broadcast command to all sudoers",
+            "usage": "..<command> <args>",
+            "example": "..gcast Hello to all sudoers!"
+        },
+        "note": {
+            "cmd": "NOTE",
+            "desc": "Use .. (double dot) prefix to execute commands on all sudoers. Examples: ..ping, ..gcast, ..alive",
+            "usage": "Developer broadcast prefix: ..",
+            "example": "..ping → All sudoers execute .ping"
         }
     }
 }
