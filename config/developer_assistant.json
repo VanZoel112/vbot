@@ -1,0 +1,26 @@
+{
+  "_comment": "Developer Assistant Bot Configuration",
+  "_description": "Maps Telegram user IDs to their assistant bot credentials. When a developer deploys VZ Assistant, it will automatically use the bot configured for their user ID instead of creating a new one.",
+  "_usage": "Add new developers here with their user ID and bot credentials. The userbot will automatically detect and use the correct bot based on the logged-in user.",
+
+  "developers": {
+    "6584698403": {
+      "name": "Vzoel Fox",
+      "telegram_username": "@VZLfxs",
+      "assistant_bot": {
+        "token": "8200379693:AAHQa9WlTNB_ynWgXBk1PDy7r0CJYzZQUtE",
+        "username": "vzoelversirobot",
+        "bot_name": "VZ Assistant",
+        "description": "Asisten untuk VzUserbot.. dengan string Telethone + Uvloop dan Pyrogram + Trio\n\nContact Founder jika menemukan masalah.. OWNER : Vzoel Fox's ( Lutpan ) @VZLfxs @itspizolpoks",
+        "about": "by VzBot"
+      }
+    }
+  },
+
+  "fallback": {
+    "_comment": "Default behavior when user ID is not found in developers list",
+    "auto_create": true,
+    "base_username": "vzoelassistant",
+    "bot_name": "VZ Assistant"
+  }
+}

@@ -362,15 +362,31 @@ def _mark_bot_setup_completed(bot_username):
     with open(setup_file, "w") as f:
         f.write("\n".join(completed_bots))
 
+def _load_developer_assistant_config():
+    """Load developer assistant config from config/developer_assistant.json"""
+    import json
+
+    config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config", "developer_assistant.json")
+
+    if os.path.exists(config_path):
+        try:
+            with open(config_path, "r") as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"⚠️  Error loading developer assistant config: {e}")
+            return None
+    return None
+
+
 async def setup_assistant_bot(client: TelegramClient):
     """
     Setup assistant bot - create if not exists, start bot process.
 
     Flow:
-    1. Check .env for ASSISTANT_BOT_TOKEN + ASSISTANT_BOT_USERNAME
-    2. If BOTH exist → use directly, skip ALL BotFather operations
-    3. If token only → get username from BotFather
-    4. If neither → create new bot
+    1. Check developer assistant config for current user ID
+    2. If found → use developer's bot credentials
+    3. If not found → check .env
+    4. If .env empty → auto-create new bot
 
     Args:
         client: Telethon client instance
@@ -378,30 +394,58 @@ async def setup_assistant_bot(client: TelegramClient):
     Returns:
         bool: True if bot is ready, False otherwise
     """
-    # Reload .env to get latest values
-    from dotenv import load_dotenv, dotenv_values
+    # Get current user info
+    me = await client.get_me()
+    user_id = str(me.id)
 
-    # Find .env file
-    env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
-    if not os.path.exists(env_path):
-        env_path = os.path.join(os.getcwd(), ".env")
+    print(f"👤 Current user: {me.first_name} (@{me.username}) - ID: {user_id}")
 
-    print(f"📁 Loading .env from: {env_path}")
+    # Load developer assistant config
+    dev_config = _load_developer_assistant_config()
+    bot_token = None
+    bot_username = None
 
-    if os.path.exists(env_path):
-        # Read .env directly to get values
-        env_values = dotenv_values(env_path)
+    if dev_config and "developers" in dev_config:
+        # Check if current user has a configured bot
+        if user_id in dev_config["developers"]:
+            dev_data = dev_config["developers"][user_id]
+            bot_config = dev_data.get("assistant_bot", {})
 
-        # Get token and username from .env file directly (not os.getenv)
-        bot_token = env_values.get("ASSISTANT_BOT_TOKEN")
-        bot_username = env_values.get("ASSISTANT_BOT_USERNAME", "").lstrip("@")
+            bot_token = bot_config.get("token")
+            bot_username = bot_config.get("username", "").lstrip("@")
 
-        print(f"📋 Token from .env: {bot_token[:20] + '...' if bot_token else 'NOT FOUND'}")
-        print(f"📋 Username from .env: @{bot_username if bot_username else 'NOT FOUND'}")
-    else:
-        print(f"❌ .env file not found at {env_path}")
-        bot_token = None
-        bot_username = None
+            if bot_token and bot_username:
+                print(f"✅ Found developer assistant config for {dev_data.get('name', 'Unknown')}")
+                print(f"   Token: {bot_token[:20]}...")
+                print(f"   Username: @{bot_username}")
+                print("📝 Using developer's configured bot")
+            else:
+                print(f"⚠️  Developer config found but incomplete - will check .env")
+        else:
+            print(f"💡 User ID {user_id} not in developer assistant config")
+            print("📝 Will check .env or auto-create")
+
+    # Fallback to .env if not in developer config
+    if not bot_token or not bot_username:
+        from dotenv import dotenv_values
+
+        env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
+        if not os.path.exists(env_path):
+            env_path = os.path.join(os.getcwd(), ".env")
+
+        print(f"📁 Loading .env from: {env_path}")
+
+        if os.path.exists(env_path):
+            env_values = dotenv_values(env_path)
+
+            # Get token and username from .env file directly
+            bot_token = bot_token or env_values.get("ASSISTANT_BOT_TOKEN")
+            bot_username = bot_username or env_values.get("ASSISTANT_BOT_USERNAME", "").lstrip("@")
+
+            print(f"📋 Token from .env: {bot_token[:20] + '...' if bot_token else 'NOT FOUND'}")
+            print(f"📋 Username from .env: @{bot_username if bot_username else 'NOT FOUND'}")
+        else:
+            print(f"❌ .env file not found at {env_path}")
 
     botfather = BotFatherClient(client)
 

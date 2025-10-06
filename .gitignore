@@ -2,9 +2,13 @@
 
 # Environment & Secrets
 .env
+.env.local
 *.session
 *.session-journal
 sessions/
+
+# NOTE: config/developer_assistant.json is NOT ignored
+# It's meant to be committed so developers can share bot configs
 
 # Database files (but keep Python code)
 database/*.db
