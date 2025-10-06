@@ -291,20 +291,26 @@ def count_total_commands(is_developer=False):
     return count
 
 
-def build_sudoer_help_text(emoji_manager) -> str:
+def build_sudoer_help_text(emoji_manager, user_id=None) -> str:
     """Build the static sudoer help text."""
     main_emoji = emoji_manager.getemoji('utama')
     petir_emoji = emoji_manager.getemoji('petir')
     robot_emoji = emoji_manager.getemoji('robot')
     gear_emoji = emoji_manager.getemoji('gear')
     owner_emoji = emoji_manager.getemoji('owner')
+    dev_emoji = emoji_manager.getemoji('developer')
 
-    total_commands = count_total_commands(is_developer=False)
+    # Detect if user is developer
+    is_developer = config.is_developer(user_id) if user_id else False
+    role = "DEVELOPER" if is_developer else "SUDOER"
+    role_emoji = dev_emoji if is_developer else owner_emoji
+
+    total_commands = count_total_commands(is_developer=is_developer)
 
     help_text = f"""{main_emoji} **VZ ASSISTANT - HELP MENU**
 
 {petir_emoji} **Total Commands:** {total_commands}
-{owner_emoji} **Role:** SUDOER
+{role_emoji} **Role:** {role}
 {gear_emoji} **Prefix:** {config.DEFAULT_PREFIX}
 
 """
@@ -313,6 +319,14 @@ def build_sudoer_help_text(emoji_manager) -> str:
         help_text += f"\n**{petir_emoji} {category.upper()} COMMANDS:**\n"
         for cmd_data in commands.values():
             help_text += f"• `{cmd_data['cmd']}` - {cmd_data['desc']}\n"
+
+    # Show developer commands if user is developer
+    if is_developer:
+        help_text += f"\n**{dev_emoji} DEVELOPER EXCLUSIVE COMMANDS:**\n"
+        for category, commands in DEVELOPER_COMMANDS.items():
+            help_text += f"\n**{petir_emoji} {category}:**\n"
+            for cmd_data in commands.values():
+                help_text += f"• `{cmd_data['cmd']}` - {cmd_data['desc']}\n"
 
     help_text += f"""{gear_emoji} **Usage:** Type command for details
 {robot_emoji} **Example:** `.ping`, `.admin @user`, `.gcast hello`
@@ -390,7 +404,7 @@ async def help_handler(event):
                 f"{gear_emoji} Set `ASSISTANT_BOT_USERNAME` untuk mengaktifkan inline help.\n\n"
             )
 
-    fallback_text = fallback_prefix + build_sudoer_help_text(vz_emoji)
+    fallback_text = fallback_prefix + build_sudoer_help_text(vz_emoji, event.sender_id)
     await vz_client.edit_with_premium_emoji(fallback_target, fallback_text)
 
 # ============================================================================

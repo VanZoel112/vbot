@@ -10,6 +10,8 @@ Founder & DEVELOPER : @VZLfxs
 import asyncio
 import sys
 import os
+import subprocess
+import signal
 from datetime import datetime
 
 # Add current directory to path
@@ -100,6 +102,80 @@ async def setup_log_handler(client: VZClient):
     print(f"✅ Log handler configured - sending to group {config.LOG_GROUP_ID}")
 
 # ============================================================================
+# ASSISTANT BOT PROCESS MANAGEMENT
+# ============================================================================
+
+def start_assistant_bot():
+    """Start assistant bot as subprocess."""
+    try:
+        # Check if already running
+        result = subprocess.run(
+            ["pgrep", "-f", "assistant_bot_pyrogram.py"],
+            capture_output=True,
+            text=True
+        )
+
+        if result.stdout.strip():
+            logger.info("Assistant bot already running, skipping start")
+            print("ℹ️  Assistant bot already running")
+            return None
+
+        # Start assistant bot
+        logger.info("Starting assistant bot subprocess...")
+        process = subprocess.Popen(
+            ["python3", "assistant_bot_pyrogram.py"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            start_new_session=True  # Isolate from parent process
+        )
+
+        # Wait a moment to check if it started successfully
+        import time
+        time.sleep(2)
+
+        if process.poll() is None:
+            logger.info(f"Assistant bot started successfully (PID: {process.pid})")
+            print(f"✅ Assistant bot started (PID: {process.pid})")
+            return process
+        else:
+            stdout, stderr = process.communicate()
+            logger.error(f"Assistant bot failed to start: {stderr.decode()}")
+            print(f"❌ Assistant bot failed to start")
+            return None
+
+    except Exception as e:
+        logger.error(f"Error starting assistant bot: {e}")
+        print(f"⚠️  Could not start assistant bot: {e}")
+        return None
+
+def stop_assistant_bot(process):
+    """Stop assistant bot subprocess gracefully."""
+    if process and process.poll() is None:
+        try:
+            logger.info("Stopping assistant bot...")
+            print("🛑 Stopping assistant bot...")
+
+            # Send SIGTERM for graceful shutdown
+            process.terminate()
+
+            # Wait up to 5 seconds for graceful shutdown
+            try:
+                process.wait(timeout=5)
+                logger.info("Assistant bot stopped gracefully")
+                print("✅ Assistant bot stopped")
+            except subprocess.TimeoutExpired:
+                # Force kill if still running
+                logger.warning("Assistant bot did not stop gracefully, forcing...")
+                process.kill()
+                process.wait()
+                logger.info("Assistant bot force stopped")
+                print("⚠️  Assistant bot force stopped")
+
+        except Exception as e:
+            logger.error(f"Error stopping assistant bot: {e}")
+            print(f"⚠️  Error stopping assistant bot: {e}")
+
+# ============================================================================
 # MAIN FUNCTION
 # ============================================================================
 
@@ -146,6 +222,9 @@ async def main():
     logger.info("Initializing client manager...")
     manager = MultiClientManager()
 
+    # Track assistant bot process for cleanup
+    assistant_bot_process = None
+
     try:
         # Add main client
         print("📡 Connecting to Telegram...")
@@ -181,6 +260,10 @@ async def main():
         print("\n🤖 Setting up Assistant Bot...")
         from helpers.botfather import setup_assistant_bot
         await setup_assistant_bot(main_client.client)
+
+        # Start assistant bot subprocess
+        print("\n🚀 Starting Assistant Bot...")
+        assistant_bot_process = start_assistant_bot()
 
         # Load plugins with event registration
         print("\n📦 Loading Plugins...")
@@ -231,6 +314,11 @@ async def main():
     finally:
         logger.info("Shutting down...")
         print("\n🛑 Shutting down...")
+
+        # Stop assistant bot
+        stop_assistant_bot(assistant_bot_process)
+
+        # Stop all clients
         await manager.stop_all()
         logger.info("VZ ASSISTANT stopped")
         print("👋 Goodbye!")
