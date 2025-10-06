@@ -87,7 +87,8 @@ def parse_plugin_file(filepath: str, plugin_name: str) -> Dict[str, any]:
         for node in ast.walk(tree):
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 if any(_is_events_register_decorator(dec) for dec in node.decorator_list):
-                    handler_doc = ast.get_docstring(node) or ""
+                    # Use custom function to get docstring (handles global statements before docstring)
+                    handler_doc = _get_function_docstring(node)
                     handler_lines = [ln.strip() for ln in handler_doc.split("\n")]
 
                     collected = []
@@ -136,6 +137,29 @@ def parse_plugin_file(filepath: str, plugin_name: str) -> Dict[str, any]:
     except Exception as e:
         print(f"Error parsing {filepath}: {e}")
         return None
+
+
+def _get_function_docstring(node):
+    """
+    Get docstring from function, even if not the first statement.
+
+    This handles cases where global statements or other code
+    appears before the docstring.
+    """
+    if not node.body:
+        return ""
+
+    # Look for first string literal in function body (check first 5 statements)
+    for stmt in node.body[:5]:
+        if isinstance(stmt, ast.Expr):
+            # Python 3.7 and earlier use ast.Str
+            if hasattr(ast, 'Str') and isinstance(stmt.value, ast.Str):
+                return stmt.value.s
+            # Python 3.8+ uses ast.Constant
+            if isinstance(stmt.value, ast.Constant) and isinstance(stmt.value.value, str):
+                return stmt.value.value
+
+    return ""
 
 
 def _is_events_register_decorator(decorator: ast.AST) -> bool:
