@@ -25,31 +25,41 @@ vz_emoji = None
 @events.register(events.NewMessage(pattern=r'^\.restart$', outgoing=True))
 async def restart_handler(event):
     """
-    .restart - Restart bot and reload configuration
+    .restart - Full bot restart with complete reload
 
-    Restarts the bot to apply changes from:
-    - GitHub updates (.pull)
-    - .env changes
+    Applies ALL code changes from:
+    - GitHub updates (.pull) - NEW/UPDATED FILES
+    - Plugin updates (new plugins, edited plugins)
+    - Helper module updates (utils, database, etc)
+    - .env configuration changes
     - config.py changes
-    - New plugins
+    - JSON data files
 
-    Preserved per user:
-    - Blacklist groups
-    - Lock users
-    - PM permit settings
-    - Custom prefix
-    - Custom logo
+    How it works:
+    - os.execv() creates NEW Python process
+    - All Python modules re-imported from disk
+    - Fresh plugin loader reads all .py files
+    - .env and config.py hot-reloaded before restart
+
+    Preserved per user (file-based storage):
+    - Blacklist groups (JSON)
+    - Lock users (SQLite)
+    - PM permit settings (SQLite)
+    - Custom prefix (SQLite)
+    - Custom logo (file)
 
     Available for all roles (USER, ADMIN, DEVELOPER).
 
     Usage:
         .restart
 
-    After restart:
-    - .env reloaded
-    - config.py reloaded
-    - Plugins reloaded
-    - User data preserved (blacklist, lock, etc)
+    After restart (ALL changes applied):
+    - .env reloaded from disk
+    - config.py reloaded from disk
+    - plugins/*.py imported fresh from disk
+    - helpers/*.py imported fresh from disk
+    - All .py files reflect latest code
+    - User data preserved from database/JSON
     """
     global vz_client, vz_emoji
 
@@ -71,22 +81,23 @@ async def restart_handler(event):
 
 {role_emoji} **User:** {event.sender.first_name}
 {gear_emoji} **Role:** {user_role}
-{petir_emoji} **Action:** Full restart
+{petir_emoji} **Action:** Full process restart
 
-{nyala_emoji} **Reloading:**
+{nyala_emoji} **Applying ALL changes:**
+• New/updated plugins
+• Helper module updates
 • .env configuration
 • config.py settings
-• All plugins
-• Connections
+• All .py files from disk
 
-{gear_emoji} **Preserved:**
+{gear_emoji} **Preserved (file-based):**
 • Blacklist groups
 • Lock users
 • PM permit settings
 • Custom prefix & logo
 
 {nyala_emoji} **Please wait...**
-Bot will reconnect in a few seconds
+Creating fresh Python process...
 
 {main_emoji} by {config.RESULT_FOOTER}
 """
