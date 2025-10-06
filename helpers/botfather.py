@@ -397,13 +397,11 @@ def _load_developer_assistant_config():
 
 async def setup_assistant_bot(client: TelegramClient):
     """
-    Setup assistant bot - create if not exists, start bot process.
+    Setup assistant bot with role-based logic.
 
     Flow:
-    1. Check developer assistant config for current user ID
-    2. If found → use developer's bot credentials
-    3. If not found → check .env
-    4. If .env empty → auto-create new bot
+    - DEVELOPER: Use existing bot (from developer_assistant.json or .env)
+    - SUDOER: Auto-create new bot from scratch
 
     Args:
         client: Telethon client instance
@@ -411,243 +409,165 @@ async def setup_assistant_bot(client: TelegramClient):
     Returns:
         bool: True if bot is ready, False otherwise
     """
+    import config
+
     # Get current user info
     me = await client.get_me()
-    user_id = str(me.id)
+    user_id = me.id
+    user_id_str = str(user_id)
 
     print(f"👤 Current user: {me.first_name} (@{me.username}) - ID: {user_id}")
 
-    # Load developer assistant config
-    dev_config = _load_developer_assistant_config()
+    # Check if user is developer
+    is_developer = config.is_developer(user_id)
+    role = "DEVELOPER" if is_developer else "SUDOER"
+    print(f"🔑 Role: {role}")
+
+    botfather = BotFatherClient(client)
     bot_token = None
     bot_username = None
 
-    if dev_config and "developers" in dev_config:
-        # Check if current user has a configured bot
-        if user_id in dev_config["developers"]:
-            dev_data = dev_config["developers"][user_id]
-            bot_config = dev_data.get("assistant_bot", {})
+    # ========================================================================
+    # DEVELOPER LOGIC: Use existing bot (shared)
+    # ========================================================================
+    if is_developer:
+        print("\n🔧 DEVELOPER MODE: Using existing bot configuration")
 
-            bot_token = bot_config.get("token")
-            bot_username = bot_config.get("username", "").lstrip("@")
+        # 1. Check developer_assistant.json
+        dev_config = _load_developer_assistant_config()
+        if dev_config and "developers" in dev_config:
+            if user_id_str in dev_config["developers"]:
+                dev_data = dev_config["developers"][user_id_str]
+                bot_config = dev_data.get("assistant_bot", {})
 
-            if bot_token and bot_username:
-                print(f"✅ Found developer assistant config for {dev_data.get('name', 'Unknown')}")
-                print(f"   Token: {bot_token[:20]}...")
-                print(f"   Username: @{bot_username}")
-                print("📝 Using developer's configured bot")
+                bot_token = bot_config.get("token")
+                bot_username = bot_config.get("username", "").lstrip("@")
+
+                if bot_token and bot_username:
+                    print(f"✅ Found in developer_assistant.json")
+                    print(f"   Developer: {dev_data.get('name', 'Unknown')}")
+                    print(f"   Token: {bot_token[:20]}...")
+                    print(f"   Username: @{bot_username}")
+
+        # 2. Fallback to .env
+        if not bot_token or not bot_username:
+            from dotenv import dotenv_values
+            env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
+            if not os.path.exists(env_path):
+                env_path = os.path.join(os.getcwd(), ".env")
+
+            if os.path.exists(env_path):
+                env_values = dotenv_values(env_path)
+                bot_token = bot_token or env_values.get("ASSISTANT_BOT_TOKEN")
+                bot_username = bot_username or env_values.get("ASSISTANT_BOT_USERNAME", "").lstrip("@")
+
+                if bot_token and bot_username:
+                    print(f"✅ Found in .env file")
+                    print(f"   Token: {bot_token[:20]}...")
+                    print(f"   Username: @{bot_username}")
+
+        # Developer MUST have bot configured
+        if not bot_token or not bot_username:
+            print("\n❌ ERROR: Developer bot not configured!")
+            print("💡 Add bot credentials to config/developer_assistant.json or .env")
+            return False
+
+    # ========================================================================
+    # SUDOER LOGIC: Auto-create new bot
+    # ========================================================================
+    else:
+        print("\n🔧 SUDOER MODE: Auto-creating new bot")
+
+        # Generate unique bot username
+        base_username = "vzoelassistant"
+        username_suffix = str(user_id)[-6:]  # Last 6 digits of user ID
+        bot_username = f"{base_username}{username_suffix}bot"
+
+        print(f"📝 Bot username: @{bot_username}")
+        print(f"🤖 Creating bot via BotFather...")
+
+        # Create bot
+        bot_token = await botfather.create_bot_auto(
+            bot_name=f"VZ Assistant ({me.first_name})",
+            bot_username=bot_username
+        )
+
+        if not bot_token:
+            print("❌ Failed to create bot")
+            return False
+
+        print(f"✅ Bot created successfully!")
+        print(f"   Token: {bot_token[:20]}...")
+
+        # Save to .env for next startup
+        _save_to_env(bot_token, bot_username)
+
+    # ========================================================================
+    # COMMON: Setup bot (description + inline mode)
+    # ========================================================================
+    print(f"\n📝 Configuring bot @{bot_username}...")
+
+    # Check if already configured
+    if _check_bot_setup_completed(bot_username):
+        print("✅ Bot already configured (description + inline mode)")
+    else:
+        print("📝 Setting up bot (description + inline mode)...")
+        try:
+            # Cancel any ongoing operations
+            await client.send_message(botfather.BOTFATHER_USERNAME, "/cancel")
+            await botfather._wait_for_response(timeout=5)
+
+            # Set description
+            await botfather._set_bot_description(bot_username)
+
+            # Enable inline mode
+            print("📝 Enabling inline mode...")
+            await client.send_message(botfather.BOTFATHER_USERNAME, "/setinline")
+            response = await botfather._wait_for_response(timeout=10)
+
+            if response and "Choose a bot" in response:
+                await client.send_message(botfather.BOTFATHER_USERNAME, f"@{bot_username}")
+                await botfather._wait_for_response(timeout=10)
+
+                inline_placeholder = "Type 'help' for plugin list..."
+                await client.send_message(botfather.BOTFATHER_USERNAME, inline_placeholder)
+                response = await botfather._wait_for_response(timeout=10)
+
+                if response and "successfully" in response.lower():
+                    print("✅ Inline mode enabled")
+                else:
+                    print(f"⚠️  Inline mode response: {response}")
             else:
-                print(f"⚠️  Developer config found but incomplete - will check .env")
-        else:
-            print(f"💡 User ID {user_id} not in developer assistant config")
-            print("📝 Will check .env or auto-create")
+                print(f"⚠️  Unexpected inline mode response: {response}")
 
-    # Fallback to .env if not in developer config
-    if not bot_token or not bot_username:
-        from dotenv import dotenv_values
+            _mark_bot_setup_completed(bot_username)
+            print("✅ Bot setup completed")
+
+        except Exception as e:
+            print(f"⚠️  Error during bot setup: {e}")
+            print("💡 Bot will still start - setup not critical")
+
+    # Save to .env for all users (developer and sudoer)
+    _save_to_env(bot_token, bot_username)
+
+    print("\n✅ Assistant bot ready!")
+    return True
+
+
+def _save_to_env(bot_token, bot_username):
+    """Save bot credentials to .env file."""
+    try:
+        from dotenv import set_key
 
         env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
         if not os.path.exists(env_path):
             env_path = os.path.join(os.getcwd(), ".env")
 
-        print(f"📁 Loading .env from: {env_path}")
+        # Update or create entries
+        set_key(env_path, "ASSISTANT_BOT_TOKEN", bot_token)
+        set_key(env_path, "ASSISTANT_BOT_USERNAME", bot_username)
 
-        if os.path.exists(env_path):
-            env_values = dotenv_values(env_path)
-
-            # Get token and username from .env file directly
-            bot_token = bot_token or env_values.get("ASSISTANT_BOT_TOKEN")
-            bot_username = bot_username or env_values.get("ASSISTANT_BOT_USERNAME", "").lstrip("@")
-
-            print(f"📋 Token from .env: {bot_token[:20] + '...' if bot_token else 'NOT FOUND'}")
-            print(f"📋 Username from .env: @{bot_username if bot_username else 'NOT FOUND'}")
-        else:
-            print(f"❌ .env file not found at {env_path}")
-
-    botfather = BotFatherClient(client)
-
-    # SIMPLE FLOW: If token+username in .env, use directly
-    if bot_token and bot_username:
-        print(f"✅ Bot configured in .env:")
-        print(f"   Token: {bot_token[:20]}...")
-        print(f"   Username: @{bot_username}")
-        print("✅ Skipping all BotFather operations - using .env values")
-
-        # Check if description already set
-        if _check_bot_setup_completed(bot_username):
-            print("✅ Bot already configured")
-        else:
-            print("📝 Setting bot description...")
-            try:
-                # Check for rate limit first
-                await client.send_message(botfather.BOTFATHER_USERNAME, "/cancel")
-                await botfather._wait_for_response(timeout=5)
-
-                await botfather._set_bot_description(bot_username)
-                _mark_bot_setup_completed(bot_username)
-            except Exception as e:
-                print(f"⚠️  Could not set description: {e}")
-                print("💡 Bot will still start - description update not critical")
-
-    if not bot_token:
-        print("\n🤖 Assistant Bot Token not configured")
-        print("🔍 Checking existing bots...")
-
-        # Step 1: Check if username is in .env (use that to get token)
-        if bot_username:
-            print(f"📋 Username from .env: @{bot_username}")
-            print(f"🔑 Getting token for @{bot_username}...")
-
-            # Get token directly for this username
-            bot_token = await botfather.get_token_from_botfather(bot_username)
-
-            if bot_token:
-                print(f"✅ Token retrieved: {bot_token[:20]}...")
-
-                # Check if description already set
-                if _check_bot_setup_completed(bot_username):
-                    print("✅ Bot already configured")
-                else:
-                    print("📝 Setting bot description...")
-                    await botfather._set_bot_description(bot_username)
-                    _mark_bot_setup_completed(bot_username)
-            else:
-                print(f"⚠️  Could not get token for @{bot_username}")
-                print("🔍 Will search for bots with pattern instead...")
-                bot_username = None  # Reset for search
-
-        # Step 2: If no token yet, search for bot with pattern
-        if not bot_token:
-            # Use base pattern that matches multiple variants
-            existing_bot = await botfather.find_existing_bot("vzoelversi")
-
-            if existing_bot:
-                print(f"✅ Found existing bot: @{existing_bot}")
-                print("🔑 Getting token from BotFather...")
-
-                # Try to get token
-                bot_token = await botfather.get_token_from_botfather(existing_bot)
-
-                if bot_token:
-                    bot_username = existing_bot
-                    print(f"✅ Token retrieved: {bot_token[:20]}...")
-
-                    # Check if description already set
-                    if _check_bot_setup_completed(bot_username):
-                        print("✅ Bot already configured - skipping description update")
-                    else:
-                        print("📝 Setting bot description...")
-                        await botfather._set_bot_description(bot_username)
-                        _mark_bot_setup_completed(bot_username)
-                else:
-                    print("⚠️  Could not retrieve token")
-
-        # Step 3: If still no token, create new bot (LAST RESORT)
-        if not bot_token:
-            print("📝 Creating new bot via BotFather...")
-
-            # Create bot via BotFather
-            bot_token, bot_username = await botfather.create_assistant_bot()
-
-            if not bot_token:
-                print("❌ Failed to create assistant bot")
-                return False
-
-            print(f"✅ Bot created: @{bot_username}")
-            print(f"🔑 Token: {bot_token[:20]}...")
-
-            # Mark as completed (description was set during creation)
-            _mark_bot_setup_completed(bot_username)
-
-        # Save token and username to .env
-        if bot_token and bot_username:
-            env_path = os.path.join(os.getcwd(), ".env")
-
-            # Read existing .env
-            env_content = ""
-            if os.path.exists(env_path):
-                with open(env_path, "r") as f:
-                    env_content = f.read()
-
-            # Add or update token
-            if "ASSISTANT_BOT_TOKEN=" in env_content:
-                lines = env_content.split("\n")
-                for i, line in enumerate(lines):
-                    if line.startswith("ASSISTANT_BOT_TOKEN="):
-                        lines[i] = f"ASSISTANT_BOT_TOKEN={bot_token}"
-                env_content = "\n".join(lines)
-            else:
-                env_content += f"\nASSISTANT_BOT_TOKEN={bot_token}\n"
-
-            # Add or update username
-            if "ASSISTANT_BOT_USERNAME=" in env_content:
-                lines = env_content.split("\n")
-                for i, line in enumerate(lines):
-                    if line.startswith("ASSISTANT_BOT_USERNAME="):
-                        lines[i] = f"ASSISTANT_BOT_USERNAME={bot_username}"
-                env_content = "\n".join(lines)
-            else:
-                env_content += f"ASSISTANT_BOT_USERNAME={bot_username}\n"
-
-            # Write back
-            with open(env_path, "w") as f:
-                f.write(env_content)
-
-            print(f"✅ Token and username saved to .env")
-
-            # Update environment
-            os.environ["ASSISTANT_BOT_TOKEN"] = bot_token
-            os.environ["ASSISTANT_BOT_USERNAME"] = bot_username
-
-    # Start assistant bot process
-    print("🚀 Starting Assistant Bot...")
-
-    try:
-        import subprocess
-
-        script_path = os.path.join(os.getcwd(), "assistant_bot_pyrogram.py")
-
-        if not os.path.exists(script_path):
-            print(f"❌ Bot script not found: {script_path}")
-            return False
-
-        # Try PM2 first
-        try:
-            # Stop existing if running (ignore errors)
-            subprocess.run(
-                ["pm2", "delete", "vz-assistant"],
-                capture_output=True  # Captures both stdout and stderr
-            )
-
-            # Start new
-            result = subprocess.run(
-                ["pm2", "start", script_path, "--name", "vz-assistant", "--interpreter", "python3"],
-                capture_output=True,
-                text=True
-            )
-
-            if result.returncode == 0:
-                print("✅ Assistant Bot started via PM2")
-                return True
-            else:
-                print(f"⚠️  PM2 start failed: {result.stderr}")
-                # Fall through to background process
-
-        except FileNotFoundError:
-            print("💡 PM2 not installed - using background process")
-
-        # Fallback: Use background process
-        subprocess.Popen(
-            ["python3", script_path],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            start_new_session=True
-        )
-        print("✅ Assistant Bot started (background process)")
-        return True
+        print(f"✅ Saved to .env: @{bot_username}")
 
     except Exception as e:
-        print(f"❌ Error starting assistant bot: {e}")
-        return False
-
-    return True
+        print(f"⚠️  Could not save to .env: {e}")
