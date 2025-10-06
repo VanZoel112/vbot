@@ -46,8 +46,36 @@ BANNER = f"""
 # LOG HANDLER
 # ============================================================================
 
+async def send_startup_log(client: VZClient, plugin_count: int):
+    """Send startup notification to log group."""
+    if not config.LOG_GROUP_ID:
+        return
+
+    try:
+        role = "DEVELOPER" if client.is_developer else "SUDOER"
+        startup_msg = f"""
+🚀 **VZ ASSISTANT DEPLOYED**
+
+👤 **User:** {client.me.first_name} (@{client.me.username})
+🆔 **ID:** `{client.me.id}`
+🔑 **Role:** {role}
+📝 **Prefix:** `{client.get_prefix()}`
+📦 **Plugins:** {plugin_count}
+🕐 **Time:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+✅ Bot is now running and ready!
+"""
+        await client.client.send_message(config.LOG_GROUP_ID, startup_msg)
+        logger.info("Sent startup notification to log group")
+        print("✅ Startup notification sent to log group")
+
+    except Exception as e:
+        logger.error(f"Failed to send startup log: {e}")
+        print(f"⚠️  Could not send startup log: {e}")
+
+
 async def setup_log_handler(client: VZClient):
-    """Setup log handler to send logs to LOG_GROUP_ID."""
+    """Setup comprehensive log handler to send logs to LOG_GROUP_ID."""
     logger.info("Setting up log handler...")
 
     if not config.LOG_GROUP_ID:
@@ -56,8 +84,8 @@ async def setup_log_handler(client: VZClient):
         return
 
     @events.register(events.NewMessage(outgoing=True))
-    async def log_handler(event):
-        """Log all outgoing messages to log group."""
+    async def command_log_handler(event):
+        """Log all outgoing commands to log group."""
         try:
             # Skip if message is from log group itself
             if event.chat_id == config.LOG_GROUP_ID:
@@ -80,26 +108,137 @@ async def setup_log_handler(client: VZClient):
 
             # Build log message
             log_msg = f"""
-📝 **Command Log**
+📝 **Command Executed**
 
-👤 User: {client.me.first_name} (@{client.me.username})
-💬 Chat: {chat_name} (`{event.chat_id}`)
-⚡ Command: `{event.text}`
-🕐 Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+👤 **User:** {client.me.first_name} (@{client.me.username})
+💬 **Chat:** {chat_name} (`{event.chat_id}`)
+⚡ **Command:** `{event.text}`
+🕐 **Time:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 """
 
             # Send to log group
             await client.client.send_message(config.LOG_GROUP_ID, log_msg)
-            logger.debug(f"Sent log to group {config.LOG_GROUP_ID}")
 
         except Exception as e:
-            logger.error(f"Log handler error: {e}", exc_info=True)
-            print(f"❌ Log handler error: {e}")
+            logger.error(f"Command log handler error: {e}", exc_info=True)
 
-    # Add handler to client
-    client.client.add_event_handler(log_handler)
-    logger.info(f"Log handler configured - sending to group {config.LOG_GROUP_ID}")
-    print(f"✅ Log handler configured - sending to group {config.LOG_GROUP_ID}")
+    @events.register(events.NewMessage(incoming=True))
+    async def mention_log_handler(event):
+        """Log all mentions to log group."""
+        try:
+            # Skip if message is from log group itself
+            if event.chat_id == config.LOG_GROUP_ID:
+                return
+
+            # Check if we are mentioned
+            if not event.text:
+                return
+
+            me_username = client.me.username
+            if not me_username:
+                return
+
+            # Check for @username or text mention
+            mentioned = (
+                f"@{me_username}" in event.text or
+                (event.message.entities and any(
+                    hasattr(e, 'user_id') and e.user_id == client.me.id
+                    for e in event.message.entities
+                ))
+            )
+
+            if not mentioned:
+                return
+
+            # Get sender and chat info
+            sender = await event.get_sender()
+            chat = await event.get_chat()
+
+            sender_name = getattr(sender, 'first_name', 'Unknown')
+            sender_username = getattr(sender, 'username', None)
+            chat_name = getattr(chat, 'title', None) or getattr(chat, 'first_name', 'Unknown')
+
+            # Log to local file
+            logger.info(f"Mention from: {sender_name} (@{sender_username}) in {chat_name}")
+
+            # Build log message
+            log_msg = f"""
+🔔 **Mentioned**
+
+👤 **From:** {sender_name} {f'(@{sender_username})' if sender_username else ''}
+💬 **Chat:** {chat_name} (`{event.chat_id}`)
+📨 **Message:** {event.text[:200]}{'...' if len(event.text) > 200 else ''}
+🕐 **Time:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+"""
+
+            # Send to log group
+            await client.client.send_message(config.LOG_GROUP_ID, log_msg)
+
+        except Exception as e:
+            logger.error(f"Mention log handler error: {e}", exc_info=True)
+
+    # Add handlers to client
+    client.client.add_event_handler(command_log_handler)
+    client.client.add_event_handler(mention_log_handler)
+
+    logger.info(f"Log handlers configured - sending to group {config.LOG_GROUP_ID}")
+    print(f"✅ Log handlers configured - commands, mentions → group {config.LOG_GROUP_ID}")
+
+
+async def setup_error_handler(client: VZClient):
+    """Setup global error handler to log all errors to log group."""
+    if not config.LOG_GROUP_ID:
+        return
+
+    import traceback as tb
+
+    async def send_error_log(error_msg: str):
+        """Send error log to log group."""
+        try:
+            await client.client.send_message(config.LOG_GROUP_ID, error_msg)
+        except Exception as e:
+            logger.error(f"Failed to send error log: {e}")
+
+    # Monkey-patch client to catch all errors
+    original_handle_update = client.client._handle_update
+
+    async def handle_update_with_error_logging(update):
+        """Wrapper to catch and log all errors."""
+        try:
+            await original_handle_update(update)
+        except Exception as e:
+            # Log locally
+            logger.error(f"Error handling update: {e}", exc_info=True)
+
+            # Get traceback
+            tb_lines = tb.format_exception(type(e), e, e.__traceback__)
+            tb_text = ''.join(tb_lines)
+
+            # Build error message
+            error_msg = f"""
+❌ **ERROR OCCURRED**
+
+⚠️ **Error Type:** `{type(e).__name__}`
+📝 **Error Message:** `{str(e)}`
+
+**Traceback:**
+```python
+{tb_text[:3000]}
+```
+
+🕐 **Time:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+"""
+
+            # Send to log group
+            await send_error_log(error_msg)
+
+            # Re-raise to maintain normal error flow
+            raise
+
+    client.client._handle_update = handle_update_with_error_logging
+
+    logger.info("Global error handler configured")
+    print("✅ Error handler configured - all errors → log group")
 
 # ============================================================================
 # ASSISTANT BOT PROCESS MANAGEMENT
@@ -256,6 +395,10 @@ async def main():
         print("\n📋 Configuring Logging...")
         await setup_log_handler(main_client)
 
+        # Setup error handler
+        print("📋 Configuring Error Handler...")
+        await setup_error_handler(main_client)
+
         # Setup assistant bot (auto-create if needed)
         print("\n🤖 Setting up Assistant Bot...")
         from helpers.botfather import setup_assistant_bot
@@ -297,6 +440,9 @@ async def main():
         logger.info(f"User: {main_client.me.first_name} (ID: {main_client.me.id})")
         logger.info(f"Role: {'DEVELOPER' if main_client.is_developer else 'SUDOER'}")
         logger.info(f"Loaded {plugin_count} plugins")
+
+        # Send startup notification to log group
+        await send_startup_log(main_client, plugin_count)
 
         # Keep running
         print("\n🔄 Bot is now running... (Press Ctrl+C to stop)")
