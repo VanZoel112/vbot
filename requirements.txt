@@ -25,7 +25,7 @@ uvloop>=0.19.0
 aiodocker>=0.21.0
 
 # ============================================================================
-# VOICE CHAT SUPPORT (.joinvc, .leavevc, /play, /leave)
+# VOICE CHAT & MUSIC SUPPORT (.joinvc, .leavevc, /play, /leave)
 # ============================================================================
 py-tgcalls>=0.9.7
 pytgcalls>=3.0.0.dev24
@@ -33,7 +33,14 @@ tgcrypto>=1.2.5
 cryptg>=0.4.0
 Pillow>=10.0.0
 ffmpeg-python>=0.2.0
-# yt-dlp: using local copy from vzoelupgrade folder
+yt-dlp>=2024.8.6
+# YouTube cookies support (optional for age-restricted videos)
+
+# ============================================================================
+# ASSISTANT BOT (Pyrogram + Trio)
+# ============================================================================
+pyrogram>=2.0.106
+trio>=0.27.0
 
 # Note: ffmpeg binary must be installed separately:
 # Termux: pkg install ffmpeg

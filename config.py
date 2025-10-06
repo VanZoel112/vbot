@@ -269,6 +269,22 @@ VC_BITRATE = 48000
 MAX_PAYMENT_INFO = 3  # Maximum number of payment info entries
 PAYMENT_QR_ENABLED = True
 
+# ============================================================================
+# YOUTUBE / MUSIC SETTINGS
+# ============================================================================
+# YouTube cookies for age-restricted videos
+# Option 1: Extract from browser (recommended)
+# Format: "chrome", "firefox", "edge", "opera", "brave", etc.
+YOUTUBE_COOKIES_FROM_BROWSER = os.getenv("YOUTUBE_COOKIES_FROM_BROWSER", None)
+
+# Option 2: Use cookies.txt file
+# Path to Netscape cookies.txt file
+YOUTUBE_COOKIES_FILE = os.getenv("YOUTUBE_COOKIES_FILE", None)
+
+# Download settings
+YOUTUBE_AUDIO_QUALITY = os.getenv("YOUTUBE_AUDIO_QUALITY", "bestaudio")
+YOUTUBE_VIDEO_QUALITY = os.getenv("YOUTUBE_VIDEO_QUALITY", "best")
+
 print(f"✅ {BOT_NAME} v{BOT_VERSION} - Configuration Loaded")
 print(f"📁 Database Directory: {DATABASE_DIR}")
 print(f"👨‍💻 Developers: {len(DEVELOPER_IDS)} registered")
