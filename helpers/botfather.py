@@ -376,11 +376,41 @@ async def setup_assistant_bot(client: TelegramClient):
         bool: True if bot is ready, False otherwise
     """
     # Reload .env to get latest values (in case .env was updated)
-    from dotenv import load_dotenv
-    load_dotenv(override=True)
+    from dotenv import load_dotenv, dotenv_values
+
+    # Try multiple paths to find .env
+    possible_paths = [
+        os.path.join(os.getcwd(), ".env"),  # Current directory
+        os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"),  # Project root
+        "/data/data/com.termux/files/home/vbot/.env",  # Absolute path
+    ]
+
+    env_path = None
+    for path in possible_paths:
+        if os.path.exists(path):
+            env_path = path
+            break
+
+    if env_path:
+        print(f"🔍 Loading .env from: {env_path}")
+        load_dotenv(env_path, override=True)
+
+        # Also read directly to debug
+        env_values = dotenv_values(env_path)
+        print(f"🔍 .env contains ASSISTANT_BOT_TOKEN: {'ASSISTANT_BOT_TOKEN' in env_values}")
+        print(f"🔍 .env contains ASSISTANT_BOT_USERNAME: {'ASSISTANT_BOT_USERNAME' in env_values}")
+    else:
+        print(f"⚠️  Could not find .env file in any of these paths:")
+        for path in possible_paths:
+            print(f"   - {path}")
 
     # Check if token already exists
     bot_token = os.getenv("ASSISTANT_BOT_TOKEN")
+    bot_username_env = os.getenv("ASSISTANT_BOT_USERNAME")
+
+    print(f"🔍 ASSISTANT_BOT_TOKEN from env: {bot_token[:20] + '...' if bot_token else 'None'}")
+    print(f"🔍 ASSISTANT_BOT_USERNAME from env: {bot_username_env or 'None'}")
+
     botfather = BotFatherClient(client)
     bot_username = None
 
