@@ -40,6 +40,24 @@ BRANDING_FOOTER = "2025© Vzoel Fox's Lutpan"
 # Assistant bot bridge
 ASSISTANT_BOT_USERNAME = os.getenv("ASSISTANT_BOT_USERNAME")
 
+# Fallback: Load from developer assistant config if not in .env
+if not ASSISTANT_BOT_USERNAME:
+    try:
+        import json
+        config_path = os.path.join(os.path.dirname(__file__), "config", "developer_assistant.json")
+        if os.path.exists(config_path):
+            with open(config_path, "r") as f:
+                dev_config = json.load(f)
+            # Try to get from developers (we don't have user ID yet, so check all)
+            for user_id, dev_data in dev_config.get("developers", {}).items():
+                bot_config = dev_data.get("assistant_bot", {})
+                username = bot_config.get("username", "").lstrip("@")
+                if username:
+                    ASSISTANT_BOT_USERNAME = username
+                    break  # Use first found
+    except Exception:
+        pass  # Ignore errors, will be None if not found
+
 # Deploy Bot Configuration
 DEPLOY_BOT_USERNAME = os.getenv("DEPLOY_BOT_USERNAME", "@VZDeployBot")  # Set in .env
 
