@@ -137,11 +137,11 @@ def build_plugins_keyboard(page: int = 0):
     for i in range(0, len(page_plugins), 3):
         row = []
         for plugin in page_plugins[i:i+3]:
-            emoji = plugin.get("emoji", "🔧")
+            # Remove emoji - inline keyboards don't support premium emoji
             name = plugin.get("display_name", plugin["name"])
             row.append(
                 InlineKeyboardButton(
-                    f"{emoji} {name}",
+                    name,  # No emoji
                     callback_data=f"plugin:{plugin['name']}"
                 )
             )
@@ -151,11 +151,11 @@ def build_plugins_keyboard(page: int = 0):
     pagination_row = []
     if page > 0:
         pagination_row.append(
-            InlineKeyboardButton("◀️ Sebelumnya", callback_data=f"page:{page-1}")
+            InlineKeyboardButton("< Sebelumnya", callback_data=f"page:{page-1}")
         )
     if page < total_pages - 1:
         pagination_row.append(
-            InlineKeyboardButton("Selanjutnya ▶️", callback_data=f"page:{page+1}")
+            InlineKeyboardButton("Selanjutnya >", callback_data=f"page:{page+1}")
         )
 
     if pagination_row:
@@ -163,12 +163,12 @@ def build_plugins_keyboard(page: int = 0):
 
     # VBot button
     buttons.append([
-        InlineKeyboardButton("🎵 VBot", url="https://t.me/vmusic_vbot")
+        InlineKeyboardButton("VBot", url="https://t.me/vmusic_vbot")
     ])
 
     # Developer button
     buttons.append([
-        InlineKeyboardButton("👨‍💻 Developer", url="https://t.me/VZLfxs")
+        InlineKeyboardButton("Developer", url="https://t.me/VZLfxs")
     ])
 
     return InlineKeyboardMarkup(buttons)
@@ -176,7 +176,7 @@ def build_plugins_keyboard(page: int = 0):
 def build_plugin_detail_keyboard():
     """Build keyboard for plugin detail view."""
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("◀️ Kembali", callback_data="back_to_plugins")]
+        [InlineKeyboardButton("< Kembali", callback_data="back_to_plugins")]
     ])
 
 
@@ -184,17 +184,17 @@ def build_help_text(user_id: int, total_plugins: int, page: int = 0, total_pages
     """Build the help text message for inline and command responses."""
     role = 'DEVELOPER' if user_id in DEVELOPER_IDS else 'SUDOER'
     help_text = (
-        "🤩 **VZ ASSISTANT - HELP MENU**\n\n"
-        f"⛈ **Total Plugins:** {total_plugins}\n"
-        f"🌟 **Role:** {role}\n"
-        "⚙️ **Prefix:** .\n\n"
-        "**📋 Pilih Plugin:**\n"
+        "**VZ ASSISTANT - HELP MENU**\n\n"
+        f"**Total Plugins:** {total_plugins}\n"
+        f"**Role:** {role}\n"
+        "**Prefix:** .\n\n"
+        "**Pilih Plugin:**\n"
         "Click plugin dibawah untuk melihat commands\n\n"
-        "🤖 Powered by VzBot"
+        "Powered by VzBot"
     )
 
     if total_pages > 1:
-        help_text += f"\n\n📄 **Halaman:** {page + 1}/{total_pages}"
+        help_text += f"\n\n**Halaman:** {page + 1}/{total_pages}"
 
     return help_text
 
@@ -348,18 +348,17 @@ async def plugin_callback(client: Client, callback: CallbackQuery):
         await callback.answer("Plugin not found", show_alert=True)
         return
 
-    # Build detail text
-    emoji = plugin.get("emoji", "🔧")
+    # Build detail text (no premium emoji in inline messages)
     display_name = plugin.get("display_name", plugin["name"])
     description = plugin.get("description", "No description available")
     commands = plugin.get("commands", [])
 
-    detail_text = f"""{emoji} **{display_name}**
+    detail_text = f"""**{display_name}**
 
-📝 **Description:**
+**Description:**
 {description}
 
-⚡ **Commands:**
+**Commands:**
 """
 
     if commands:
@@ -368,7 +367,7 @@ async def plugin_callback(client: Client, callback: CallbackQuery):
     else:
         detail_text += "No commands documented\n"
 
-    detail_text += f"\n🤖 Use these commands in userbot"
+    detail_text += f"\nUse these commands in userbot"
 
     keyboard = build_plugin_detail_keyboard()
     await callback.edit_message_text(detail_text, reply_markup=keyboard)
