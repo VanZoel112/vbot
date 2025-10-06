@@ -94,11 +94,11 @@ class InlineManager:
 # ============================================================================
 
 def get_alive_buttons():
-    """Get buttons for .alive command."""
+    """Get buttons for .alive command (compact)."""
     return [
         [
-            Button.inline("📚 HELP", b"cmd_help"),
-            Button.url("👨‍💻 DEV", "https://t.me/VZLfxs")
+            Button.inline("📋 Help", b"cmd_help"),
+            Button.url("👨‍💻 Dev", "https://t.me/VZLfxs")
         ]
     ]
 
@@ -114,82 +114,80 @@ def get_help_main_buttons(categories):
             buttons.append(row)
             row = []
 
-    # Add close button
-    buttons.append([Button.inline("❌ Close", b"help_close")])
+    # Add close button (compact)
+    buttons.append([Button.inline("❌", b"help_close")])
 
     return buttons
 
 def get_help_category_buttons(category, commands):
-    """Get buttons for a specific category."""
+    """Get buttons for a specific category (compact)."""
     buttons = []
 
     # Create command buttons
     for cmd in commands:
-        buttons.append([Button.inline(f"📝 {cmd}", f"help_cmd_{cmd}".encode('utf-8'))])
+        buttons.append([Button.inline(f"• {cmd}", f"help_cmd_{cmd}".encode('utf-8'))])
 
-    # Add back and close buttons
+    # Add back and close buttons (compact)
     buttons.append([
-        Button.inline("◀️ Back", b"help_back"),
-        Button.inline("❌ Close", b"help_close")
+        Button.inline("◀️", b"help_back"),
+        Button.inline("❌", b"help_close")
     ])
 
     return buttons
 
 def get_help_command_buttons():
-    """Get buttons for command detail view."""
+    """Get buttons for command detail view (compact)."""
     return [
         [
-            Button.inline("◀️ Back", b"help_back"),
-            Button.inline("🏠 Home", b"help_home"),
-            Button.inline("❌ Close", b"help_close")
+            Button.inline("◀️", b"help_back"),
+            Button.inline("🏠", b"help_home"),
+            Button.inline("❌", b"help_close")
         ]
     ]
 
 def get_showjson_buttons():
-    """Get buttons for .showjson command."""
+    """Get buttons for .showjson command (compact)."""
     return [
         [
-            Button.inline("📊 Metrics", b"json_metrics"),
-            Button.inline("🎨 Emojis", b"json_emojis")
+            Button.inline("📊", b"json_metrics"),
+            Button.inline("🎨", b"json_emojis"),
+            Button.inline("📄", b"json_fileids")
         ],
         [
-            Button.inline("📄 File IDs", b"json_fileids"),
-            Button.inline("⚙️ Settings", b"json_settings")
-        ],
-        [Button.inline("❌ Close", b"json_close")]
-    ]
-
-def get_payment_buttons():
-    """Get buttons for .get payment command."""
-    return [
-        [
-            Button.inline("💳 E-Wallet", b"pay_ewallet"),
-            Button.inline("🏦 Bank", b"pay_bank")
-        ],
-        [
-            Button.inline("📱 QR Code", b"pay_qr"),
-            Button.inline("❌ Close", b"pay_close")
+            Button.inline("⚙️", b"json_settings"),
+            Button.inline("❌", b"json_close")
         ]
     ]
 
-def get_admin_buttons(user_id):
-    """Get admin management buttons."""
+def get_payment_buttons():
+    """Get buttons for payment command (compact)."""
     return [
         [
-            Button.inline("✅ Promote", f"admin_promote_{user_id}".encode('utf-8')),
-            Button.inline("❌ Demote", f"admin_demote_{user_id}".encode('utf-8'))
+            Button.inline("💳", b"pay_ewallet"),
+            Button.inline("🏦", b"pay_bank"),
+            Button.inline("📱", b"pay_qr")
         ],
-        [Button.inline("🚫 Close", b"admin_close")]
+        [Button.inline("❌", b"pay_close")]
+    ]
+
+def get_admin_buttons(user_id):
+    """Get admin management buttons (compact)."""
+    return [
+        [
+            Button.inline("✅", f"admin_promote_{user_id}".encode('utf-8')),
+            Button.inline("❌", f"admin_demote_{user_id}".encode('utf-8')),
+            Button.inline("🚫", b"admin_close")
+        ]
     ]
 
 def get_pm_permit_buttons():
-    """Get PM permit approval buttons."""
+    """Get PM permit approval buttons (compact)."""
     return [
         [
-            Button.inline("✅ Approve", b"pm_approve"),
-            Button.inline("🚫 Block", b"pm_block")
-        ],
-        [Button.inline("📝 Report", b"pm_report")]
+            Button.inline("✅", b"pm_approve"),
+            Button.inline("🚫", b"pm_block"),
+            Button.inline("📝", b"pm_report")
+        ]
     ]
 
 # ============================================================================

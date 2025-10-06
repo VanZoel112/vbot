@@ -113,13 +113,13 @@ async def alive_handler(event):
 {petir_emoji} by {main_emoji} {config.RESULT_FOOTER}
 """
 
-    # Create inline buttons with premium emojis
+    # Create inline buttons with premium emojis (compact)
     telegram_emoji = vz_emoji.getemoji('telegram')
 
     buttons = [
         [
-            Button.inline(f"{telegram_emoji} HELP", b"cmd_help"),
-            Button.url(f"{dev_emoji} DEV", "https://t.me/VZLfxs")
+            Button.inline(f"📋 Help", b"cmd_help"),
+            Button.url(f"👨‍💻 Dev", "https://t.me/VZLfxs")
         ]
     ]
 

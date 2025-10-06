@@ -31,12 +31,16 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # Import plugin loader
 from helpers.plugin_loader import load_plugins_info, chunk_list
 from helpers.vc_bridge import VCBridge
+from helpers.vz_emoji_manager import VZEmojiManager
 
 # Load environment
 load_dotenv()
 
 # Initialize VC Bridge
 vc_bridge = VCBridge()
+
+# Initialize Emoji Manager
+emoji_manager = VZEmojiManager()
 
 # ============================================================================
 # LOGGING SETUP (Trio-style structured logging)
@@ -147,28 +151,24 @@ def build_plugins_keyboard(page: int = 0):
             )
         buttons.append(row)
 
-    # Pagination row
+    # Pagination row (pangkas ukuran)
     pagination_row = []
     if page > 0:
         pagination_row.append(
-            InlineKeyboardButton("< Sebelumnya", callback_data=f"page:{page-1}")
+            InlineKeyboardButton("◀️", callback_data=f"page:{page-1}")
         )
     if page < total_pages - 1:
         pagination_row.append(
-            InlineKeyboardButton("Selanjutnya >", callback_data=f"page:{page+1}")
+            InlineKeyboardButton("▶️", callback_data=f"page:{page+1}")
         )
 
     if pagination_row:
         buttons.append(pagination_row)
 
-    # VBot button
+    # VBot & Developer buttons (lebih compact)
     buttons.append([
-        InlineKeyboardButton("VBot", url="https://t.me/vmusic_vbot")
-    ])
-
-    # Developer button
-    buttons.append([
-        InlineKeyboardButton("Developer", url="https://t.me/VZLfxs")
+        InlineKeyboardButton("🤖 VBot", url="https://t.me/vmusic_vbot"),
+        InlineKeyboardButton("👨‍💻 Dev", url="https://t.me/VZLfxs")
     ])
 
     return InlineKeyboardMarkup(buttons)
@@ -176,21 +176,30 @@ def build_plugins_keyboard(page: int = 0):
 def build_plugin_detail_keyboard():
     """Build keyboard for plugin detail view."""
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("< Kembali", callback_data="back_to_plugins")]
+        [InlineKeyboardButton("◀️ Back", callback_data="back_to_plugins")]
     ])
 
 
 def build_help_text(user_id: int, total_plugins: int, page: int = 0, total_pages: int = 1) -> str:
-    """Build the help text message for inline and command responses."""
+    """Build the help text message with premium emoji mapping."""
+    # Get emojis
+    main_emoji = emoji_manager.getemoji('utama')
+    petir_emoji = emoji_manager.getemoji('petir')
+    robot_emoji = emoji_manager.getemoji('robot')
+    dev_emoji = emoji_manager.getemoji('developer')
+    gear_emoji = emoji_manager.getemoji('gear')
+
+    # Determine role
     role = 'DEVELOPER' if user_id in DEVELOPER_IDS else 'SUDOER'
+
     help_text = (
-        "**VZ ASSISTANT - HELP MENU**\n\n"
-        f"**Total Plugins:** {total_plugins}\n"
-        f"**Role:** {role}\n"
-        "**Prefix:** .\n\n"
+        f"{main_emoji} **VZ ASSISTANT - HELP MENU**\n\n"
+        f"{petir_emoji} **Total Plugins:** {total_plugins}\n"
+        f"{robot_emoji if role == 'SUDOER' else dev_emoji} **Role:** {role}\n"
+        f"{gear_emoji} **Prefix:** .\n\n"
         "**Pilih Plugin:**\n"
         "Click plugin dibawah untuk melihat commands\n\n"
-        "Powered by VzBot"
+        f"{robot_emoji} Powered by VzBot"
     )
 
     if total_pages > 1:
@@ -225,22 +234,29 @@ async def start_handler(client: Client, message: Message):
 
     await log_action(user_id, "start")
 
+    # Get emojis
+    main_emoji = emoji_manager.getemoji('utama')
+    robot_emoji = emoji_manager.getemoji('robot')
+    petir_emoji = emoji_manager.getemoji('petir')
+    gear_emoji = emoji_manager.getemoji('gear')
+    dev_emoji = emoji_manager.getemoji('developer')
+
     welcome_text = f"""
-🤩 **VZ ASSISTANT BOT**
+{main_emoji} **VZ ASSISTANT BOT**
 
 Hello {message.from_user.first_name}! I'm your personal assistant bot.
 
 **Features:**
-• ✨ Inline keyboards for plugin help
-• 🚀 Fast response with Pyrogram + Trio
-• 🔒 Secure & authorized access
+{petir_emoji} Inline keyboards for plugin help
+{petir_emoji} Fast response with Pyrogram + Trio
+{gear_emoji} Secure & authorized access
 
 **Available Commands:**
-/help - Interactive plugin help menu
-/alive - Bot status with buttons
-/ping - Check latency
+{robot_emoji} /help - Interactive plugin help menu
+{robot_emoji} /alive - Bot status with buttons
+{robot_emoji} /ping - Check latency
 
-🤖 by VzBot | @VZLfxs
+{main_emoji} by VzBot | {dev_emoji} @VZLfxs
 """
 
     await message.reply(welcome_text)
