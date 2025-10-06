@@ -172,8 +172,20 @@ async def install_handler(event):
             stdout, stderr = await process.communicate()
 
             if process.returncode == 0:
-                success_emoji = vz_emoji.getemoji('centang')
-                await vz_client.edit_with_premium_emoji(msg, f"{success_emoji} **{pkg}** installed successfully!")
+                # Verify installation
+                verify = await asyncio.create_subprocess_exec(
+                    "pip3", "show", pkg,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE
+                )
+                verify_out, _ = await verify.communicate()
+
+                if verify.returncode == 0:
+                    success_emoji = vz_emoji.getemoji('centang')
+                    await vz_client.edit_with_premium_emoji(msg, f"{success_emoji} **{pkg}** installed successfully!")
+                else:
+                    kuning_emoji = vz_emoji.getemoji('kuning')
+                    await vz_client.edit_with_premium_emoji(msg, f"{kuning_emoji} **{pkg}** install completed but not verified")
                 await asyncio.sleep(1)
             else:
                 error_emoji = vz_emoji.getemoji('merah')
