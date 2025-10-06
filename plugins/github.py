@@ -183,14 +183,17 @@ CONTACT: @VZLfxs"""
         merah_emoji = vz_emoji.getemoji('merah')
         kuning_emoji = vz_emoji.getemoji('kuning')
 
+        robot_emoji = vz_emoji.getemoji('robot')
+        centang_emoji = vz_emoji.getemoji('centang')
+
         response = f"""{merah_emoji} **PUSH FAILED**
 
 {kuning_emoji} Error: {message}
 
-{aktif_emoji} Possible solutions:
-• Check your GitHub token (.settoken)
-• Pull latest changes first (.pull)
-• Check repository permissions
+{robot_emoji} Possible solutions:
+{centang_emoji} Check your GitHub token (.settoken)
+{centang_emoji} Pull latest changes first (.pull)
+{centang_emoji} Check repository permissions
 
 VZ ASSISTANT GitHub Integration
 CONTACT: @VZLfxs"""
@@ -262,14 +265,17 @@ CONTACT: @VZLfxs"""
         merah_emoji = vz_emoji.getemoji('merah')
         kuning_emoji = vz_emoji.getemoji('kuning')
 
+        robot_emoji = vz_emoji.getemoji('robot')
+        centang_emoji = vz_emoji.getemoji('centang')
+
         response = f"""{merah_emoji} **PULL FAILED**
 
 {kuning_emoji} Error: {message}
 
-{aktif_emoji} Possible solutions:
-• Check your GitHub token (.settoken)
-• Resolve merge conflicts manually
-• Check repository permissions
+{robot_emoji} Possible solutions:
+{centang_emoji} Check your GitHub token (.settoken)
+{centang_emoji} Resolve merge conflicts manually
+{centang_emoji} Check repository permissions
 
 VZ ASSISTANT GitHub Integration
 CONTACT: @VZLfxs"""
