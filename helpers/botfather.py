@@ -596,11 +596,10 @@ async def setup_assistant_bot(client: TelegramClient):
 
         # Try PM2 first
         try:
-            # Stop existing if running
+            # Stop existing if running (ignore errors)
             subprocess.run(
                 ["pm2", "delete", "vz-assistant"],
-                capture_output=True,
-                stderr=subprocess.DEVNULL
+                capture_output=True  # Captures both stdout and stderr
             )
 
             # Start new
@@ -613,17 +612,22 @@ async def setup_assistant_bot(client: TelegramClient):
             if result.returncode == 0:
                 print("✅ Assistant Bot started via PM2")
                 return True
+            else:
+                print(f"⚠️  PM2 start failed: {result.stderr}")
+                # Fall through to background process
 
         except FileNotFoundError:
-            # PM2 not installed, use background process
-            subprocess.Popen(
-                ["python3", script_path],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                start_new_session=True
-            )
-            print("✅ Assistant Bot started (background process)")
-            return True
+            print("💡 PM2 not installed - using background process")
+
+        # Fallback: Use background process
+        subprocess.Popen(
+            ["python3", script_path],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True
+        )
+        print("✅ Assistant Bot started (background process)")
+        return True
 
     except Exception as e:
         print(f"❌ Error starting assistant bot: {e}")
