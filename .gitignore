@@ -14,6 +14,11 @@ database/developer/
 database/sudoers/
 database/shared/
 
+# Setup completion flags
+data/bot_setup_completed.txt
+data/log_group_setup_completed.txt
+data/vc_bridge.json
+
 # Python
 __pycache__/
 *.py[cod]

@@ -160,6 +160,19 @@ async def main():
         builtins.manager = manager  # For broadcast middleware
         logger.info("Global variables set: vz_client, vz_emoji, manager")
 
+        # Setup log group (auto-create if needed)
+        print("\n📋 Setting up Log Group...")
+        from helpers.log_group import setup_log_group
+        await setup_log_group(main_client.client)
+
+        # Reload LOG_GROUP_ID from environment (in case it was just created)
+        log_group_id_str = os.getenv("LOG_GROUP_ID")
+        if log_group_id_str:
+            try:
+                config.LOG_GROUP_ID = int(log_group_id_str)
+            except ValueError:
+                config.LOG_GROUP_ID = None
+
         # Setup log handler
         print("\n📋 Configuring Logging...")
         await setup_log_handler(main_client)
