@@ -89,28 +89,41 @@ class BotFatherClient:
             str: Bot username if found, None otherwise
         """
         try:
+            # Cancel any pending operation first
+            await self.client.send_message(self.BOTFATHER_USERNAME, "/cancel")
+            await asyncio.sleep(1)
+
             # Send /mybots
             await self.client.send_message(self.BOTFATHER_USERNAME, "/mybots")
-            await asyncio.sleep(1.5)
+            await asyncio.sleep(2)  # Longer delay for rate limit
 
             response = await self._get_latest_message()
             if not response:
+                print("⚠️  No response from BotFather")
                 return None
+
+            print(f"📋 BotFather response: {response[:200]}...")  # Debug
 
             # Parse bot list
             lines = response.split("\n")
             for line in lines:
-                if "@" in line and pattern in line.lower():
-                    # Extract @username
+                # Look for @username pattern in line
+                if "@" in line and pattern.lower() in line.lower():
+                    # Try multiple extraction methods
+                    # Method 1: Split by @
                     parts = line.split("@")
                     if len(parts) > 1:
-                        username = parts[1].split()[0].strip().rstrip(".")
+                        username = parts[1].split()[0].strip().rstrip(".").rstrip(",")
+                        print(f"✅ Found bot: @{username}")
                         return username
 
+            print(f"❌ No bot matching '{pattern}' found in list")
             return None
 
         except Exception as e:
             print(f"⚠️  Error finding existing bot: {e}")
+            import traceback
+            traceback.print_exc()
             return None
 
     async def get_token_from_botfather(self, username):
@@ -124,30 +137,45 @@ class BotFatherClient:
             str: Bot token if found, None otherwise
         """
         try:
+            # Cancel any pending operation first
+            await self.client.send_message(self.BOTFATHER_USERNAME, "/cancel")
+            await asyncio.sleep(1)
+
             # Send /token
             await self.client.send_message(self.BOTFATHER_USERNAME, "/token")
-            await asyncio.sleep(1.5)
+            await asyncio.sleep(2)  # Longer delay
 
             # Get bot list
             response = await self._get_latest_message()
             if not response or "Choose a bot" not in response:
+                print(f"⚠️  Unexpected response from /token: {response[:200] if response else 'None'}")
                 return None
 
             # Send bot username
             await self.client.send_message(self.BOTFATHER_USERNAME, f"@{username}")
-            await asyncio.sleep(2)
+            await asyncio.sleep(2.5)  # Longer delay for token retrieval
 
             # Get token response
             response = await self._get_latest_message()
             if not response:
+                print("⚠️  No token response from BotFather")
                 return None
+
+            print(f"🔑 Token response received: {response[:100]}...")  # Debug
 
             # Extract token
             token = self._extract_token(response)
+            if token:
+                print(f"✅ Token extracted: {token[:20]}...")
+            else:
+                print("❌ Could not extract token from response")
+
             return token
 
         except Exception as e:
             print(f"⚠️  Error getting token from BotFather: {e}")
+            import traceback
+            traceback.print_exc()
             return None
 
     async def create_assistant_bot(self, base_username="vzoelassistant"):
@@ -327,9 +355,9 @@ async def setup_assistant_bot(client: TelegramClient):
     Flow:
     1. Check .env for ASSISTANT_BOT_TOKEN
     2. If exists → verify & update description
-    3. If not exists → check existing bots in BotFather
-    4. If found existing → get token & save
-    5. If not found → create new bot
+    3. If not exists → check existing bots in BotFather (/mybots)
+    4. If found existing → get token via /token & save
+    5. If not found → create new bot (LAST RESORT)
 
     Args:
         client: Telethon client instance
@@ -341,6 +369,19 @@ async def setup_assistant_bot(client: TelegramClient):
     bot_token = os.getenv("ASSISTANT_BOT_TOKEN")
     botfather = BotFatherClient(client)
     bot_username = None
+
+    # Check for rate limit first
+    try:
+        await client.send_message(botfather.BOTFATHER_USERNAME, "/cancel")
+        await asyncio.sleep(0.5)
+        response = await botfather._get_latest_message()
+        if response and "too many attempts" in response.lower():
+            print("❌ BotFather rate limited!")
+            print(f"   Response: {response}")
+            print("⚠️  Cannot create/check bots. Please wait and try again later.")
+            return False
+    except:
+        pass
 
     if bot_token:
         # Token exists - verify and update description
