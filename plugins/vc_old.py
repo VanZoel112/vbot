@@ -57,9 +57,9 @@ async def joinvc_handler(event):
 └ ffmpeg installed
 
 **⚙️ Installation:**
-```bash
+`bash
 pip install py-tgcalls tgcrypto
-```
+`
 
 **📝 Status:**
 Voice chat integration requires pytgcalls setup.
