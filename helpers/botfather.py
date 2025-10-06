@@ -394,11 +394,11 @@ async def setup_assistant_bot(client: TelegramClient):
         pass
 
     if bot_token:
-        # Token exists - verify
+        # Token exists in .env - SKIP all BotFather operations
         print(f"✅ Assistant Bot Token found: {bot_token[:20]}...")
         print("📝 Verifying bot...")
 
-        # Get bot username from token
+        # Get bot username from token (for description update only)
         bot_username = await botfather.get_bot_username_from_token(bot_token)
 
         if bot_username:
@@ -412,9 +412,13 @@ async def setup_assistant_bot(client: TelegramClient):
                 await botfather._set_bot_description(bot_username)
                 _mark_bot_setup_completed(bot_username)
         else:
-            print("⚠️  Could not verify bot - token might be invalid")
-            # Reset token to try fallback
-            bot_token = None
+            print("⚠️  Could not get bot username - skipping description update")
+            print("💡 Bot will still start with token from .env")
+            # DO NOT reset bot_token - we have valid token in .env
+            # Just skip description update and continue to start bot
+
+        # Token exists - skip to bot startup (don't check /mybots or /newbot)
+        print("✅ Using bot token from .env - skipping BotFather checks")
 
     if not bot_token:
         print("\n🤖 Assistant Bot Token not configured")
