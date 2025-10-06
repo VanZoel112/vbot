@@ -77,12 +77,6 @@ async def bl_handler(event):
         await vz_client.edit_with_premium_emoji(event, f"{merah_emoji} Cannot blacklist Telegram service chat (777000)")
         return
 
-    # Validate chat ID range (group/channel must be negative and large)
-    if chat_id > 0 and chat_id < 1000000000:  # Not a valid user/group/channel
-        merah_emoji = vz_emoji.getemoji('merah')
-        await vz_client.edit_with_premium_emoji(event, f"{merah_emoji} Invalid chat ID: `{chat_id}`\nUse chat ID from group/channel")
-        return
-
     # Add to GLOBAL blacklist (config.py)
     added = config.add_to_gcast_blacklist(chat_id)
 
