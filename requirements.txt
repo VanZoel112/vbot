@@ -27,14 +27,11 @@ aiodocker>=0.21.0
 # ============================================================================
 # VOICE CHAT & MUSIC SUPPORT (.joinvc, .leavevc, /play, /leave)
 # ============================================================================
-py-tgcalls>=0.9.7
-pytgcalls>=3.0.0.dev24
+py-tgcalls>=2.2.0
 tgcrypto>=1.2.5
-cryptg>=0.4.0
-Pillow>=10.0.0
-ffmpeg-python>=0.2.0
 yt-dlp>=2024.8.6
-# YouTube cookies support (optional for age-restricted videos)
+# Note: py-tgcalls (package) imports as pytgcalls (module)
+# Do not install pytgcalls package - it conflicts with py-tgcalls
 
 # ============================================================================
 # ASSISTANT BOT (Pyrogram + Trio)
