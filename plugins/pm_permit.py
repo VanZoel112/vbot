@@ -220,7 +220,7 @@ async def pmoff_handler(event):
 
 @events.register(events.NewMessage(pattern=r'^\\.setpm\\s+(.+)', outgoing=True))
 async def setpm_handler(event):
-    \"\"\"Set custom PM permit message.\"\"\"
+    """Set custom PM permit message."""
     global vz_client, vz_emoji
 
     custom_message = event.pattern_match.group(1).strip()

@@ -76,10 +76,17 @@ async def restart_handler(event):
     main_emoji = vz_emoji.getemoji('utama')
     nyala_emoji = vz_emoji.getemoji('nyala')
 
+    # Get sender info
+    try:
+        sender = await event.get_sender()
+        sender_name = sender.first_name if sender else "User"
+    except:
+        sender_name = "User"
+
     restart_text = f"""
 {loading_emoji} **Restarting VZ ASSISTANT...**
 
-{role_emoji} **User:** {event.sender.first_name}
+{role_emoji} **User:** {sender_name}
 {gear_emoji} **Role:** {user_role}
 {petir_emoji} **Action:** Full process restart
 
