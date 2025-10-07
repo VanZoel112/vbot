@@ -416,15 +416,16 @@ Hello {message.from_user.first_name}! I'm your personal assistant bot.
         if status_info["status"] == "approved":
             buttons = InlineKeyboardMarkup([
                 [
-                    InlineKeyboardButton("✅ Deploy Status", callback_data="deploy_status"),
-                    InlineKeyboardButton("📋 Deploy Guide", callback_data="deploy_guide")
+                    InlineKeyboardButton("🚀 Deploy Now", callback_data="start_deployment"),
+                    InlineKeyboardButton("✅ Status", callback_data="deploy_status")
                 ],
                 [
-                    InlineKeyboardButton("💓 Alive", callback_data="alive_status"),
+                    InlineKeyboardButton("📋 Deploy Guide", callback_data="deploy_guide"),
+                    InlineKeyboardButton("💓 Alive", callback_data="alive_status")
+                ],
+                [
+                    InlineKeyboardButton("📖 Help", callback_data="cmd_help"),
                     InlineKeyboardButton("⚡ Ping", callback_data="ping_check")
-                ],
-                [
-                    InlineKeyboardButton("📖 Help", callback_data="cmd_help")
                 ]
             ])
         elif status_info["status"] == "pending":
@@ -1715,15 +1716,16 @@ Hello {callback.from_user.first_name}! I'm your personal assistant bot.
         if status_info["status"] == "approved":
             buttons = InlineKeyboardMarkup([
                 [
-                    InlineKeyboardButton("✅ Deploy Status", callback_data="deploy_status"),
-                    InlineKeyboardButton("📋 Deploy Guide", callback_data="deploy_guide")
+                    InlineKeyboardButton("🚀 Deploy Now", callback_data="start_deployment"),
+                    InlineKeyboardButton("✅ Status", callback_data="deploy_status")
                 ],
                 [
-                    InlineKeyboardButton("💓 Alive", callback_data="alive_status"),
+                    InlineKeyboardButton("📋 Deploy Guide", callback_data="deploy_guide"),
+                    InlineKeyboardButton("💓 Alive", callback_data="alive_status")
+                ],
+                [
+                    InlineKeyboardButton("📖 Help", callback_data="cmd_help"),
                     InlineKeyboardButton("⚡ Ping", callback_data="ping_check")
-                ],
-                [
-                    InlineKeyboardButton("📖 Help", callback_data="cmd_help")
                 ]
             ])
         elif status_info["status"] == "pending":
@@ -1885,6 +1887,93 @@ async def ping_check_callback(client: Client, callback: CallbackQuery):
 
     await callback.edit_message_text(response, reply_markup=buttons)
     await callback.answer(f"⚡ Ping: {ping}ms", show_alert=False)
+
+
+@app.on_callback_query(filters.regex("^start_deployment$"))
+async def start_deployment_callback(client: Client, callback: CallbackQuery):
+    """Handle start deployment button."""
+    user_id = callback.from_user.id
+
+    # Check if approved
+    global deploy_auth_db
+    if deploy_auth_db is None:
+        deploy_auth_db = DeployAuthDB()
+
+    status_info = deploy_auth_db.get_user_status(user_id)
+
+    if status_info["status"] != "approved" and not is_developer(user_id):
+        await callback.answer("❌ Deploy access required!", show_alert=True)
+        return
+
+    response = f"""🚀 **Start Deployment**
+
+Hi {callback.from_user.first_name}!
+
+You're approved and ready to deploy your bot!
+
+**📱 Quick Deployment Options:**
+
+**Option 1: Automated Deployment (Recommended)**
+Contact admin for instant deployment:
+👉 {config.FOUNDER_USERNAME}
+
+Send: "Deploy my bot please"
+Admin will handle everything!
+
+**Option 2: Self-Deployment**
+Follow these steps:
+
+1️⃣ **Generate Session:**
+```bash
+python3 stringgenerator.py
+```
+
+2️⃣ **Deploy:**
+In your main userbot:
+```
+..dp
+```
+
+3️⃣ **Follow Wizard**
+Enter session string and configure
+
+**💡 Recommended:** Contact admin for faster deployment!
+
+**🆘 Need Help?**
+Contact: {config.FOUNDER_USERNAME}
+
+🤖 VZ Assistant Bot"""
+
+    buttons = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("📋 Full Guide", callback_data="deploy_guide"),
+            InlineKeyboardButton("🔙 Back", callback_data="back_to_start")
+        ]
+    ])
+
+    await callback.edit_message_text(response, reply_markup=buttons)
+    await callback.answer("✅ Ready to deploy!", show_alert=False)
+
+    # Notify admin
+    try:
+        for dev_id in config.DEVELOPER_IDS:
+            await client.send_message(
+                dev_id,
+                f"""🔔 **Deployment Request**
+
+**User Ready to Deploy:**
+├ Name: {callback.from_user.first_name}
+├ Username: @{callback.from_user.username or 'None'}
+├ User ID: `{user_id}`
+└ Status: ✅ Approved
+
+User clicked "Deploy Now" button and is ready for deployment.
+
+**Actions:**
+Contact user for deployment assistance."""
+            )
+    except Exception as e:
+        logger.error(f"Failed to notify admin: {e}")
 
 
 @app.on_callback_query(filters.regex("^deploy_guide$"))
