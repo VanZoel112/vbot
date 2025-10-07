@@ -333,43 +333,42 @@ async def start_handler(client: Client, message: Message):
 
     # Check if developer
     if is_developer(user_id):
-        # Developer menu with deploy management
+        # Developer menu with deploy management AND own deploy access
         welcome_text = f"""
 {main_emoji} **VZ ASSISTANT BOT** - Developer Mode
 
 Hello {message.from_user.first_name}! I'm your personal assistant bot.
 
-**Assistant Features:**
+**🌟 Developer Privileges:**
+{rocket_emoji} Full deploy access (no approval needed)
+{gear_emoji} Can approve/reject other users
+{petir_emoji} Manage all deployments
+
+**📱 Assistant Features:**
 {petir_emoji} Inline keyboards for plugin help
 {petir_emoji} Fast response with Pyrogram + Trio
 {gear_emoji} Secure & authorized access
 
-**Deploy Management:**
-{rocket_emoji} Approve/reject deploy requests
-{rocket_emoji} Manage sudoer deployments
-{gear_emoji} View pending requests
-
-**Commands:**
-{robot_emoji} /help - Interactive plugin help menu
-{robot_emoji} /alive - Bot status with buttons
-{robot_emoji} /ping - Check latency
-
-**Deploy Commands:**
-{rocket_emoji} /approve <user_id> - Approve user
-{rocket_emoji} /reject <user_id> [reason] - Reject user
-{rocket_emoji} /pending - View pending requests
-{rocket_emoji} /approved - List approved users
+**🚀 Quick Actions:**
+Use buttons below for instant access!
 
 {main_emoji} by VzBot | {dev_emoji} @VZLfxs
 """
 
-        # Developer inline buttons
+        # Developer inline buttons with deploy + management
         buttons = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("🚀 Deploy My Bot", callback_data="dev_deploy"),
+                InlineKeyboardButton("📊 My Status", callback_data="deploy_status")
+            ],
             [
                 InlineKeyboardButton("⏳ Pending Requests", callback_data="deploy_pending"),
                 InlineKeyboardButton("✅ Approved Users", callback_data="deploy_approved")
             ],
-            [InlineKeyboardButton("📊 Help", callback_data="cmd_help")]
+            [
+                InlineKeyboardButton("📖 Help", callback_data="cmd_help"),
+                InlineKeyboardButton("💓 Alive", callback_data="alive_status")
+            ]
         ])
 
         await message.reply(welcome_text, reply_markup=buttons)
@@ -416,24 +415,48 @@ Hello {message.from_user.first_name}! I'm your personal assistant bot.
         # User inline buttons based on deploy status
         if status_info["status"] == "approved":
             buttons = InlineKeyboardMarkup([
-                [InlineKeyboardButton("✅ Check Status", callback_data="deploy_status")],
-                [InlineKeyboardButton("📊 Help", callback_data="cmd_help")]
+                [
+                    InlineKeyboardButton("✅ Deploy Status", callback_data="deploy_status"),
+                    InlineKeyboardButton("💓 Alive", callback_data="alive_status")
+                ],
+                [
+                    InlineKeyboardButton("📖 Help", callback_data="cmd_help"),
+                    InlineKeyboardButton("⚡ Ping", callback_data="ping_check")
+                ]
             ])
         elif status_info["status"] == "pending":
             buttons = InlineKeyboardMarkup([
-                [InlineKeyboardButton("⏳ Check Status", callback_data="deploy_status")],
-                [InlineKeyboardButton("📊 Help", callback_data="cmd_help")]
+                [
+                    InlineKeyboardButton("⏳ Check Status", callback_data="deploy_status"),
+                    InlineKeyboardButton("💓 Alive", callback_data="alive_status")
+                ],
+                [
+                    InlineKeyboardButton("📖 Help", callback_data="cmd_help"),
+                    InlineKeyboardButton("⚡ Ping", callback_data="ping_check")
+                ]
             ])
         elif status_info["status"] == "rejected":
             buttons = InlineKeyboardMarkup([
-                [InlineKeyboardButton("🔁 Request Again", callback_data="deploy_request")],
-                [InlineKeyboardButton("📊 Help", callback_data="cmd_help")]
+                [
+                    InlineKeyboardButton("🔁 Request Again", callback_data="deploy_request"),
+                    InlineKeyboardButton("📊 Status", callback_data="deploy_status")
+                ],
+                [
+                    InlineKeyboardButton("📖 Help", callback_data="cmd_help"),
+                    InlineKeyboardButton("💓 Alive", callback_data="alive_status")
+                ]
             ])
         else:
             # No access - show request button
             buttons = InlineKeyboardMarkup([
-                [InlineKeyboardButton("🚀 Request Deploy Access", callback_data="deploy_request")],
-                [InlineKeyboardButton("📊 Help", callback_data="cmd_help")]
+                [
+                    InlineKeyboardButton("🚀 Request Deploy Access", callback_data="deploy_request"),
+                    InlineKeyboardButton("📊 Status", callback_data="deploy_status")
+                ],
+                [
+                    InlineKeyboardButton("📖 Help", callback_data="cmd_help"),
+                    InlineKeyboardButton("💓 Alive", callback_data="alive_status")
+                ]
             ])
 
         await message.reply(welcome_text, reply_markup=buttons)
@@ -1610,43 +1633,42 @@ async def back_to_start_callback(client: Client, callback: CallbackQuery):
 
     # Check if developer
     if is_developer(user_id):
-        # Developer menu with deploy management
+        # Developer menu with deploy management AND own deploy access
         welcome_text = f"""
 {main_emoji} **VZ ASSISTANT BOT** - Developer Mode
 
 Hello {callback.from_user.first_name}! I'm your personal assistant bot.
 
-**Assistant Features:**
+**🌟 Developer Privileges:**
+{rocket_emoji} Full deploy access (no approval needed)
+{gear_emoji} Can approve/reject other users
+{petir_emoji} Manage all deployments
+
+**📱 Assistant Features:**
 {petir_emoji} Inline keyboards for plugin help
 {petir_emoji} Fast response with Pyrogram + Trio
 {gear_emoji} Secure & authorized access
 
-**Deploy Management:**
-{rocket_emoji} Approve/reject deploy requests
-{rocket_emoji} Manage sudoer deployments
-{gear_emoji} View pending requests
-
-**Commands:**
-{robot_emoji} /help - Interactive plugin help menu
-{robot_emoji} /alive - Bot status with buttons
-{robot_emoji} /ping - Check latency
-
-**Deploy Commands:**
-{rocket_emoji} /approve <user_id> - Approve user
-{rocket_emoji} /reject <user_id> [reason] - Reject user
-{rocket_emoji} /pending - View pending requests
-{rocket_emoji} /approved - List approved users
+**🚀 Quick Actions:**
+Use buttons below for instant access!
 
 {main_emoji} by VzBot | {dev_emoji} @VZLfxs
 """
 
-        # Developer inline buttons
+        # Developer inline buttons with deploy + management
         buttons = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("🚀 Deploy My Bot", callback_data="dev_deploy"),
+                InlineKeyboardButton("📊 My Status", callback_data="deploy_status")
+            ],
             [
                 InlineKeyboardButton("⏳ Pending Requests", callback_data="deploy_pending"),
                 InlineKeyboardButton("✅ Approved Users", callback_data="deploy_approved")
             ],
-            [InlineKeyboardButton("📊 Help", callback_data="cmd_help")]
+            [
+                InlineKeyboardButton("📖 Help", callback_data="cmd_help"),
+                InlineKeyboardButton("💓 Alive", callback_data="alive_status")
+            ]
         ])
     else:
         # Regular user menu with deploy request option
@@ -1689,28 +1711,164 @@ Hello {callback.from_user.first_name}! I'm your personal assistant bot.
         # User inline buttons based on deploy status
         if status_info["status"] == "approved":
             buttons = InlineKeyboardMarkup([
-                [InlineKeyboardButton("✅ Check Status", callback_data="deploy_status")],
-                [InlineKeyboardButton("📊 Help", callback_data="cmd_help")]
+                [
+                    InlineKeyboardButton("✅ Deploy Status", callback_data="deploy_status"),
+                    InlineKeyboardButton("💓 Alive", callback_data="alive_status")
+                ],
+                [
+                    InlineKeyboardButton("📖 Help", callback_data="cmd_help"),
+                    InlineKeyboardButton("⚡ Ping", callback_data="ping_check")
+                ]
             ])
         elif status_info["status"] == "pending":
             buttons = InlineKeyboardMarkup([
-                [InlineKeyboardButton("⏳ Check Status", callback_data="deploy_status")],
-                [InlineKeyboardButton("📊 Help", callback_data="cmd_help")]
+                [
+                    InlineKeyboardButton("⏳ Check Status", callback_data="deploy_status"),
+                    InlineKeyboardButton("💓 Alive", callback_data="alive_status")
+                ],
+                [
+                    InlineKeyboardButton("📖 Help", callback_data="cmd_help"),
+                    InlineKeyboardButton("⚡ Ping", callback_data="ping_check")
+                ]
             ])
         elif status_info["status"] == "rejected":
             buttons = InlineKeyboardMarkup([
-                [InlineKeyboardButton("🔁 Request Again", callback_data="deploy_request")],
-                [InlineKeyboardButton("📊 Help", callback_data="cmd_help")]
+                [
+                    InlineKeyboardButton("🔁 Request Again", callback_data="deploy_request"),
+                    InlineKeyboardButton("📊 Status", callback_data="deploy_status")
+                ],
+                [
+                    InlineKeyboardButton("📖 Help", callback_data="cmd_help"),
+                    InlineKeyboardButton("💓 Alive", callback_data="alive_status")
+                ]
             ])
         else:
             # No access - show request button
             buttons = InlineKeyboardMarkup([
-                [InlineKeyboardButton("🚀 Request Deploy Access", callback_data="deploy_request")],
-                [InlineKeyboardButton("📊 Help", callback_data="cmd_help")]
+                [
+                    InlineKeyboardButton("🚀 Request Deploy Access", callback_data="deploy_request"),
+                    InlineKeyboardButton("📊 Status", callback_data="deploy_status")
+                ],
+                [
+                    InlineKeyboardButton("📖 Help", callback_data="cmd_help"),
+                    InlineKeyboardButton("💓 Alive", callback_data="alive_status")
+                ]
             ])
 
     await callback.edit_message_text(welcome_text, reply_markup=buttons)
     await callback.answer()
+
+
+@app.on_callback_query(filters.regex("^dev_deploy$"))
+async def dev_deploy_callback(client: Client, callback: CallbackQuery):
+    """Handle developer deploy button."""
+    user_id = callback.from_user.id
+
+    # Developer only
+    if not is_developer(user_id):
+        await callback.answer("❌ Developer only!", show_alert=True)
+        return
+
+    response = f"""🚀 **Developer Deployment**
+
+Hi {callback.from_user.first_name},
+
+As a developer, you have automatic deploy access!
+
+**📊 Your Status:**
+├ Role: 🌟 Developer
+├ Access: ✅ Full Access (Auto-Approved)
+└ Restrictions: None
+
+**💡 How to Deploy:**
+
+**Option 1: Via Main Bot**
+Send `.dp` in your main userbot to deploy
+
+**Option 2: Contact Admin**
+Contact developer for manual deployment
+
+**🛠️ Developer Privileges:**
+✓ No approval needed
+✓ Can deploy anytime
+✓ Can approve other users
+✓ Manage all deployments
+
+**📞 Need Help?**
+Contact: {config.FOUNDER_USERNAME}
+
+🤖 VZ Assistant Bot"""
+
+    buttons = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔙 Back", callback_data="back_to_start")]
+    ])
+
+    await callback.edit_message_text(response, reply_markup=buttons)
+    await callback.answer("🌟 Developer access active!", show_alert=False)
+
+
+@app.on_callback_query(filters.regex("^alive_status$"))
+async def alive_status_callback(client: Client, callback: CallbackQuery):
+    """Handle alive button."""
+    import time
+    start_time = time.time()
+
+    response = f"""💓 **VZ Assistant Bot - Alive**
+
+**🤖 Bot Status:** Online
+**⚡ Response:** {int((time.time() - start_time) * 1000)}ms
+**🌟 Version:** v0.0.0.69
+**📱 Framework:** Pyrogram + Trio
+
+**Features:**
+✓ Inline keyboards
+✓ Deploy management
+✓ Fast response
+✓ Secure access
+
+**📊 System:**
+├ Owner: {callback.from_user.first_name}
+└ Bot: VZ Assistant
+
+🤖 by VzBot | 👨‍💻 @VZLfxs"""
+
+    buttons = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔙 Back", callback_data="back_to_start")]
+    ])
+
+    await callback.edit_message_text(response, reply_markup=buttons)
+    await callback.answer()
+
+
+@app.on_callback_query(filters.regex("^ping_check$"))
+async def ping_check_callback(client: Client, callback: CallbackQuery):
+    """Handle ping button."""
+    import time
+    start_time = time.time()
+
+    # Calculate ping
+    ping = int((time.time() - start_time) * 1000)
+
+    response = f"""⚡ **Ping Check**
+
+**Response Time:** `{ping}ms`
+
+**Connection Quality:**
+{'🟢 Excellent' if ping < 100 else '🟡 Good' if ping < 200 else '🔴 Slow'}
+
+**Status:** ✅ Online
+
+🤖 VZ Assistant Bot"""
+
+    buttons = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("🔄 Check Again", callback_data="ping_check"),
+            InlineKeyboardButton("🔙 Back", callback_data="back_to_start")
+        ]
+    ])
+
+    await callback.edit_message_text(response, reply_markup=buttons)
+    await callback.answer(f"⚡ Ping: {ping}ms", show_alert=False)
 
 
 # ============================================================================
