@@ -168,10 +168,10 @@ async def joinvc_handler(event):
         silent_join = await _join_vc_silent(event.client, event.chat_id)
 
         if not silent_join:
-            # Method 2: PyTgCalls fallback with video disabled
-            config = GroupCallConfig(auto_start=False) if GroupCallConfig else None
+            # Method 2: PyTgCalls fallback with auto-start & audio only
+            config = GroupCallConfig(auto_start=True) if GroupCallConfig else None
 
-            # Use MediaStream to disable video
+            # Use MediaStream with audio only (no video)
             if MediaStream:
                 stream = MediaStream(
                     SILENCE_URL,
@@ -212,15 +212,6 @@ async def joinvc_handler(event):
 
 {robot_emoji} Plugins Digunakan: **VOICE CHAT**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan"""
-
-    except NoActiveGroupCall:
-        merah_emoji = vz_emoji.getemoji('merah')
-        kuning_emoji = vz_emoji.getemoji('kuning')
-        response = f"""{merah_emoji} **JOIN FAILED**
-
-{kuning_emoji} Start the voice chat first
-
-VZ ASSISTANT"""
 
     except Exception as exc:
         merah_emoji = vz_emoji.getemoji('merah')
