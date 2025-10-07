@@ -1,14 +1,15 @@
 # VZ Deployer Bot
 
-Multi-user deployment manager with approval system for VZ Assistant.
+Multi-user deployment manager with `..ok` approval system for VZ Assistant.
 
 ## Features
 
-- 🤖 User request deployment via `/deploy`
-- ✅ Developer approve/reject with inline buttons
+- 🤖 User request via chat → forward to developer
+- ✅ Developer approve dengan command `..ok` di userbot
 - 🔐 Auto-generate `.env` for each user
 - 📊 PM2 management for each deployment
 - 🔒 Secure session storage
+- 🚫 Anti-spam protection
 
 ## Setup
 
@@ -32,26 +33,37 @@ Or manually:
 python3 deployer_bot.py
 ```
 
-## User Commands
+## Commands
 
-### For Sudoers (Users who can request deployment):
+### For Users (After approved):
 
 - `/start` - Show welcome message
 - `/setsession <session_string>` - Set your session string
-- `/deploy` - Request deployment
+- `/deploy` - Deploy your vbot
 - `/mystatus` - Check deployment status
 
-### For Developers:
+### For Developers (Userbot):
+
+- `..ok` - Approve user (reply di PM bot deployer)
+- `..no` - Disapprove user (remove from approved list)
+- `.approvedlist` - List all approved users
+- `.deploystatus` - Check deployer bot status
+
+### For Developers (Bot):
 
 - `/deploylist` - List all active deployments
 - `/deploystop <user_id>` - Stop deployment for user
-- `/pending` - View pending deployment requests
 
 ## Usage Flow
 
 ### For Users:
 
-1. **Set Session String**
+1. **Request Access**
+   - Chat deployer bot (any message)
+   - Bot will forward to developer
+   - Wait for approval
+
+2. **After Approved - Set Session**
    ```
    /setsession 1BVtsOK4Bu...
    ```
@@ -59,31 +71,37 @@ python3 deployer_bot.py
    - Get session from string generator
    - Message will auto-delete for security
 
-2. **Request Deployment**
+3. **Deploy**
    ```
    /deploy
    ```
-   - Sends request to developers
-   - Wait for approval notification
+   - Bot auto-creates env and starts PM2
+   - Get deployment info (port, PID)
 
-3. **Check Status**
+4. **Check Status**
    ```
    /mystatus
    ```
-   - Shows deployment status (pending/active/none)
+   - Shows deployment status (port, PID, uptime)
 
 ### For Developers:
 
-1. **Approve Request**
-   - Receive notification with inline buttons
-   - Click "✅ Approve" to deploy
-   - Bot auto-creates env and starts PM2
+1. **Approve User**
+   - Receive forwarded message di userbot PM
+   - Reply `..ok` pada pesan bot deployer
+   - User instantly approved
 
-2. **Manage Deployments**
+2. **Manage Approvals**
    ```
-   /deploylist          # View all active
-   /deploystop 123456   # Stop specific user
-   /pending             # View pending requests
+   ..no              # Disapprove user (reply)
+   .approvedlist     # List approved users
+   .deploystatus     # Check bot status
+   ```
+
+3. **Manage Deployments**
+   ```
+   /deploylist          # View all active (di bot)
+   /deploystop 123456   # Stop specific user (di bot)
    ```
 
 ## Configuration
