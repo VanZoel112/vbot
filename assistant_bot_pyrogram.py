@@ -32,11 +32,18 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from helpers.plugin_loader import load_plugins_info, chunk_list
 from helpers.vc_bridge import VCBridge
 
+# Import config and deploy auth
+import config
+from database.deploy_auth import DeployAuthDB
+
 # Load environment
 load_dotenv()
 
 # Initialize VC Bridge
 vc_bridge = VCBridge()
+
+# Initialize Deploy Auth Database (for developers only)
+deploy_auth_db = None
 
 # ============================================================================
 # LOGGING SETUP (Trio-style structured logging)
@@ -102,6 +109,10 @@ _log_group_joined = False
 def is_authorized(user_id: int) -> bool:
     """Check if user is authorized."""
     return user_id == OWNER_ID or user_id in DEVELOPER_IDS
+
+def is_developer(user_id: int) -> bool:
+    """Check if user is a developer."""
+    return config.is_developer(user_id)
 
 async def log_action(user_id: int, action: str):
     """Log user actions."""
@@ -313,8 +324,42 @@ async def start_handler(client: Client, message: Message):
     petir_emoji = "⚡"
     gear_emoji = "⚙️"
     dev_emoji = "👨‍💻"
+    rocket_emoji = "🚀"
 
-    welcome_text = f"""
+    # Check if developer
+    if is_developer(user_id):
+        # Developer menu with deploy management
+        welcome_text = f"""
+{main_emoji} **VZ ASSISTANT BOT** - Developer Mode
+
+Hello {message.from_user.first_name}! I'm your personal assistant bot.
+
+**Assistant Features:**
+{petir_emoji} Inline keyboards for plugin help
+{petir_emoji} Fast response with Pyrogram + Trio
+{gear_emoji} Secure & authorized access
+
+**Deploy Management:**
+{rocket_emoji} Approve/reject deploy requests
+{rocket_emoji} Manage sudoer deployments
+{gear_emoji} View pending requests
+
+**Commands:**
+{robot_emoji} /help - Interactive plugin help menu
+{robot_emoji} /alive - Bot status with buttons
+{robot_emoji} /ping - Check latency
+
+**Deploy Commands:**
+{rocket_emoji} /approve <user_id> - Approve user
+{rocket_emoji} /reject <user_id> [reason] - Reject user
+{rocket_emoji} /pending - View pending requests
+{rocket_emoji} /approved - List approved users
+
+{main_emoji} by VzBot | {dev_emoji} @VZLfxs
+"""
+    else:
+        # Regular user menu (NO deploy features)
+        welcome_text = f"""
 {main_emoji} **VZ ASSISTANT BOT**
 
 Hello {message.from_user.first_name}! I'm your personal assistant bot.
@@ -908,6 +953,257 @@ async def vcstatus_handler(client: Client, message: Message):
     status_text += "• `/leave` or `/stop` - Leave VC"
 
     await message.reply(status_text)
+
+# ============================================================================
+# DEPLOY MANAGEMENT COMMANDS (Developer Only)
+# ============================================================================
+
+@app.on_message(filters.command("approve") & filters.private)
+async def approve_handler(client: Client, message: Message):
+    """Approve user for deployment (Developer only)."""
+    user_id = message.from_user.id
+
+    # Developer only
+    if not is_developer(user_id):
+        await message.reply("❌ Developer only command!")
+        return
+
+    # Initialize deploy auth DB if needed
+    global deploy_auth_db
+    if deploy_auth_db is None:
+        deploy_auth_db = DeployAuthDB()
+
+    # Parse command
+    parts = message.text.split(maxsplit=2)
+    if len(parts) < 2:
+        await message.reply("❌ Usage: `/approve <user_id> [notes]`")
+        return
+
+    try:
+        target_id = int(parts[1])
+        notes = parts[2] if len(parts) > 2 else "Approved via assistant bot"
+    except ValueError:
+        await message.reply("❌ Invalid user ID!")
+        return
+
+    # Get target user info if possible
+    username = None
+    first_name = None
+    try:
+        # Try to get user from Telegram
+        target_user = await client.get_users(target_id)
+        username = target_user.username
+        first_name = target_user.first_name
+    except:
+        pass
+
+    # Approve user
+    created, updated, record = deploy_auth_db.approve_user(
+        target_id,
+        user_id,
+        notes,
+        username=username,
+        first_name=first_name
+    )
+
+    if created:
+        status = "✅ **User Approved!**"
+        footer = "User can now deploy."
+    elif updated:
+        status = "✅ **Approval Updated**"
+        footer = "User approval details updated."
+    else:
+        status = "ℹ️ **Already Approved**"
+        footer = "User already has deploy access."
+
+    response = f"""{status}
+
+**User Info:**
+├ Name: {record.get('first_name') or 'Unknown'}
+├ Username: @{record.get('username') or 'None'}
+├ User ID: `{record['user_id']}`
+├ Approved: {record.get('approved_at', 'Unknown')}
+└ Notes: {record.get('notes', 'None')}
+
+{footer}
+
+🤖 VZ Assistant Bot"""
+
+    await message.reply(response)
+    logger.info(f"User {target_id} approved by {user_id}")
+
+
+@app.on_message(filters.command("reject") & filters.private)
+async def reject_handler(client: Client, message: Message):
+    """Reject user deployment request (Developer only)."""
+    user_id = message.from_user.id
+
+    # Developer only
+    if not is_developer(user_id):
+        await message.reply("❌ Developer only command!")
+        return
+
+    # Initialize deploy auth DB if needed
+    global deploy_auth_db
+    if deploy_auth_db is None:
+        deploy_auth_db = DeployAuthDB()
+
+    # Parse command
+    parts = message.text.split(maxsplit=2)
+    if len(parts) < 2:
+        await message.reply("❌ Usage: `/reject <user_id> [reason]`")
+        return
+
+    try:
+        target_id = int(parts[1])
+        reason = parts[2] if len(parts) > 2 else "Not specified"
+    except ValueError:
+        await message.reply("❌ Invalid user ID!")
+        return
+
+    # Reject user
+    deploy_auth_db.reject_user(target_id, user_id, reason)
+
+    response = f"""❌ **User Rejected**
+
+**User ID:** `{target_id}`
+**Reason:** {reason}
+**Rejected by:** {message.from_user.first_name}
+
+User has been notified.
+
+🤖 VZ Assistant Bot"""
+
+    await message.reply(response)
+    logger.info(f"User {target_id} rejected by {user_id}")
+
+
+@app.on_message(filters.command("pending") & filters.private)
+async def pending_handler(client: Client, message: Message):
+    """View pending deploy requests (Developer only)."""
+    user_id = message.from_user.id
+
+    # Developer only
+    if not is_developer(user_id):
+        await message.reply("❌ Developer only command!")
+        return
+
+    # Initialize deploy auth DB if needed
+    global deploy_auth_db
+    if deploy_auth_db is None:
+        deploy_auth_db = DeployAuthDB()
+
+    # Get pending requests
+    requests = deploy_auth_db.get_pending_requests()
+
+    if not requests:
+        await message.reply("ℹ️ No pending requests.")
+        return
+
+    response = "⏳ **Pending Deploy Requests:**\n\n"
+
+    for req in requests[:10]:  # Limit to 10
+        response += f"""**👤 {req['first_name']}**
+├ Username: @{req['username'] or 'None'}
+├ User ID: `{req['user_id']}`
+├ Requested: {req['requested_at']}
+"""
+        if req.get('reason'):
+            response += f"├ Reason: {req['reason']}\n"
+        response += f"└ Actions: `/approve {req['user_id']}` or `/reject {req['user_id']}`\n\n"
+
+    if len(requests) > 10:
+        response += f"\n_...and {len(requests) - 10} more_"
+
+    response += "\n🤖 VZ Assistant Bot"
+
+    await message.reply(response)
+
+
+@app.on_message(filters.command("approved") & filters.private)
+async def approved_handler(client: Client, message: Message):
+    """View approved users (Developer only)."""
+    user_id = message.from_user.id
+
+    # Developer only
+    if not is_developer(user_id):
+        await message.reply("❌ Developer only command!")
+        return
+
+    # Initialize deploy auth DB if needed
+    global deploy_auth_db
+    if deploy_auth_db is None:
+        deploy_auth_db = DeployAuthDB()
+
+    # Get approved users
+    users = deploy_auth_db.get_approved_users()
+
+    if not users:
+        await message.reply("ℹ️ No approved users.")
+        return
+
+    response = "✅ **Approved Users:**\n\n"
+
+    for user in users[:10]:  # Limit to 10
+        response += f"""**👤 {user['first_name']}**
+├ Username: @{user['username'] or 'None'}
+├ User ID: `{user['user_id']}`
+├ Approved: {user['approved_at']}
+"""
+        if user.get('notes'):
+            response += f"├ Notes: {user['notes']}\n"
+        response += f"└ Revoke: `/revoke {user['user_id']}`\n\n"
+
+    if len(users) > 10:
+        response += f"\n_...and {len(users) - 10} more_"
+
+    response += f"\n🤖 VZ Assistant Bot\n📊 Total: {len(users)} approved users"
+
+    await message.reply(response)
+
+
+@app.on_message(filters.command("revoke") & filters.private)
+async def revoke_handler(client: Client, message: Message):
+    """Revoke user deploy access (Developer only)."""
+    user_id = message.from_user.id
+
+    # Developer only
+    if not is_developer(user_id):
+        await message.reply("❌ Developer only command!")
+        return
+
+    # Initialize deploy auth DB if needed
+    global deploy_auth_db
+    if deploy_auth_db is None:
+        deploy_auth_db = DeployAuthDB()
+
+    # Parse command
+    parts = message.text.split()
+    if len(parts) < 2:
+        await message.reply("❌ Usage: `/revoke <user_id>`")
+        return
+
+    try:
+        target_id = int(parts[1])
+    except ValueError:
+        await message.reply("❌ Invalid user ID!")
+        return
+
+    # Revoke access
+    deploy_auth_db.revoke_access(target_id)
+
+    response = f"""🔒 **Access Revoked**
+
+**User ID:** `{target_id}`
+**Revoked by:** {message.from_user.first_name}
+
+Deploy access has been revoked.
+
+🤖 VZ Assistant Bot"""
+
+    await message.reply(response)
+    logger.info(f"User {target_id} revoked by {user_id}")
+
 
 # ============================================================================
 # MAIN
