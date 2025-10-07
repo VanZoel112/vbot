@@ -362,6 +362,19 @@ Hello {message.from_user.first_name}! I'm your personal assistant bot.
 
 {main_emoji} by VzBot | {dev_emoji} @VZLfxs
 """
+
+        # Developer inline buttons
+        buttons = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("⏳ Pending Requests", callback_data="deploy_pending"),
+                InlineKeyboardButton("✅ Approved Users", callback_data="deploy_approved")
+            ],
+            [InlineKeyboardButton("📊 Help", callback_data="cmd_help")]
+        ])
+
+        await message.reply(welcome_text, reply_markup=buttons)
+        return
+
     else:
         # Regular user menu with deploy request option
         # Check deploy status
@@ -400,7 +413,30 @@ Hello {message.from_user.first_name}! I'm your personal assistant bot.
 {main_emoji} by VzBot | {dev_emoji} @VZLfxs
 """
 
-    await message.reply(welcome_text)
+        # User inline buttons based on deploy status
+        if status_info["status"] == "approved":
+            buttons = InlineKeyboardMarkup([
+                [InlineKeyboardButton("✅ Check Status", callback_data="deploy_status")],
+                [InlineKeyboardButton("📊 Help", callback_data="cmd_help")]
+            ])
+        elif status_info["status"] == "pending":
+            buttons = InlineKeyboardMarkup([
+                [InlineKeyboardButton("⏳ Check Status", callback_data="deploy_status")],
+                [InlineKeyboardButton("📊 Help", callback_data="cmd_help")]
+            ])
+        elif status_info["status"] == "rejected":
+            buttons = InlineKeyboardMarkup([
+                [InlineKeyboardButton("🔁 Request Again", callback_data="deploy_request")],
+                [InlineKeyboardButton("📊 Help", callback_data="cmd_help")]
+            ])
+        else:
+            # No access - show request button
+            buttons = InlineKeyboardMarkup([
+                [InlineKeyboardButton("🚀 Request Deploy Access", callback_data="deploy_request")],
+                [InlineKeyboardButton("📊 Help", callback_data="cmd_help")]
+            ])
+
+        await message.reply(welcome_text, reply_markup=buttons)
 
 # ============================================================================
 # HELP COMMAND WITH INLINE PLUGINS
@@ -1341,6 +1377,340 @@ async def status_deploy_handler(client: Client, message: Message):
 🤖 VZ Assistant Bot"""
 
     await message.reply(response)
+
+
+# ============================================================================
+# DEPLOY INLINE BUTTON CALLBACKS
+# ============================================================================
+
+@app.on_callback_query(filters.regex("^deploy_request$"))
+async def deploy_request_callback(client: Client, callback: CallbackQuery):
+    """Handle deploy request button."""
+    user_id = callback.from_user.id
+
+    # Developers don't need to request
+    if is_developer(user_id):
+        await callback.answer("🌟 Developers have automatic access!", show_alert=True)
+        return
+
+    # Initialize deploy auth DB if needed
+    global deploy_auth_db
+    if deploy_auth_db is None:
+        deploy_auth_db = DeployAuthDB()
+
+    # Check current status
+    status_info = deploy_auth_db.get_user_status(user_id)
+
+    if status_info["status"] == "approved":
+        await callback.answer("✅ You are already approved!", show_alert=True)
+        return
+
+    if status_info["status"] == "pending":
+        await callback.answer("⏳ Your request is pending!", show_alert=True)
+        return
+
+    # Add request
+    reason = "Requested via assistant bot button"
+    deploy_auth_db.add_request(
+        user_id=user_id,
+        username=callback.from_user.username,
+        first_name=callback.from_user.first_name,
+        reason=reason
+    )
+
+    # Update message
+    response = f"""✅ **Deploy Access Requested**
+
+Hi {callback.from_user.first_name},
+
+Your deployment request has been submitted to the developers.
+
+**📊 Request Info:**
+├ User ID: `{user_id}`
+├ Username: @{callback.from_user.username or 'None'}
+└ Status: ⏳ Pending
+
+**⏰ Next Steps:**
+A developer will review your request soon.
+You will be notified when approved.
+
+🤖 VZ Assistant Bot"""
+
+    buttons = InlineKeyboardMarkup([
+        [InlineKeyboardButton("⏳ Check Status", callback_data="deploy_status")],
+        [InlineKeyboardButton("🔙 Back", callback_data="back_to_start")]
+    ])
+
+    await callback.edit_message_text(response, reply_markup=buttons)
+    await callback.answer("✅ Request sent!", show_alert=False)
+    logger.info(f"Deploy request from user {user_id} via button")
+
+
+@app.on_callback_query(filters.regex("^deploy_status$"))
+async def deploy_status_callback(client: Client, callback: CallbackQuery):
+    """Handle deploy status button."""
+    user_id = callback.from_user.id
+
+    # Initialize deploy auth DB if needed
+    global deploy_auth_db
+    if deploy_auth_db is None:
+        deploy_auth_db = DeployAuthDB()
+
+    # Get status
+    status_info = deploy_auth_db.get_user_status(user_id)
+
+    if is_developer(user_id):
+        status_emoji = "🌟"
+        status_text = "Developer (Full Access)"
+        detail = "You have automatic deploy access."
+    elif status_info["status"] == "approved":
+        status_emoji = "✅"
+        status_text = "Approved"
+        data = status_info["data"]
+        detail = f"Approved: {data.get('approved_at', 'Unknown')}"
+    elif status_info["status"] == "pending":
+        status_emoji = "⏳"
+        status_text = "Pending"
+        data = status_info["data"]
+        detail = f"Requested: {data.get('requested_at', 'Unknown')}"
+    elif status_info["status"] == "rejected":
+        status_emoji = "❌"
+        status_text = "Rejected"
+        data = status_info["data"]
+        detail = f"Reason: {data.get('reason', 'Not specified')}"
+    else:
+        status_emoji = "🔒"
+        status_text = "No Access"
+        detail = "Use button below to request deploy access"
+
+    response = f"""{status_emoji} **Deploy Status**
+
+**User:** {callback.from_user.first_name}
+**Status:** {status_text}
+
+{detail}
+
+🤖 VZ Assistant Bot"""
+
+    buttons = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔙 Back", callback_data="back_to_start")]
+    ])
+
+    await callback.edit_message_text(response, reply_markup=buttons)
+    await callback.answer()
+
+
+@app.on_callback_query(filters.regex("^deploy_pending$"))
+async def deploy_pending_callback(client: Client, callback: CallbackQuery):
+    """Handle pending requests button (Developer only)."""
+    user_id = callback.from_user.id
+
+    # Developer only
+    if not is_developer(user_id):
+        await callback.answer("❌ Developer only!", show_alert=True)
+        return
+
+    # Initialize deploy auth DB if needed
+    global deploy_auth_db
+    if deploy_auth_db is None:
+        deploy_auth_db = DeployAuthDB()
+
+    # Get pending requests
+    requests = deploy_auth_db.get_pending_requests()
+
+    if not requests:
+        await callback.answer("ℹ️ No pending requests.", show_alert=True)
+        return
+
+    response = "⏳ **Pending Deploy Requests:**\n\n"
+
+    for req in requests[:10]:  # Limit to 10
+        response += f"""**👤 {req['first_name']}**
+├ Username: @{req['username'] or 'None'}
+├ User ID: `{req['user_id']}`
+├ Requested: {req['requested_at']}
+"""
+        if req.get('reason'):
+            response += f"├ Reason: {req['reason']}\n"
+        response += f"└ `/approve {req['user_id']}`\n\n"
+
+    if len(requests) > 10:
+        response += f"\n_...and {len(requests) - 10} more_"
+
+    response += "\n🤖 VZ Assistant Bot"
+
+    buttons = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔙 Back", callback_data="back_to_start")]
+    ])
+
+    await callback.edit_message_text(response, reply_markup=buttons)
+    await callback.answer()
+
+
+@app.on_callback_query(filters.regex("^deploy_approved$"))
+async def deploy_approved_callback(client: Client, callback: CallbackQuery):
+    """Handle approved users button (Developer only)."""
+    user_id = callback.from_user.id
+
+    # Developer only
+    if not is_developer(user_id):
+        await callback.answer("❌ Developer only!", show_alert=True)
+        return
+
+    # Initialize deploy auth DB if needed
+    global deploy_auth_db
+    if deploy_auth_db is None:
+        deploy_auth_db = DeployAuthDB()
+
+    # Get approved users
+    users = deploy_auth_db.get_approved_users()
+
+    if not users:
+        await callback.answer("ℹ️ No approved users.", show_alert=True)
+        return
+
+    response = "✅ **Approved Users:**\n\n"
+
+    for user in users[:10]:  # Limit to 10
+        response += f"""**👤 {user['first_name']}**
+├ Username: @{user['username'] or 'None'}
+├ User ID: `{user['user_id']}`
+├ Approved: {user['approved_at']}
+"""
+        if user.get('notes'):
+            response += f"├ Notes: {user['notes']}\n"
+        response += f"└ `/revoke {user['user_id']}`\n\n"
+
+    if len(users) > 10:
+        response += f"\n_...and {len(users) - 10} more_"
+
+    response += f"\n🤖 VZ Assistant Bot\n📊 Total: {len(users)} approved users"
+
+    buttons = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔙 Back", callback_data="back_to_start")]
+    ])
+
+    await callback.edit_message_text(response, reply_markup=buttons)
+    await callback.answer()
+
+
+@app.on_callback_query(filters.regex("^back_to_start$"))
+async def back_to_start_callback(client: Client, callback: CallbackQuery):
+    """Handle back to start button."""
+    # Just re-trigger /start handler logic
+    user_id = callback.from_user.id
+
+    # Use regular Unicode emoji (Pyrogram compatible)
+    main_emoji = "🌟"
+    robot_emoji = "🤖"
+    petir_emoji = "⚡"
+    gear_emoji = "⚙️"
+    dev_emoji = "👨‍💻"
+    rocket_emoji = "🚀"
+
+    # Check if developer
+    if is_developer(user_id):
+        # Developer menu with deploy management
+        welcome_text = f"""
+{main_emoji} **VZ ASSISTANT BOT** - Developer Mode
+
+Hello {callback.from_user.first_name}! I'm your personal assistant bot.
+
+**Assistant Features:**
+{petir_emoji} Inline keyboards for plugin help
+{petir_emoji} Fast response with Pyrogram + Trio
+{gear_emoji} Secure & authorized access
+
+**Deploy Management:**
+{rocket_emoji} Approve/reject deploy requests
+{rocket_emoji} Manage sudoer deployments
+{gear_emoji} View pending requests
+
+**Commands:**
+{robot_emoji} /help - Interactive plugin help menu
+{robot_emoji} /alive - Bot status with buttons
+{robot_emoji} /ping - Check latency
+
+**Deploy Commands:**
+{rocket_emoji} /approve <user_id> - Approve user
+{rocket_emoji} /reject <user_id> [reason] - Reject user
+{rocket_emoji} /pending - View pending requests
+{rocket_emoji} /approved - List approved users
+
+{main_emoji} by VzBot | {dev_emoji} @VZLfxs
+"""
+
+        # Developer inline buttons
+        buttons = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("⏳ Pending Requests", callback_data="deploy_pending"),
+                InlineKeyboardButton("✅ Approved Users", callback_data="deploy_approved")
+            ],
+            [InlineKeyboardButton("📊 Help", callback_data="cmd_help")]
+        ])
+    else:
+        # Regular user menu with deploy request option
+        # Check deploy status
+        global deploy_auth_db
+        if deploy_auth_db is None:
+            deploy_auth_db = DeployAuthDB()
+
+        status_info = deploy_auth_db.get_user_status(user_id)
+
+        if status_info["status"] == "approved":
+            deploy_text = f"\n**🚀 Deploy Access:** ✅ Approved\n💡 Contact developer for deployment\n"
+        elif status_info["status"] == "pending":
+            deploy_text = f"\n**🚀 Deploy Access:** ⏳ Pending approval\n💡 Use /status to check request status\n"
+        elif status_info["status"] == "rejected":
+            deploy_text = f"\n**🚀 Deploy Access:** ❌ Rejected\n💡 Use /request to request again\n"
+        else:
+            deploy_text = f"\n**🚀 Deploy Access:** 🔒 Not requested\n💡 Use /request to request deploy access\n"
+
+        welcome_text = f"""
+{main_emoji} **VZ ASSISTANT BOT**
+
+Hello {callback.from_user.first_name}! I'm your personal assistant bot.
+
+**Features:**
+{petir_emoji} Inline keyboards for plugin help
+{petir_emoji} Fast response with Pyrogram + Trio
+{gear_emoji} Secure & authorized access
+{deploy_text}
+**Available Commands:**
+{robot_emoji} /help - Interactive plugin help menu
+{robot_emoji} /alive - Bot status with buttons
+{robot_emoji} /ping - Check latency
+{rocket_emoji} /request [reason] - Request deploy access
+{rocket_emoji} /status - Check deploy status
+
+{main_emoji} by VzBot | {dev_emoji} @VZLfxs
+"""
+
+        # User inline buttons based on deploy status
+        if status_info["status"] == "approved":
+            buttons = InlineKeyboardMarkup([
+                [InlineKeyboardButton("✅ Check Status", callback_data="deploy_status")],
+                [InlineKeyboardButton("📊 Help", callback_data="cmd_help")]
+            ])
+        elif status_info["status"] == "pending":
+            buttons = InlineKeyboardMarkup([
+                [InlineKeyboardButton("⏳ Check Status", callback_data="deploy_status")],
+                [InlineKeyboardButton("📊 Help", callback_data="cmd_help")]
+            ])
+        elif status_info["status"] == "rejected":
+            buttons = InlineKeyboardMarkup([
+                [InlineKeyboardButton("🔁 Request Again", callback_data="deploy_request")],
+                [InlineKeyboardButton("📊 Help", callback_data="cmd_help")]
+            ])
+        else:
+            # No access - show request button
+            buttons = InlineKeyboardMarkup([
+                [InlineKeyboardButton("🚀 Request Deploy Access", callback_data="deploy_request")],
+                [InlineKeyboardButton("📊 Help", callback_data="cmd_help")]
+            ])
+
+    await callback.edit_message_text(welcome_text, reply_markup=buttons)
+    await callback.answer()
 
 
 # ============================================================================
