@@ -91,30 +91,79 @@ class DeployAuthDB:
         """, (user_id, username, first_name, datetime.now(), reason))
         self.conn.commit()
 
-    def approve_user(self, user_id: int, approved_by: int, notes: str = None):
-        """Approve user for deploy access."""
+    def approve_user(
+        self,
+        user_id: int,
+        approved_by: int,
+        notes: str = None,
+        username: Optional[str] = None,
+        first_name: Optional[str] = None,
+    ) -> tuple[bool, bool, dict]:
+        """Approve user for deploy access.
+
+        Returns:
+            tuple[bool, bool, dict]:
+                - bool: ``True`` when this call created a new approval record.
+                - bool: ``True`` when the record was modified during this call.
+                - dict: The resulting approval record.
+        """
         cursor = self.conn.cursor()
+
+        # Check if user already approved
+        cursor.execute(
+            "SELECT * FROM approved_users WHERE user_id = ?",
+            (user_id,),
+        )
+        existing = cursor.fetchone()
+        if existing:
+            existing_data = dict(existing)
+
+            updates = {}
+            if notes is not None and notes != existing_data.get("notes"):
+                updates["notes"] = notes
+            if username and username != existing_data.get("username"):
+                updates["username"] = username
+            if first_name and first_name != existing_data.get("first_name"):
+                updates["first_name"] = first_name
+
+            updated = False
+            if updates:
+                set_clause = ", ".join(f"{column} = ?" for column in updates)
+                params = list(updates.values()) + [user_id]
+                cursor.execute(
+                    f"UPDATE approved_users SET {set_clause} WHERE user_id = ?",
+                    params,
+                )
+                self.conn.commit()
+                cursor.execute(
+                    "SELECT * FROM approved_users WHERE user_id = ?",
+                    (user_id,),
+                )
+                existing_data = dict(cursor.fetchone())
+                updated = True
+
+            return False, updated, existing_data
 
         # Get user info from pending requests
         cursor.execute(
             "SELECT username, first_name FROM pending_requests WHERE user_id = ?",
-            (user_id,)
+            (user_id,),
         )
         user_data = cursor.fetchone()
 
         if user_data:
-            username, first_name = user_data
-        else:
-            # If not in pending, try to get from rejected or use defaults
-            username = None
-            first_name = None
+            username = user_data["username"] or username
+            first_name = user_data["first_name"] or first_name
 
         # Add to approved users
-        cursor.execute("""
-            INSERT OR REPLACE INTO approved_users
+        cursor.execute(
+            """
+            INSERT INTO approved_users
             (user_id, username, first_name, approved_by, approved_at, notes)
             VALUES (?, ?, ?, ?, ?, ?)
-        """, (user_id, username, first_name, approved_by, datetime.now(), notes))
+            """,
+            (user_id, username, first_name, approved_by, datetime.now(), notes),
+        )
 
         # Remove from pending requests
         cursor.execute("DELETE FROM pending_requests WHERE user_id = ?", (user_id,))
@@ -123,6 +172,14 @@ class DeployAuthDB:
         cursor.execute("DELETE FROM rejected_users WHERE user_id = ?", (user_id,))
 
         self.conn.commit()
+
+        cursor.execute(
+            "SELECT * FROM approved_users WHERE user_id = ?",
+            (user_id,),
+        )
+        record = dict(cursor.fetchone())
+
+        return True, True, record
 
     def reject_user(self, user_id: int, rejected_by: int, reason: str = None):
         """Reject user deploy access."""

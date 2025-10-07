@@ -118,26 +118,30 @@ Developers have automatic deploy access.
 
     # Approve user
     try:
-        auth_db.approve_user(
+        display_name = ' '.join(filter(None, [target_user.first_name, getattr(target_user, 'last_name', None)])) or target_user.first_name or getattr(target_user, 'last_name', None)
+        created, updated, record = auth_db.approve_user(
             user_id=target_id,
             approved_by=event.sender_id,
-            notes="Quick approved via ..ok command"
+            notes="Quick approved via ..ok command",
+            username=target_user.username,
+            first_name=display_name,
         )
 
         # Build success message
         success_text = f"""
-{centang_emoji} **Deploy Access Approved!**
+{centang_emoji} **Deploy Access {'Updated' if not created and updated else 'Approved'}!**
 
-{target_user.first_name} (@{target_user.username or 'None'}) telah diberi akses deploy.
+{record.get('first_name') or target_user.first_name or 'User'} (@{record.get('username') or target_user.username or 'None'}) kini memiliki akses deploy.
 
 {telegram_emoji} **Deploy Bot Link:**
 {config.DEPLOY_BOT_USERNAME}
 
 {gear_emoji} **User Info:**
-├ Name: {target_user.first_name}
-├ Username: @{target_user.username or 'None'}
-├ User ID: `{target_id}`
-└ Status: ✅ Approved
+├ Name: {record.get('first_name') or target_user.first_name or 'Unknown'}
+├ Username: @{record.get('username') or target_user.username or 'None'}
+├ User ID: `{record.get('user_id', target_id)}`
+├ Approved: {record.get('approved_at', 'Unknown')}
+└ Notes: {record.get('notes') or 'Quick approved via ..ok command'}
 
 {robot_emoji} **Next Steps:**
 User bisa langsung ke deploy bot untuk:
@@ -244,13 +248,18 @@ Tidak ada request deploy yang pending.
 
     for req in pending:
         try:
-            auth_db.approve_user(
+            created, updated, record = auth_db.approve_user(
                 user_id=req['user_id'],
                 approved_by=event.sender_id,
-                notes="Bulk approved via ..okall command"
+                notes="Bulk approved via ..okall command",
+                username=req.get('username'),
+                first_name=req.get('first_name'),
             )
-            approved_count += 1
-            approved_users.append(f"• {req['first_name']} (@{req['username'] or 'None'}) - `{req['user_id']}`")
+            if created or updated:
+                approved_count += 1
+            approved_users.append(
+                f"• {record.get('first_name') or req.get('first_name') or 'User'} (@{record.get('username') or req.get('username') or 'None'}) - `{record.get('user_id', req['user_id'])}`"
+            )
         except Exception as e:
             print(f"⚠️  Failed to approve {req['user_id']}: {e}")
 
