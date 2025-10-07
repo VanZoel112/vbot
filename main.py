@@ -22,6 +22,7 @@ import config
 from client import VZClient, MultiClientManager
 from database.models import DatabaseManager
 from helpers import load_plugins, logger, log_event, log_exception
+from helpers.deployer_manager import start_deployer_bot, stop_deployer_bot
 from telethon import events
 
 # ============================================================================
@@ -478,6 +479,11 @@ async def main():
         # Send startup notification to log group
         await send_startup_log(main_client, plugin_count)
 
+        # Start deployer bot
+        print("\n🤖 Starting Deployer Bot...")
+        logger.info("Starting deployer bot...")
+        await start_deployer_bot()
+
         # Keep running
         print("\n🔄 Bot is now running... (Press Ctrl+C to stop)")
         logger.info("Bot is now running and listening for events...")
@@ -494,6 +500,9 @@ async def main():
     finally:
         logger.info("Shutting down...")
         print("\n🛑 Shutting down...")
+
+        # Stop deployer bot
+        await stop_deployer_bot()
 
         # Stop assistant bot
         stop_assistant_bot(assistant_bot_process)
