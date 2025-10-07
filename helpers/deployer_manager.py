@@ -14,7 +14,7 @@ import subprocess
 import logging
 from datetime import datetime
 from pyrogram import Client, filters
-from pyrogram.types import Message
+from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 
 logger = logging.getLogger('DeployerManager')
 
@@ -183,21 +183,49 @@ def create_deployer_bot():
 Hello {message.from_user.first_name}!
 """
 
+        buttons = []
+
         if is_dev:
-            text += "\n**Role:** DEVELOPER\n\n**Commands:**\n"
-            text += "• `/deploylist` - List deployments\n"
-            text += "• `/deploystop <user_id>` - Stop deployment\n"
-            text += "\n**Approval:**\nUse `..ok` di userbot PM untuk approve user"
+            text += "\n**Role:** DEVELOPER\n\n"
+            text += "Gunakan button di bawah untuk manage deployment."
+
+            buttons = [
+                [
+                    InlineKeyboardButton("👥 List Users", callback_data="dev_list_users"),
+                    InlineKeyboardButton("📊 Deployments", callback_data="dev_deployments")
+                ],
+                [
+                    InlineKeyboardButton("ℹ️ Help", callback_data="help"),
+                    InlineKeyboardButton("👨‍💻 Developer", url="https://t.me/VZLfxs")
+                ]
+            ]
         elif is_approved(user_id):
-            text += "\n**Status:** ✅ Approved\n\n**Commands:**\n"
-            text += "• `/setsession <string>` - Set session\n"
-            text += "• `/deploy` - Deploy bot\n"
-            text += "• `/mystatus` - Check status"
+            text += "\n**Status:** ✅ Approved\n\n"
+            text += "Kamu sudah diapprove untuk deploy!"
+
+            buttons = [
+                [
+                    InlineKeyboardButton("🚀 Deploy", callback_data="user_deploy"),
+                    InlineKeyboardButton("📊 Status", callback_data="user_status")
+                ],
+                [
+                    InlineKeyboardButton("ℹ️ Help", callback_data="help"),
+                    InlineKeyboardButton("👨‍💻 Developer", url="https://t.me/VZLfxs")
+                ]
+            ]
         else:
             text += "\n**Status:** ❌ Not Approved\n\n"
-            text += "Chat bot ini, developer akan approve dengan `..ok`"
+            text += "Chat bot ini untuk request approval deployment."
 
-        await message.reply(text)
+            buttons = [
+                [
+                    InlineKeyboardButton("ℹ️ Help", callback_data="help"),
+                    InlineKeyboardButton("👨‍💻 Developer", url="https://t.me/VZLfxs")
+                ]
+            ]
+
+        keyboard = InlineKeyboardMarkup(buttons)
+        await message.reply(text, reply_markup=keyboard)
 
     @deployer_app.on_message(filters.private & ~filters.command(["start", "setsession", "deploy", "mystatus", "deploylist", "deploystop"]))
     async def forward_to_dev(client, message):
@@ -400,6 +428,338 @@ Hello {message.from_user.first_name}!
             await message.reply(f"✅ Stopped deployment for {info['user_name']}")
         else:
             await message.reply(f"❌ Failed: {error}")
+
+    # ========================================================================
+    # CALLBACK HANDLERS
+    # ========================================================================
+
+    @deployer_app.on_callback_query(filters.regex("^help$"))
+    async def help_callback(client, callback: CallbackQuery):
+        """Show help message"""
+        user_id = callback.from_user.id
+        is_dev = user_id in DEVELOPER_IDS
+
+        help_text = """📖 **HELP - VZ DEPLOYER BOT**
+
+"""
+
+        if is_dev:
+            help_text += """**Developer Commands:**
+• `/deploylist` - List all deployments
+• `/deploystop <id>` - Stop deployment
+
+**Approval (via userbot):**
+• `..ok` - Approve user (reply di PM bot)
+• `..no` - Disapprove user
+• `.approvedlist` - List approved users
+
+**Buttons:**
+• **List Users** - See all users with approve/reject
+• **Deployments** - Active deployments
+"""
+        elif is_approved(user_id):
+            help_text += """**Your Commands:**
+• `/setsession <string>` - Set session string
+• `/deploy` - Deploy your vbot
+• `/mystatus` - Check deployment status
+
+**How to Deploy:**
+1. Get session from string generator
+2. `/setsession <your_session>`
+3. Click **Deploy** button or `/deploy`
+4. Wait for deployment complete
+
+**Notes:**
+• Each user gets isolated vbot clone
+• Your vbot runs as PM2 process
+• Use different account from owner
+"""
+        else:
+            help_text += """**How to Get Access:**
+1. Chat this bot (any message)
+2. Your message forwarded to developer
+3. Developer will approve with `..ok`
+4. You get access to deploy
+
+**After Approved:**
+• Set session string
+• Deploy your vbot
+• Manage your deployment
+
+**Contact:**
+Developer: @VZLfxs
+"""
+
+        back_button = InlineKeyboardMarkup([
+            [InlineKeyboardButton("◀️ Back", callback_data="back_to_start")]
+        ])
+
+        await callback.edit_message_text(help_text, reply_markup=back_button)
+
+    @deployer_app.on_callback_query(filters.regex("^back_to_start$"))
+    async def back_to_start_callback(client, callback: CallbackQuery):
+        """Back to start menu"""
+        # Re-run start handler logic
+        user_id = callback.from_user.id
+        is_dev = user_id in DEVELOPER_IDS
+
+        text = f"""🤖 **VZ DEPLOYER BOT**
+
+Hello {callback.from_user.first_name}!
+"""
+
+        buttons = []
+
+        if is_dev:
+            text += "\n**Role:** DEVELOPER\n\n"
+            text += "Gunakan button di bawah untuk manage deployment."
+
+            buttons = [
+                [
+                    InlineKeyboardButton("👥 List Users", callback_data="dev_list_users"),
+                    InlineKeyboardButton("📊 Deployments", callback_data="dev_deployments")
+                ],
+                [
+                    InlineKeyboardButton("ℹ️ Help", callback_data="help"),
+                    InlineKeyboardButton("👨‍💻 Developer", url="https://t.me/VZLfxs")
+                ]
+            ]
+        elif is_approved(user_id):
+            text += "\n**Status:** ✅ Approved\n\n"
+            text += "Kamu sudah diapprove untuk deploy!"
+
+            buttons = [
+                [
+                    InlineKeyboardButton("🚀 Deploy", callback_data="user_deploy"),
+                    InlineKeyboardButton("📊 Status", callback_data="user_status")
+                ],
+                [
+                    InlineKeyboardButton("ℹ️ Help", callback_data="help"),
+                    InlineKeyboardButton("👨‍💻 Developer", url="https://t.me/VZLfxs")
+                ]
+            ]
+        else:
+            text += "\n**Status:** ❌ Not Approved\n\n"
+            text += "Chat bot ini untuk request approval deployment."
+
+            buttons = [
+                [
+                    InlineKeyboardButton("ℹ️ Help", callback_data="help"),
+                    InlineKeyboardButton("👨‍💻 Developer", url="https://t.me/VZLfxs")
+                ]
+            ]
+
+        keyboard = InlineKeyboardMarkup(buttons)
+        await callback.edit_message_text(text, reply_markup=keyboard)
+
+    @deployer_app.on_callback_query(filters.regex("^dev_list_users$"))
+    async def dev_list_users_callback(client, callback: CallbackQuery):
+        """Show list of users with approve/reject buttons"""
+        if callback.from_user.id not in DEVELOPER_IDS:
+            await callback.answer("❌ Developer only", show_alert=True)
+            return
+
+        approved = load_approved_users()
+        approved_list = approved.get("approved", [])
+
+        if not approved_list:
+            text = "👥 **APPROVED USERS**\n\n"
+            text += "Belum ada user yang di-approve.\n\n"
+            text += "User akan muncul disini setelah di-approve dengan `..ok`"
+
+            back_button = InlineKeyboardMarkup([
+                [InlineKeyboardButton("◀️ Back", callback_data="back_to_start")]
+            ])
+
+            await callback.edit_message_text(text, reply_markup=back_button)
+            return
+
+        text = "👥 **APPROVED USERS**\n\n"
+        text += f"Total: {len(approved_list)} users\n\n"
+
+        buttons = []
+        for user_id in approved_list:
+            try:
+                # Try to get user info
+                user = await client.get_users(user_id)
+                user_name = user.first_name
+                username = f"@{user.username}" if user.username else "No username"
+            except:
+                user_name = f"User {user_id}"
+                username = ""
+
+            # Add user info row
+            text += f"**{user_name}** {username}\n"
+            text += f"ID: `{user_id}`\n\n"
+
+            # Add approve/reject buttons for this user
+            buttons.append([
+                InlineKeyboardButton(f"✅ {user_name[:15]}", callback_data=f"noop"),
+                InlineKeyboardButton("❌ Reject", callback_data=f"reject_{user_id}")
+            ])
+
+        # Add back button
+        buttons.append([InlineKeyboardButton("◀️ Back", callback_data="back_to_start")])
+
+        keyboard = InlineKeyboardMarkup(buttons)
+        await callback.edit_message_text(text, reply_markup=keyboard)
+
+    @deployer_app.on_callback_query(filters.regex("^reject_(\\d+)$"))
+    async def reject_user_callback(client, callback: CallbackQuery):
+        """Reject/remove user from approved list"""
+        if callback.from_user.id not in DEVELOPER_IDS:
+            await callback.answer("❌ Developer only", show_alert=True)
+            return
+
+        user_id = int(callback.data.split("_")[1])
+
+        # Remove from approved list
+        approved = load_approved_users()
+        if user_id in approved.get("approved", []):
+            approved["approved"].remove(user_id)
+            save_approved_users(approved)
+
+            await callback.answer("✅ User rejected", show_alert=True)
+
+            # Refresh list
+            await dev_list_users_callback(client, callback)
+        else:
+            await callback.answer("❌ User not in approved list", show_alert=True)
+
+    @deployer_app.on_callback_query(filters.regex("^noop$"))
+    async def noop_callback(client, callback: CallbackQuery):
+        """No operation - just for display"""
+        await callback.answer()
+
+    @deployer_app.on_callback_query(filters.regex("^dev_deployments$"))
+    async def dev_deployments_callback(client, callback: CallbackQuery):
+        """Show active deployments"""
+        if callback.from_user.id not in DEVELOPER_IDS:
+            await callback.answer("❌ Developer only", show_alert=True)
+            return
+
+        deployments = load_deployments()
+        active = deployments.get('active', {})
+
+        if not active:
+            text = "📊 **ACTIVE DEPLOYMENTS**\n\n"
+            text += "Tidak ada deployment aktif.\n\n"
+            text += "User approved bisa deploy dengan `/deploy`"
+
+            back_button = InlineKeyboardMarkup([
+                [InlineKeyboardButton("◀️ Back", callback_data="back_to_start")]
+            ])
+
+            await callback.edit_message_text(text, reply_markup=back_button)
+            return
+
+        text = "📊 **ACTIVE DEPLOYMENTS**\n\n"
+        text += f"Total: {len(active)} deployments\n\n"
+
+        for uid, info in active.items():
+            text += f"**{info['user_name']}**\n"
+            text += f"• ID: `{uid}`\n"
+            text += f"• Dir: `{info.get('dir', 'N/A')}`\n"
+            text += f"• PID: {info.get('pid', 'N/A')}\n"
+            text += f"• Started: {info.get('started_at', 'N/A')}\n\n"
+
+        back_button = InlineKeyboardMarkup([
+            [InlineKeyboardButton("◀️ Back", callback_data="back_to_start")]
+        ])
+
+        await callback.edit_message_text(text, reply_markup=back_button)
+
+    @deployer_app.on_callback_query(filters.regex("^user_deploy$"))
+    async def user_deploy_callback(client, callback: CallbackQuery):
+        """Deploy for approved user"""
+        user_id = callback.from_user.id
+
+        if not is_approved(user_id):
+            await callback.answer("❌ Belum di-approve", show_alert=True)
+            return
+
+        sessions = load_sessions()
+        if str(user_id) not in sessions:
+            await callback.answer("❌ Set session dulu dengan /setsession", show_alert=True)
+            return
+
+        deployments = load_deployments()
+        if str(user_id) in deployments['active']:
+            await callback.answer("⚠️ Already deployed! Use Status button", show_alert=True)
+            return
+
+        await callback.answer("⏳ Starting deployment...", show_alert=False)
+
+        # Send status message
+        status_msg = await callback.message.reply("⏳ **Deploying via git clone...**")
+
+        try:
+            session_string = sessions[str(user_id)]['session']
+
+            # Create git clone deployment
+            success, result = create_user_deployment(user_id, session_string)
+
+            if not success:
+                await status_msg.edit(f"❌ **FAILED**\n\n{result}")
+                return
+
+            user_dir = result
+
+            # Start deployment
+            success, pid = await start_deployment(user_id, user_dir)
+
+            if success:
+                deployments['active'][str(user_id)] = {
+                    'user_name': callback.from_user.first_name,
+                    'dir': user_dir,
+                    'pid': pid,
+                    'started_at': datetime.now().isoformat()
+                }
+                save_deployments(deployments)
+
+                await status_msg.edit(
+                    f"✅ **DEPLOYED**\n\n"
+                    f"Dir: `deployments/{user_id}`\n"
+                    f"PID: {pid}\n"
+                    f"Status: Running\n\n"
+                    f"Git clone complete!"
+                )
+            else:
+                await status_msg.edit(f"❌ **FAILED**\n\n{str(pid)[:200]}")
+
+        except Exception as e:
+            logger.error(f"Deploy error: {e}", exc_info=True)
+            await status_msg.edit(f"❌ Error: {str(e)[:200]}")
+
+    @deployer_app.on_callback_query(filters.regex("^user_status$"))
+    async def user_status_callback(client, callback: CallbackQuery):
+        """Show user deployment status"""
+        user_id = callback.from_user.id
+
+        if not is_approved(user_id):
+            await callback.answer("❌ Belum di-approve", show_alert=True)
+            return
+
+        deployments = load_deployments()
+
+        if str(user_id) in deployments['active']:
+            info = deployments['active'][str(user_id)]
+            text = f"""✅ **DEPLOYMENT ACTIVE**
+
+**Dir:** `{info.get('dir', 'N/A')}`
+**PID:** {info.get('pid', 'N/A')}
+**Started:** {info.get('started_at', 'N/A')}
+
+Your vbot is running!
+"""
+
+            back_button = InlineKeyboardMarkup([
+                [InlineKeyboardButton("◀️ Back", callback_data="back_to_start")]
+            ])
+
+            await callback.edit_message_text(text, reply_markup=back_button)
+        else:
+            await callback.answer("ℹ️ No deployment. Use Deploy button!", show_alert=True)
 
     return deployer_app
 
