@@ -58,21 +58,7 @@ async def settoken_handler(event):
 
     token = event.pattern_match.group(1).strip()
 
-    # Processing message
-    loading_emoji = vz_emoji.getemoji('loading')
-    proses_emoji = vz_emoji.getemoji('robot')
-    telegram_emoji = vz_emoji.getemoji('telegram')
-
-    processing_msg = f"""{loading_emoji} **CONFIGURING GITHUB TOKEN**
-
-{proses_emoji} Validating token
-{telegram_emoji} Please wait
-
-VZ ASSISTANT"""
-
-    await vz_client.edit_with_premium_emoji(event, processing_msg)
-
-    # Delete original message for security
+    # Delete original message for security (contains token)
     try:
         await event.delete()
     except:
@@ -86,6 +72,7 @@ VZ ASSISTANT"""
         aktif_emoji = vz_emoji.getemoji('aktif')
         proses_emoji = vz_emoji.getemoji('robot')
         biru_emoji = vz_emoji.getemoji('camera')
+        telegram_emoji = vz_emoji.getemoji('telegram')
 
         response = f"""{centang_emoji} **GITHUB TOKEN CONFIGURED**
 
@@ -107,8 +94,8 @@ CONTACT: @VZLfxs"""
 
 VZ ASSISTANT"""
 
-    # Send as new message (original deleted)
-    await event.respond(response)
+    # Send result message
+    await vz_client.client.send_message(event.chat_id, response)
 
 # ============================================================================
 # PUSH COMMAND (Developer Only)
