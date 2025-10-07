@@ -31,7 +31,7 @@ SILENCE_URL = "https://raw.githubusercontent.com/anars/blank-audio/master/1-seco
 # PyTgCalls setup
 try:
     from pytgcalls import PyTgCalls
-    from pytgcalls.types import GroupCallConfig
+    from pytgcalls.types import GroupCallConfig, MediaStream
     from pytgcalls.exceptions import NoActiveGroupCall, NotInCallError, PyTgCallsAlreadyRunning
     PYTGCALLS_AVAILABLE = True
 except ImportError:
@@ -40,6 +40,7 @@ except ImportError:
     class PyTgCallsAlreadyRunning(Exception): pass
     PyTgCalls = None
     GroupCallConfig = None
+    MediaStream = None
     PYTGCALLS_AVAILABLE = False
 
 # Runtime state
@@ -167,9 +168,19 @@ async def joinvc_handler(event):
         silent_join = await _join_vc_silent(event.client, event.chat_id)
 
         if not silent_join:
-            # Method 2: PyTgCalls fallback with mute
+            # Method 2: PyTgCalls fallback with video disabled
             config = GroupCallConfig(auto_start=False) if GroupCallConfig else None
-            await voice_client.play(event.chat_id, SILENCE_URL, config=config)
+
+            # Use MediaStream to disable video
+            if MediaStream:
+                stream = MediaStream(
+                    SILENCE_URL,
+                    video_flags=MediaStream.Flags.IGNORE
+                )
+                await voice_client.play(event.chat_id, stream, config=config)
+            else:
+                await voice_client.play(event.chat_id, SILENCE_URL, config=config)
+
             try:
                 await voice_client.mute(event.chat_id)
             except NotInCallError:
