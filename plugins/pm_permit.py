@@ -5,6 +5,7 @@ PM Permit Plugin - Private Message Protection
 Commands:
 - .pmon - Enable PM permit
 - .pmoff - Disable PM permit
+- .setpm <message> - Set custom PM message
 - .ok / .approve - Approve user
 - .no / .disapprove - Disapprove user
 
@@ -119,7 +120,9 @@ async def pm_guard_handler(event):
     pm_data["warned"] = warned
     save_pm_data(pm_data)
 
-    warning_msg = DEFAULT_PM_MESSAGE + f"\n\n⚠️ Peringatan: {warn_count}/3"
+    # Use custom message if set, otherwise use default
+    base_message = pm_data.get("custom_message", DEFAULT_PM_MESSAGE)
+    warning_msg = base_message + f"\n\n⚠️ Peringatan: {warn_count}/3"
 
     try:
         await event.reply(warning_msg)
@@ -207,6 +210,49 @@ async def pmoff_handler(event):
 
 {robot_emoji} Plugins Digunakan: **PM PERMIT**
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan"""
+
+    await vz_client.edit_with_premium_emoji(event, response)
+
+
+# ============================================================================
+# SET PM MESSAGE COMMAND
+# ============================================================================
+
+@events.register(events.NewMessage(pattern=r'^\\.setpm\\s+(.+)', outgoing=True))
+async def setpm_handler(event):
+    \"\"\"Set custom PM permit message.\"\"\"
+    global vz_client, vz_emoji
+
+    custom_message = event.pattern_match.group(1).strip()
+
+    if not custom_message:
+        kuning_emoji = vz_emoji.getemoji('kuning')
+        await vz_client.edit_with_premium_emoji(
+            event,
+            f\"{kuning_emoji} Berikan pesan custom\\n\\nContoh: `.setpm Halo, tunggu approve dari owner`\\n\\nVZ ASSISTANT\"
+        )
+        return
+
+    # Load PM data
+    pm_data = load_pm_data()
+    pm_data[\"custom_message\"] = custom_message
+    save_pm_data(pm_data)
+
+    centang_emoji = vz_emoji.getemoji('centang')
+    hijau_emoji = vz_emoji.getemoji('hijau')
+    robot_emoji = vz_emoji.getemoji('robot')
+    petir_emoji = vz_emoji.getemoji('petir')
+    main_emoji = vz_emoji.getemoji('utama')
+
+    response = f\"\"\"{centang_emoji} **PM MESSAGE UPDATED**
+
+{hijau_emoji} Pesan custom berhasil disimpan
+{robot_emoji} Preview:
+
+{custom_message}
+
+{robot_emoji} Plugins Digunakan: **PM PERMIT**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan\"\"\"
 
     await vz_client.edit_with_premium_emoji(event, response)
 
