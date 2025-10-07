@@ -455,23 +455,63 @@ async def approve_handler(event):
         return
 
     target_id = int(event.pattern_match.group(1))
-    notes = event.pattern_match.group(2)
+    raw_notes = event.pattern_match.group(2)
+    notes = raw_notes.strip() if raw_notes else None
 
-    # Approve user
-    auth_db.approve_user(target_id, event.sender_id, notes)
-
-    await event.respond(f"""
-✅ **User Approved**
-
-**User ID:** `{target_id}`
-{'**Notes:** ' + notes if notes else ''}
-
-User can now deploy via this bot.
-""")
-
-    # Notify user
+    # Try to fetch latest metadata for the target user
+    username = None
+    display_name = None
     try:
-        await bot.send_message(target_id, f"""
+        target = await bot.get_entity(target_id)
+        username = target.username
+        name_parts = [target.first_name, target.last_name]
+        display_name = ' '.join(part for part in name_parts if part) or target.first_name or target.last_name
+    except Exception:
+        target = None
+
+    created, updated, record = auth_db.approve_user(
+        target_id,
+        event.sender_id,
+        notes,
+        username=username,
+        first_name=display_name,
+    )
+
+    if created:
+        status_title = "✅ **User Approved**"
+        footer_line = "User can now deploy via this bot."
+    elif updated:
+        status_title = "✅ **User Approval Updated**"
+        footer_line = "User approval details have been updated."
+    else:
+        status_title = "ℹ️ **User Already Approved**"
+        footer_line = "No changes were made; user already has deploy access."
+
+    detail_lines = [
+        f"**User ID:** `{record['user_id']}`",
+        f"├ Name: {record.get('first_name') or 'Unknown'}",
+        f"├ Username: @{record.get('username') or 'None'}",
+        f"├ Approved: {record.get('approved_at', 'Unknown')}",
+    ]
+    if record.get('notes'):
+        detail_lines.append(f"├ Notes: {record['notes']}")
+    detail_lines.append(f"└ Approved by: `{record.get('approved_by', 'Unknown')}`")
+
+    detail_text = "\n".join(detail_lines)
+
+    await event.respond(
+        f"""{status_title}
+
+{detail_text}
+
+{footer_line}
+"""
+    )
+
+    if created:
+        # Notify user only when approval is newly granted
+        try:
+            await bot.send_message(target_id, f"""
 🎉 **Deploy Access Approved!**
 
 Congratulations! Your deploy access has been approved.
@@ -485,8 +525,8 @@ Congratulations! Your deploy access has been approved.
 {config.BRANDING_FOOTER}
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 """)
-    except:
-        pass
+        except Exception:
+            pass
 
 @bot.on(events.NewMessage(pattern=r'/reject\s+(\d+)(?:\s+(.+))?'))
 async def reject_handler(event):
