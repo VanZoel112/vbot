@@ -1,11 +1,11 @@
 """
 VZ ASSISTANT v0.0.0.69
-VC Plugin - Voice Chat Management with pytgcalls
+Voice Chat Plugin - PyTgCalls with Telethon (vzl2 style)
 
 Commands:
-- .joinvc - Join voice chat (manual)
-- .leavevc - Leave voice chat (manual)
-- .vcbridge - Start bridge monitor
+- .joinvc / .jvc - Join voice chat silently
+- .leavevc / .lvc - Leave voice chat
+- .vcstatus - Show VC status
 
 2025© Vzoel Fox's Lutpan
 Founder & DEVELOPER : @VZLfxs
@@ -13,434 +13,325 @@ Founder & DEVELOPER : @VZLfxs
 
 import asyncio
 import os
-from telethon import events, functions
-from telethon.tl.types import InputPeerChannel
-import config
-from helpers.vc_bridge import VCBridge
+import time
+from typing import Dict, Optional
+from telethon import events
+from telethon.utils import get_display_name
+from telethon.tl.functions.phone import JoinGroupCallRequest, LeaveGroupCallRequest
+from telethon.tl.functions.channels import GetFullChannelRequest
+from telethon.tl.types import DataJSON
 
 # Global variables (set by main.py)
-vz_client = None  # Telethon client - for commands/messages
+vz_client = None
 vz_emoji = None
-vz_vc_client = None  # Pyrogram client - for pytgcalls
 
-# VC Bridge instance
-vc_bridge = VCBridge()
+# Silence audio URL
+SILENCE_URL = "https://raw.githubusercontent.com/anars/blank-audio/master/1-second-of-silence.mp3"
 
-# Active VC sessions
-active_sessions = {}
-
-# Bridge monitor task
-bridge_monitor_task = None
-
-# ============================================================================
-# PYTGCALLS SETUP
-# ============================================================================
-
+# PyTgCalls setup
 try:
     from pytgcalls import PyTgCalls
-    from pytgcalls.types import MediaStream, AudioQuality, GroupCallConfig
-    from pytgcalls.exceptions import NoActiveGroupCall, NotInCallError
-
-    # Try to import yt-dlp from vzoelupgrade first, fallback to pip
-    try:
-        import sys
-        vzoelupgrade_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'vzoelupgrade')
-        if vzoelupgrade_path not in sys.path:
-            sys.path.insert(0, vzoelupgrade_path)
-        import yt_dlp
-    except ImportError:
-        import yt_dlp
-
+    from pytgcalls.types import GroupCallConfig
+    from pytgcalls.exceptions import NoActiveGroupCall, NotInCallError, PyTgCallsAlreadyRunning
     PYTGCALLS_AVAILABLE = True
-except ImportError as e:
+except ImportError:
+    class NoActiveGroupCall(Exception): pass
+    class NotInCallError(Exception): pass
+    class PyTgCallsAlreadyRunning(Exception): pass
+    PyTgCalls = None
+    GroupCallConfig = None
     PYTGCALLS_AVAILABLE = False
-    print(f"⚠️  pytgcalls not available: {e}")
 
-# PyTgCalls client (initialized on first use)
-py_tgcalls = None
+# Runtime state
+_voice_client: Optional[PyTgCalls] = None
+_voice_client_lock: Optional[asyncio.Lock] = None
+_state_lock: Optional[asyncio.Lock] = None
+_active_calls: Dict[int, Dict] = {}
 
-def init_pytgcalls():
-    """Initialize pytgcalls client with Pyrogram client."""
-    global py_tgcalls
-    if py_tgcalls is None and PYTGCALLS_AVAILABLE and vz_vc_client:
-        py_tgcalls = PyTgCalls(vz_vc_client)
-    return py_tgcalls
 
-# ============================================================================
-# HELPER FUNCTIONS
-# ============================================================================
+async def _ensure_locks():
+    """Create locks once event loop is running."""
+    global _voice_client_lock, _state_lock
+    if _voice_client_lock is None:
+        _voice_client_lock = asyncio.Lock()
+    if _state_lock is None:
+        _state_lock = asyncio.Lock()
 
-async def create_voice_chat(client, chat_id):
-    """Create voice chat if not exists."""
+
+async def _ensure_voice_client(telethon_client) -> Optional[PyTgCalls]:
+    """Ensure PyTgCalls with Telethon client."""
+    await _ensure_locks()
+
+    if not PYTGCALLS_AVAILABLE or PyTgCalls is None:
+        return None
+
+    global _voice_client
+    async with _voice_client_lock:
+        if _voice_client is None:
+            _voice_client = PyTgCalls(telethon_client)  # ← Telethon directly!
+            try:
+                await _voice_client.start()
+            except PyTgCallsAlreadyRunning:
+                pass
+            except Exception:
+                _voice_client = None
+                raise
+
+    return _voice_client
+
+
+async def _join_vc_silent(client, chat_id) -> bool:
+    """
+    Join VC silently using raw Telethon (pure listener mode).
+    No audio streaming - like regular user joining.
+    """
     try:
-        # Try to join existing VC first
-        await client(functions.phone.JoinGroupCallRequest(
-            call=InputPeerChannel(
-                channel_id=chat_id,
-                access_hash=0
-            ),
-            muted=True
+        chat = await client.get_entity(chat_id)
+        full_chat = await client(GetFullChannelRequest(chat))
+
+        if not full_chat.full_chat.call:
+            raise NoActiveGroupCall("No active voice chat")
+
+        # Join as pure listener (no audio/video)
+        await client(JoinGroupCallRequest(
+            call=full_chat.full_chat.call,
+            join_as=await client.get_me(),
+            params=DataJSON(data='{"ufrag":"","pwd":"","fingerprints":[],"ssrc":0}'),
+            muted=True,
+            video_stopped=True
         ))
         return True
-    except:
-        # If no VC exists, create one
-        try:
-            await client(functions.phone.CreateGroupCallRequest(
-                peer=chat_id,
-                random_id=0
-            ))
-            return True
-        except Exception as e:
-            print(f"Failed to create VC: {e}")
-            return False
-
-async def download_audio(query: str) -> tuple:
-    """
-    Download audio from YouTube.
-
-    Returns:
-        tuple: (file_path, title, duration) or (None, None, None)
-    """
-    try:
-        ydl_opts = {
-            'format': 'bestaudio/best',
-            'outtmpl': 'downloads/%(id)s.%(ext)s',
-            'quiet': True,
-            'no_warnings': True,
-            'extractaudio': True,
-            'audioformat': 'mp3',
-            'prefer_ffmpeg': True,
-        }
-
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(f"ytsearch:{query}", download=True)
-            if 'entries' in info:
-                info = info['entries'][0]
-
-            file_path = ydl.prepare_filename(info)
-            title = info.get('title', query)
-            duration = info.get('duration', 0)
-
-            # Convert duration to mm:ss
-            minutes = duration // 60
-            seconds = duration % 60
-            duration_str = f"{minutes}:{seconds:02d}"
-
-            return file_path, title, duration_str
-
-    except Exception as e:
-        print(f"Error downloading audio: {e}")
-        return None, None, None
-
-# ============================================================================
-# BRIDGE MONITOR
-# ============================================================================
-
-async def monitor_bridge():
-    """Monitor bridge for commands from bot assistant."""
-    global active_sessions
-
-    print("🔄 VC Bridge monitor started")
-
-    while True:
-        try:
-            # Cleanup old commands every loop
-            await vc_bridge.cleanup_old_commands(max_age_hours=1)
-
-            # Get bridge data
-            import json
-            bridge_file = vc_bridge.bridge_file
-            if not os.path.exists(bridge_file):
-                await asyncio.sleep(1)
-                continue
-
-            with open(bridge_file, 'r') as f:
-                data = json.load(f)
-
-            # Process pending commands
-            for command_id, cmd_data in data.items():
-                if command_id == "active_sessions":
-                    continue
-
-                if cmd_data.get("status") != "pending":
-                    continue
-
-                # Process command
-                chat_id = cmd_data["chat_id"]
-                command = cmd_data["command"]
-                params = cmd_data.get("params", {})
-
-                try:
-                    if command == "join":
-                        # Join VC
-                        result = await join_vc_silent(chat_id)
-                        if result:
-                            await vc_bridge.update_command(command_id, "completed", {"chat_id": chat_id})
-                        else:
-                            await vc_bridge.update_command(command_id, "error", error="Failed to join VC")
-
-                    elif command == "play":
-                        # Play music
-                        song = params.get("song", "")
-                        result = await play_music(chat_id, song)
-                        if result:
-                            await vc_bridge.update_command(command_id, "completed", result)
-                        else:
-                            await vc_bridge.update_command(command_id, "error", error="Failed to play music")
-
-                    elif command == "leave":
-                        # Leave VC
-                        result = await leave_vc(chat_id)
-                        if result:
-                            await vc_bridge.update_command(command_id, "completed", {"chat_id": chat_id})
-                        else:
-                            await vc_bridge.update_command(command_id, "error", error="Failed to leave VC")
-
-                except Exception as e:
-                    await vc_bridge.update_command(command_id, "error", error=str(e))
-
-            await asyncio.sleep(1)  # Check every second
-
-        except Exception as e:
-            print(f"Bridge monitor error: {e}")
-            await asyncio.sleep(5)
-
-async def join_vc_silent(chat_id: int) -> bool:
-    """Join VC silently (no admin required) using Pyrogram client."""
-    global active_sessions
-
-    if not PYTGCALLS_AVAILABLE:
-        print("pytgcalls not available")
+    except Exception:
         return False
 
-    if not vz_vc_client:
-        print("Pyrogram VC client not available")
-        return False
 
+async def _leave_vc_silent(client, chat_id) -> bool:
+    """Leave VC using raw Telethon."""
     try:
-        calls = init_pytgcalls()
-        if not calls:
-            print("Failed to init pytgcalls")
+        chat = await client.get_entity(chat_id)
+        full_chat = await client(GetFullChannelRequest(chat))
+
+        if not full_chat.full_chat.call:
             return False
 
-        # Start pytgcalls if not started
-        if not calls.is_connected:
-            await calls.start()
-            print(f"PyTgCalls started: {calls.is_connected}")
-
-        # Create MediaStream for silent audio (listener mode)
-        media_stream = MediaStream(
-            "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-            audio_parameters=AudioQuality.STUDIO,
-            video_flags=MediaStream.Flags.IGNORE  # Audio only
-        )
-
-        # GroupCallConfig with auto_start (no admin needed)
-        group_config = GroupCallConfig(auto_start=True)
-
-        print(f"Attempting to join VC in chat {chat_id}")
-
-        # Join VC with silent stream
-        await calls.play(chat_id, media_stream, config=group_config)
-
-        print(f"Successfully called play() for chat {chat_id}")
-
-        # Track session
-        active_sessions[chat_id] = {
-            "status": "joined",
-            "current_song": None
-        }
-        await vc_bridge.update_vc_session(chat_id, active_sessions[chat_id])
-
+        await client(LeaveGroupCallRequest(call=full_chat.full_chat.call))
         return True
-
-    except Exception as e:
-        error_msg = str(e).lower()
-        if "already" in error_msg or "joined" in error_msg:
-            return True  # Already joined
-        print(f"Error joining VC: {e}")
-        import traceback
-        traceback.print_exc()
+    except Exception:
         return False
 
-async def play_music(chat_id: int, song: str) -> dict:
-    """Play music in VC."""
-    global active_sessions
 
-    if not PYTGCALLS_AVAILABLE:
-        return None
-
-    try:
-        # Download audio
-        file_path, title, duration = await download_audio(song)
-        if not file_path:
-            return None
-
-        calls = init_pytgcalls()
-        if not calls:
-            return None
-
-        # Change stream
-        await calls.change_stream(
-            chat_id,
-            MediaStream(
-                file_path,
-                audio_parameters=AudioQuality.HIGH
-            ),
-        )
-
-        # Update session
-        if chat_id in active_sessions:
-            active_sessions[chat_id]["current_song"] = title
-            await vc_bridge.update_vc_session(chat_id, active_sessions[chat_id])
-
-        return {
-            "title": title,
-            "duration": duration,
-            "file": file_path
-        }
-
-    except Exception as e:
-        print(f"Error playing music: {e}")
-        return None
-
-async def leave_vc(chat_id: int) -> bool:
-    """Leave VC."""
-    global active_sessions
-
-    if not PYTGCALLS_AVAILABLE:
-        return False
-
-    try:
-        calls = init_pytgcalls()
-        if not calls:
-            return False
-
-        await calls.leave_group_call(chat_id)
-
-        # Remove session
-        if chat_id in active_sessions:
-            del active_sessions[chat_id]
-        await vc_bridge.remove_vc_session(chat_id)
-
-        return True
-
-    except Exception as e:
-        print(f"Error leaving VC: {e}")
-        return False
-
-# ============================================================================
-# MANUAL COMMANDS (for direct userbot control)
-# ============================================================================
-
-@events.register(events.NewMessage(pattern=r'^\.joinvc$', outgoing=True))
+@events.register(events.NewMessage(pattern=r'^\.(?:jvc|joinvc)$', outgoing=True))
 async def joinvc_handler(event):
+    """Join voice chat silently."""
     global vz_client, vz_emoji
 
-    """
-    .joinvc - Join voice chat manually
+    if event.is_private:
+        kuning_emoji = vz_emoji.getemoji('kuning')
+        await vz_client.edit_with_premium_emoji(event, f"{kuning_emoji} Only works in groups\n\nVZ ASSISTANT")
+        return
 
-    Joins voice chat in current group silently.
-    No admin permission required.
-    """
-    chat_id = event.chat_id
-
-    robot_emoji = vz_emoji.getemoji('robot')
-    status_msg = await vz_client.edit_with_premium_emoji(event, f"{robot_emoji} **Joining voice chat...**")
-
-    if not PYTGCALLS_AVAILABLE:
-        error_emoji = vz_emoji.getemoji('merah')
-        gear_emoji = vz_emoji.getemoji('gear')
-        petir_emoji = vz_emoji.getemoji('petir')
-        main_emoji = vz_emoji.getemoji('utama')
-
+    try:
+        voice_client = await _ensure_voice_client(event.client)
+    except Exception as exc:
+        merah_emoji = vz_emoji.getemoji('merah')
         await vz_client.edit_with_premium_emoji(
-            status_msg,
-            f"{error_emoji} **pytgcalls not installed**\n\n"
-            f"{gear_emoji} **Install Required:**\n"
-            "`.install pytgcalls yt-dlp`\n\n"
-            f"{petir_emoji} **Alternative:**\n"
-            "`.install py-tgcalls`\n\n"
-            f"{main_emoji} After install, restart bot"
+            event,
+            f"{merah_emoji} **PyTgCalls failed**\n\nError: {str(exc)[:80]}\n\nVZ ASSISTANT"
         )
         return
 
-    result = await join_vc_silent(chat_id)
-
-    if result:
-        hijau_emoji = vz_emoji.getemoji('hijau')
+    if voice_client is None:
+        merah_emoji = vz_emoji.getemoji('merah')
         await vz_client.edit_with_premium_emoji(
-            status_msg,
-            f"{hijau_emoji} **Joined voice chat!**\n\n"
-            f"📍 Chat: `{chat_id}`\n"
-            f"🎙 Mode: Silent (no admin)"
+            event,
+            f"{merah_emoji} **PyTgCalls not installed**\n\nInstall: `.install py-tgcalls`\n\nVZ ASSISTANT"
         )
-    else:
+        return
+
+    await _ensure_locks()
+    async with _state_lock:
+        if event.chat_id in _active_calls:
+            kuning_emoji = vz_emoji.getemoji('kuning')
+            await vz_client.edit_with_premium_emoji(event, f"{kuning_emoji} Already connected\n\nVZ ASSISTANT")
+            return
+
+    loading_emoji = vz_emoji.getemoji('loading')
+    robot_emoji = vz_emoji.getemoji('robot')
+    msg = await vz_client.edit_with_premium_emoji(
+        event,
+        f"{loading_emoji} **JOINING VOICE CHAT**\n\n{robot_emoji} Pure listener mode\n\nVZ ASSISTANT"
+    )
+
+    try:
+        # Method 1: Raw Telethon (pure listener, zero audio)
+        silent_join = await _join_vc_silent(event.client, event.chat_id)
+
+        if not silent_join:
+            # Method 2: PyTgCalls fallback with mute
+            config = GroupCallConfig(auto_start=False) if GroupCallConfig else None
+            await voice_client.play(event.chat_id, SILENCE_URL, config=config)
+            try:
+                await voice_client.mute(event.chat_id)
+            except NotInCallError:
+                pass
+            await asyncio.sleep(0.1)
+
+        chat = await event.get_chat()
+        title = get_display_name(chat) or str(event.chat_id)
+
+        async with _state_lock:
+            _active_calls[event.chat_id] = {
+                "title": title,
+                "joined_at": time.time(),
+                "method": "silent" if silent_join else "pytgcalls"
+            }
+
+        centang_emoji = vz_emoji.getemoji('centang')
+        hijau_emoji = vz_emoji.getemoji('hijau')
+        telegram_emoji = vz_emoji.getemoji('telegram')
+        petir_emoji = vz_emoji.getemoji('petir')
+        main_emoji = vz_emoji.getemoji('utama')
+
+        method = "🎧 Pure Listener" if silent_join else "🔇 Muted Stream"
+        response = f"""{centang_emoji} **JOINED VOICE CHAT**
+
+{hijau_emoji} Connected to: {title}
+{telegram_emoji} Mode: {method}
+{petir_emoji} Zero audio disturbance
+
+{robot_emoji} Plugins Digunakan: **VOICE CHAT**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan"""
+
+    except NoActiveGroupCall:
         merah_emoji = vz_emoji.getemoji('merah')
         kuning_emoji = vz_emoji.getemoji('kuning')
-        await vz_client.edit_with_premium_emoji(
-            status_msg,
-            f"{merah_emoji} **Failed to join VC**\n\n"
-            f"{kuning_emoji} Check server logs for details\n"
-            f"📍 Chat: `{chat_id}`"
-        )
+        response = f"""{merah_emoji} **JOIN FAILED**
 
-@events.register(events.NewMessage(pattern=r'^\.leavevc$', outgoing=True))
+{kuning_emoji} Start the voice chat first
+
+VZ ASSISTANT"""
+
+    except Exception as exc:
+        merah_emoji = vz_emoji.getemoji('merah')
+        response = f"""{merah_emoji} **JOIN FAILED**
+
+Error: {str(exc)[:80]}
+
+VZ ASSISTANT"""
+
+    await vz_client.edit_with_premium_emoji(msg, response)
+
+
+@events.register(events.NewMessage(pattern=r'^\.(?:lvc|leavevc)$', outgoing=True))
 async def leavevc_handler(event):
+    """Leave voice chat."""
     global vz_client, vz_emoji
 
-    """
-    .leavevc - Leave voice chat manually
-
-    Leaves current voice chat session.
-    """
-    chat_id = event.chat_id
-
-    robot_emoji = vz_emoji.getemoji('robot')
-    status_msg = await vz_client.edit_with_premium_emoji(event, f"{robot_emoji} **Leaving voice chat...**")
-
-    result = await leave_vc(chat_id)
-
-    if result:
-        hijau_emoji = vz_emoji.getemoji('hijau')
-        await vz_client.edit_with_premium_emoji(
-            status_msg,
-            f"{hijau_emoji} **Left voice chat**"
-        )
-    else:
+    try:
+        voice_client = await _ensure_voice_client(event.client)
+    except Exception:
         merah_emoji = vz_emoji.getemoji('merah')
-        await vz_client.edit_with_premium_emoji(
-            status_msg,
-            f"{merah_emoji} **Failed to leave VC**"
-        )
+        await vz_client.edit_with_premium_emoji(event, f"{merah_emoji} PyTgCalls failed\n\nVZ ASSISTANT")
+        return
 
-@events.register(events.NewMessage(pattern=r'^\.vcbridge$', outgoing=True))
-async def vcbridge_handler(event):
-    global vz_client, vz_emoji, bridge_monitor_task
+    if voice_client is None:
+        merah_emoji = vz_emoji.getemoji('merah')
+        await vz_client.edit_with_premium_emoji(event, f"{merah_emoji} PyTgCalls not installed\n\nVZ ASSISTANT")
+        return
 
-    """
-    .vcbridge - Start/stop bridge monitor
+    await _ensure_locks()
+    async with _state_lock:
+        if event.chat_id not in _active_calls:
+            kuning_emoji = vz_emoji.getemoji('kuning')
+            await vz_client.edit_with_premium_emoji(event, f"{kuning_emoji} Not connected to VC\n\nVZ ASSISTANT")
+            return
 
-    Starts monitoring bridge for bot assistant commands.
-    """
-    robot_emoji = vz_emoji.getemoji('robot')
+    try:
+        async with _state_lock:
+            call_info = _active_calls.get(event.chat_id, {})
+            method = call_info.get("method", "pytgcalls")
 
-    if bridge_monitor_task and not bridge_monitor_task.done():
-        # Stop monitor
-        bridge_monitor_task.cancel()
-        bridge_monitor_task = None
-        await vz_client.edit_with_premium_emoji(
-            event,
-            f"{robot_emoji} **VC Bridge stopped**"
-        )
-    else:
-        # Start monitor
-        bridge_monitor_task = asyncio.create_task(monitor_bridge())
+        if method == "silent":
+            leave_ok = await _leave_vc_silent(event.client, event.chat_id)
+            if not leave_ok and voice_client:
+                await voice_client.leave_call(event.chat_id)
+        else:
+            await voice_client.leave_call(event.chat_id)
+
+        async with _state_lock:
+            _active_calls.pop(event.chat_id, None)
+
+        centang_emoji = vz_emoji.getemoji('centang')
         hijau_emoji = vz_emoji.getemoji('hijau')
-        await vz_client.edit_with_premium_emoji(
-            event,
-            f"{hijau_emoji} **VC Bridge started**\n\n"
-            f"📡 Monitoring commands from bot assistant"
-        )
+        robot_emoji = vz_emoji.getemoji('robot')
+        petir_emoji = vz_emoji.getemoji('petir')
+        main_emoji = vz_emoji.getemoji('utama')
 
-print("✅ Plugin loaded: vc.py (with pytgcalls support)")
+        response = f"""{centang_emoji} **LEFT VOICE CHAT**
+
+{hijau_emoji} Successfully disconnected
+
+{robot_emoji} Plugins Digunakan: **VOICE CHAT**
+{petir_emoji} by {main_emoji} Vzoel Fox's Lutpan"""
+
+    except NotInCallError:
+        async with _state_lock:
+            _active_calls.pop(event.chat_id, None)
+        kuning_emoji = vz_emoji.getemoji('kuning')
+        response = f"{kuning_emoji} Not in voice chat\n\nVZ ASSISTANT"
+
+    except Exception as exc:
+        merah_emoji = vz_emoji.getemoji('merah')
+        response = f"{merah_emoji} **LEAVE FAILED**\n\nError: {str(exc)[:80]}\n\nVZ ASSISTANT"
+
+    await vz_client.edit_with_premium_emoji(event, response)
+
+
+@events.register(events.NewMessage(pattern=r'^\.vcstatus$', outgoing=True))
+async def vcstatus_handler(event):
+    """Show VC status."""
+    global vz_client, vz_emoji
+
+    await _ensure_locks()
+
+    async with _state_lock:
+        active_copy = dict(_active_calls)
+
+    main_emoji = vz_emoji.getemoji('utama')
+    hijau_emoji = vz_emoji.getemoji('hijau')
+    robot_emoji = vz_emoji.getemoji('robot')
+    loading_emoji = vz_emoji.getemoji('loading')
+    telegram_emoji = vz_emoji.getemoji('telegram')
+
+    status = [
+        f"{main_emoji} **VOICE CHAT STATUS**",
+        "",
+        f"{hijau_emoji} PyTgCalls: {'Ready' if PYTGCALLS_AVAILABLE else 'Missing'}",
+        f"{robot_emoji} Client: {'Started' if _voice_client else 'No'}",
+        f"{loading_emoji} Active calls: {len(active_copy)}"
+    ]
+
+    if active_copy:
+        status.append("")
+        status.append(f"{telegram_emoji} **Sessions:**")
+        now = time.time()
+        for chat_id, info in active_copy.items():
+            title = info.get("title", str(chat_id))
+            joined_at = info.get("joined_at")
+            method = info.get("method", "unknown")
+
+            if isinstance(joined_at, (int, float)):
+                duration = int(now - joined_at)
+                m, s = divmod(duration, 60)
+                h, m = divmod(m, 60)
+                uptime = f"{h:02d}:{m:02d}:{s:02d}"
+            else:
+                uptime = "--:--"
+
+            mode = "🎧" if method == "silent" else "🔇"
+            status.append(f"• {title} — {uptime} ({mode})")
+
+    status.append("")
+    status.append("VZ ASSISTANT")
+
+    await vz_client.edit_with_premium_emoji(event, "\n".join(status))

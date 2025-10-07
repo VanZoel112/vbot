@@ -395,20 +395,6 @@ async def main():
         builtins.manager = manager  # For broadcast middleware
         logger.info("Global variables set: vz_client, vz_emoji, manager")
 
-        # Initialize Pyrogram client for VC (pytgcalls)
-        print("\n🎤 Initializing VC Client...")
-        logger.info("Initializing Pyrogram client for VC...")
-        from helpers.vc_client import start_vc_client, get_vc_client
-        vc_started = await start_vc_client()
-        if vc_started:
-            builtins.vz_vc_client = get_vc_client()
-            logger.info("VC Pyrogram client ready for pytgcalls")
-            print("✅ VC Client ready (Pyrogram for pytgcalls)")
-        else:
-            builtins.vz_vc_client = None
-            logger.warning("VC client not available - VC features disabled")
-            print("⚠️  VC Client unavailable - VC features disabled")
-
         # Get user role to determine auto-setup behavior
         user_role = config.get_user_role(main_client.me.id)
         is_developer = config.is_developer(main_client.me.id)
@@ -466,8 +452,6 @@ async def main():
                     module.vz_client = main_client
                 if hasattr(module, 'vz_emoji'):
                     module.vz_emoji = main_client.emoji
-                if hasattr(module, 'vz_vc_client'):
-                    module.vz_vc_client = builtins.vz_vc_client
                 if hasattr(module, 'manager'):
                     module.manager = manager
         logger.info("Injected globals into all plugin modules")
@@ -510,13 +494,6 @@ async def main():
     finally:
         logger.info("Shutting down...")
         print("\n🛑 Shutting down...")
-
-        # Stop VC client
-        try:
-            from helpers.vc_client import stop_vc_client
-            await stop_vc_client()
-        except Exception as e:
-            logger.error(f"Error stopping VC client: {e}")
 
         # Stop assistant bot
         stop_assistant_bot(assistant_bot_process)
