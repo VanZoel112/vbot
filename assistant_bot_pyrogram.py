@@ -384,7 +384,7 @@ Use buttons below for instant access!
         status_info = deploy_auth_db.get_user_status(user_id)
 
         if status_info["status"] == "approved":
-            deploy_text = f"\n**🚀 Deploy Access:** ✅ Approved\n💡 Contact developer for deployment\n"
+            deploy_text = f"\n**🚀 Deploy Access:** ✅ Approved\n\n**📋 Next Steps:**\n1. Generate session: `python3 stringgenerator.py`\n2. Deploy: Send `..dp` in main bot\n3. Follow setup wizard\n"
         elif status_info["status"] == "pending":
             deploy_text = f"\n**🚀 Deploy Access:** ⏳ Pending approval\n💡 Use /status to check request status\n"
         elif status_info["status"] == "rejected":
@@ -417,11 +417,14 @@ Hello {message.from_user.first_name}! I'm your personal assistant bot.
             buttons = InlineKeyboardMarkup([
                 [
                     InlineKeyboardButton("✅ Deploy Status", callback_data="deploy_status"),
-                    InlineKeyboardButton("💓 Alive", callback_data="alive_status")
+                    InlineKeyboardButton("📋 Deploy Guide", callback_data="deploy_guide")
                 ],
                 [
-                    InlineKeyboardButton("📖 Help", callback_data="cmd_help"),
+                    InlineKeyboardButton("💓 Alive", callback_data="alive_status"),
                     InlineKeyboardButton("⚡ Ping", callback_data="ping_check")
+                ],
+                [
+                    InlineKeyboardButton("📖 Help", callback_data="cmd_help")
                 ]
             ])
         elif status_info["status"] == "pending":
@@ -1680,7 +1683,7 @@ Use buttons below for instant access!
         status_info = deploy_auth_db.get_user_status(user_id)
 
         if status_info["status"] == "approved":
-            deploy_text = f"\n**🚀 Deploy Access:** ✅ Approved\n💡 Contact developer for deployment\n"
+            deploy_text = f"\n**🚀 Deploy Access:** ✅ Approved\n\n**📋 Next Steps:**\n1. Generate session: `python3 stringgenerator.py`\n2. Deploy: Send `..dp` in main bot\n3. Follow setup wizard\n"
         elif status_info["status"] == "pending":
             deploy_text = f"\n**🚀 Deploy Access:** ⏳ Pending approval\n💡 Use /status to check request status\n"
         elif status_info["status"] == "rejected":
@@ -1713,11 +1716,14 @@ Hello {callback.from_user.first_name}! I'm your personal assistant bot.
             buttons = InlineKeyboardMarkup([
                 [
                     InlineKeyboardButton("✅ Deploy Status", callback_data="deploy_status"),
-                    InlineKeyboardButton("💓 Alive", callback_data="alive_status")
+                    InlineKeyboardButton("📋 Deploy Guide", callback_data="deploy_guide")
                 ],
                 [
-                    InlineKeyboardButton("📖 Help", callback_data="cmd_help"),
+                    InlineKeyboardButton("💓 Alive", callback_data="alive_status"),
                     InlineKeyboardButton("⚡ Ping", callback_data="ping_check")
+                ],
+                [
+                    InlineKeyboardButton("📖 Help", callback_data="cmd_help")
                 ]
             ])
         elif status_info["status"] == "pending":
@@ -1782,11 +1788,21 @@ As a developer, you have automatic deploy access!
 
 **💡 How to Deploy:**
 
-**Option 1: Via Main Bot**
-Send `.dp` in your main userbot to deploy
+**Step 1: Generate Session String**
+Run in terminal:
+```bash
+python3 stringgenerator.py
+```
+Save your session string securely!
 
-**Option 2: Contact Admin**
-Contact developer for manual deployment
+**Step 2: Deploy via Main Bot**
+Send `..dp` in your main userbot
+
+**Step 3: Setup**
+Follow the deployment wizard
+
+**Or Contact Admin for Help:**
+{config.FOUNDER_USERNAME}
 
 **🛠️ Developer Privileges:**
 ✓ No approval needed
@@ -1869,6 +1885,67 @@ async def ping_check_callback(client: Client, callback: CallbackQuery):
 
     await callback.edit_message_text(response, reply_markup=buttons)
     await callback.answer(f"⚡ Ping: {ping}ms", show_alert=False)
+
+
+@app.on_callback_query(filters.regex("^deploy_guide$"))
+async def deploy_guide_callback(client: Client, callback: CallbackQuery):
+    """Handle deploy guide button."""
+
+    response = f"""📋 **Complete Deployment Guide**
+
+**🔐 Prerequisites:**
+1. Get API credentials from https://my.telegram.org
+2. Have phone number ready
+3. Access to Telegram OTP
+
+**📝 Step-by-Step Guide:**
+
+**Step 1: Generate Session String**
+Run in your terminal:
+```bash
+cd /path/to/vbot
+python3 stringgenerator.py
+```
+
+Follow prompts:
+├ Enter API_ID
+├ Enter API_HASH
+├ Enter phone number (+62...)
+├ Enter OTP code
+└ Copy session string
+
+**Step 2: Request Deploy Access**
+(You're already approved!)
+
+**Step 3: Deploy Your Bot**
+In your main userbot, send:
+```
+..dp
+```
+
+**Step 4: Follow Wizard**
+├ Click "Start Deploy Bot"
+├ Paste session string
+├ Configure settings
+└ Launch!
+
+**💡 Tips:**
+• Keep session string private
+• Don't share with anyone
+• Store in secure location
+• Use strong password
+
+**🆘 Need Help?**
+Contact: {config.FOUNDER_USERNAME}
+
+🤖 VZ Assistant Bot"""
+
+    buttons = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔙 Back", callback_data="back_to_start")]
+    ])
+
+    await callback.edit_message_text(response, reply_markup=buttons)
+    await callback.answer()
 
 
 # ============================================================================
