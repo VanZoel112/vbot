@@ -34,13 +34,23 @@ def get_vc_client():
     if _vc_client is not None:
         return _vc_client
 
-    # Get credentials from env
+    # Get credentials from env or config
     api_id = os.getenv('API_ID')
     api_hash = os.getenv('API_HASH')
     session_string = os.getenv('SESSION_STRING')
 
+    # Fallback to config if not in env
+    if not api_id or not api_hash:
+        try:
+            import config
+            api_id = api_id or str(config.API_ID)
+            api_hash = api_hash or config.API_HASH
+            logger.info("Using API credentials from config.py")
+        except Exception as e:
+            logger.error(f"Failed to load from config: {e}")
+
     if not all([api_id, api_hash, session_string]):
-        logger.error("Missing API_ID, API_HASH, or SESSION_STRING for VC client")
+        logger.error(f"Missing credentials - API_ID: {bool(api_id)}, API_HASH: {bool(api_hash)}, SESSION: {bool(session_string)}")
         return None
 
     try:
