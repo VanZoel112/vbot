@@ -36,6 +36,9 @@ from helpers.vc_bridge import VCBridge
 import config
 from database.deploy_auth import DeployAuthDB
 
+# Import deployer manager for auto-deployment
+from helpers.deployer_manager import create_user_deployment, start_deployment as start_pm2_deployment
+
 # Load environment
 load_dotenv()
 
@@ -44,6 +47,10 @@ vc_bridge = VCBridge()
 
 # Initialize Deploy Auth Database (for developers only)
 deploy_auth_db = None
+
+# Conversation state tracker for deployment flow
+# Format: {user_id: {"state": "awaiting_phone|awaiting_otp", "temp_client": Client, "phone": str}}
+deployment_states = {}
 
 # ============================================================================
 # LOGGING SETUP (Trio-style structured logging)
@@ -1891,11 +1898,11 @@ async def ping_check_callback(client: Client, callback: CallbackQuery):
 
 @app.on_callback_query(filters.regex("^start_deployment$"))
 async def start_deployment_callback(client: Client, callback: CallbackQuery):
-    """Handle start deployment button."""
+    """Handle start deployment button - Auto-deployment with phone/OTP."""
     user_id = callback.from_user.id
 
     # Check if approved
-    global deploy_auth_db
+    global deploy_auth_db, deployment_states
     if deploy_auth_db is None:
         deploy_auth_db = DeployAuthDB()
 
@@ -1905,72 +1912,58 @@ async def start_deployment_callback(client: Client, callback: CallbackQuery):
         await callback.answer("❌ Deploy access required!", show_alert=True)
         return
 
-    response = f"""🚀 **Start Deployment**
+    # Start deployment flow
+    response = f"""🚀 **Auto-Deployment Started**
 
 Hi {callback.from_user.first_name}!
 
-You're approved and ready to deploy your bot!
+Welcome to **Automated VPS Deployment**!
 
-**📱 Quick Deployment Options:**
+I'll deploy your userbot to VPS automatically. Just follow these steps:
 
-**Option 1: Automated Deployment (Recommended)**
-Contact admin for instant deployment:
-👉 {config.FOUNDER_USERNAME}
+**📱 Step 1: Phone Number**
+Please send your phone number in international format.
 
-Send: "Deploy my bot please"
-Admin will handle everything!
+**Example:**
+`+6281234567890`
+`+1234567890`
 
-**Option 2: Self-Deployment**
-Follow these steps:
+**⚠️ Important:**
+• Include country code with +
+• Use the account for your userbot
+• You'll receive OTP in next step
 
-1️⃣ **Generate Session:**
-```bash
-python3 stringgenerator.py
-```
+**🔐 Privacy:**
+Your credentials are secure and used only for deployment.
 
-2️⃣ **Deploy:**
-In your main userbot:
-```
-..dp
-```
-
-3️⃣ **Follow Wizard**
-Enter session string and configure
-
-**💡 Recommended:** Contact admin for faster deployment!
-
-**🆘 Need Help?**
-Contact: {config.FOUNDER_USERNAME}
-
-🤖 VZ Assistant Bot"""
+**Ready?** Send your phone number now! 👇"""
 
     buttons = InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton("📋 Full Guide", callback_data="deploy_guide"),
-            InlineKeyboardButton("🔙 Back", callback_data="back_to_start")
-        ]
+        [InlineKeyboardButton("🔙 Cancel", callback_data="back_to_start")]
     ])
 
     await callback.edit_message_text(response, reply_markup=buttons)
-    await callback.answer("✅ Ready to deploy!", show_alert=False)
+    await callback.answer("✅ Send your phone number!", show_alert=False)
+
+    # Set deployment state
+    deployment_states[user_id] = {
+        "state": "awaiting_phone",
+        "username": callback.from_user.username,
+        "first_name": callback.from_user.first_name
+    }
 
     # Notify admin
     try:
         for dev_id in config.DEVELOPER_IDS:
             await client.send_message(
                 dev_id,
-                f"""🔔 **Deployment Request**
+                f"""🔔 **Auto-Deployment Started**
 
-**User Ready to Deploy:**
-├ Name: {callback.from_user.first_name}
-├ Username: @{callback.from_user.username or 'None'}
-├ User ID: `{user_id}`
-└ Status: ✅ Approved
+**User:** {callback.from_user.first_name} (@{callback.from_user.username or 'None'})
+**User ID:** `{user_id}`
+**Status:** Awaiting phone number
 
-User clicked "Deploy Now" button and is ready for deployment.
-
-**Actions:**
-Contact user for deployment assistance."""
+Auto-deployment flow initiated."""
             )
     except Exception as e:
         logger.error(f"Failed to notify admin: {e}")
@@ -2035,6 +2028,235 @@ Contact: {config.FOUNDER_USERNAME}
 
     await callback.edit_message_text(response, reply_markup=buttons)
     await callback.answer()
+
+
+# ============================================================================
+# AUTO-DEPLOYMENT HANDLERS (Phone/OTP Collection)
+# ============================================================================
+
+@app.on_message(filters.private & filters.text & ~filters.command(["start", "help", "alive", "ping", "approve", "reject", "pending", "approved", "revoke", "request", "status"]))
+async def deployment_message_handler(client: Client, message: Message):
+    """Handle phone number and OTP during deployment flow."""
+    global deployment_states
+    user_id = message.from_user.id
+
+    # Check if user is in deployment flow
+    if user_id not in deployment_states:
+        return  # Not in deployment, ignore
+
+    state_data = deployment_states[user_id]
+    current_state = state_data.get("state")
+
+    # ========== PHONE NUMBER COLLECTION ==========
+    if current_state == "awaiting_phone":
+        phone = message.text.strip()
+
+        # Validate phone format
+        if not phone.startswith("+") or len(phone) < 10:
+            await message.reply(
+                "❌ **Invalid Format**\n\n"
+                "Please send phone number with country code.\n\n"
+                "**Example:** `+6281234567890`"
+            )
+            return
+
+        # Create temporary Pyrogram client for session generation
+        try:
+            temp_client = Client(
+                f"deploy_temp_{user_id}",
+                api_id=API_ID,
+                api_hash=API_HASH,
+                phone_number=phone,
+                workdir="sessions/temp"
+            )
+
+            # Start client and send code
+            await temp_client.connect()
+            sent_code = await temp_client.send_code(phone)
+
+            # Update state
+            deployment_states[user_id].update({
+                "state": "awaiting_otp",
+                "phone": phone,
+                "temp_client": temp_client,
+                "phone_code_hash": sent_code.phone_code_hash
+            })
+
+            await message.reply(
+                f"""✅ **OTP Sent!**
+
+📱 Check your Telegram account: `{phone}`
+
+**📝 Step 2: Enter OTP**
+You should receive a verification code.
+
+Send the code here (just the numbers, no spaces).
+
+**Example:** `12345`
+
+⏱️ Code expires in a few minutes!"""
+            )
+
+            logger.info(f"OTP sent to {phone} for user {user_id}")
+
+        except Exception as e:
+            logger.error(f"Failed to send OTP: {e}", exc_info=True)
+            await message.reply(
+                f"❌ **Failed to send OTP**\n\n"
+                f"Error: {str(e)[:200]}\n\n"
+                f"Please check:\n"
+                f"• Phone number is correct\n"
+                f"• You have Telegram on this number\n"
+                f"• Try again with /start"
+            )
+            # Clean up
+            if user_id in deployment_states:
+                del deployment_states[user_id]
+
+    # ========== OTP VERIFICATION ==========
+    elif current_state == "awaiting_otp":
+        otp_code = message.text.strip()
+
+        # Validate OTP format
+        if not otp_code.isdigit():
+            await message.reply(
+                "❌ **Invalid OTP**\n\n"
+                "Please send only the numbers.\n\n"
+                "**Example:** `12345`"
+            )
+            return
+
+        status_msg = await message.reply("⏳ **Verifying OTP...**")
+
+        try:
+            temp_client = state_data["temp_client"]
+            phone = state_data["phone"]
+            phone_code_hash = state_data["phone_code_hash"]
+
+            # Sign in with OTP
+            await temp_client.sign_in(phone, phone_code_hash, otp_code)
+
+            await status_msg.edit("✅ **OTP Verified!**\n\n⏳ Generating session string...")
+
+            # Export session string
+            session_string = await temp_client.export_session_string()
+
+            # Disconnect temp client
+            await temp_client.disconnect()
+
+            await status_msg.edit(
+                "✅ **Session Generated!**\n\n"
+                "⏳ Deploying to VPS...\n\n"
+                "This may take 30-60 seconds..."
+            )
+
+            # ========== DEPLOY TO VPS ==========
+            logger.info(f"Starting VPS deployment for user {user_id}")
+
+            # Create deployment directory and files
+            success, result = create_user_deployment(user_id, session_string)
+
+            if not success:
+                await status_msg.edit(
+                    f"❌ **Deployment Failed**\n\n"
+                    f"Error: {result[:200]}\n\n"
+                    f"Contact: {config.FOUNDER_USERNAME}"
+                )
+                # Clean up
+                if user_id in deployment_states:
+                    del deployment_states[user_id]
+                return
+
+            user_dir = result
+
+            # Start PM2 process
+            pm2_success, pm2_result = await start_pm2_deployment(user_id, user_dir)
+
+            if pm2_success:
+                await status_msg.edit(
+                    f"""🎉 **Deployment Successful!**
+
+✅ Your userbot is now running on VPS!
+
+**📊 Deployment Info:**
+├ Directory: `deployments/{user_id}`
+├ PM2 Process: `vbot_{user_id}`
+├ PID: {pm2_result}
+└ Status: ✅ Running
+
+**🚀 Next Steps:**
+1. Your bot should be online now
+2. Test with `.alive` command
+3. Use `.help` to see commands
+
+**📱 Assistant Bot:**
+You can manage your bot here anytime!
+
+**🆘 Need Help?**
+Contact: {config.FOUNDER_USERNAME}
+
+🤖 VZ Assistant Bot - Auto-Deploy Complete!"""
+                )
+
+                # Notify admins
+                try:
+                    for dev_id in config.DEVELOPER_IDS:
+                        await client.send_message(
+                            dev_id,
+                            f"""🎉 **Deployment Complete**
+
+**User:** {state_data['first_name']} (@{state_data['username'] or 'None'})
+**User ID:** `{user_id}`
+**Phone:** `{phone}`
+**PM2 Process:** `vbot_{user_id}`
+**PID:** {pm2_result}
+**Status:** ✅ Running
+
+Auto-deployment successful!"""
+                        )
+                except Exception as e:
+                    logger.error(f"Failed to notify admin: {e}")
+
+                logger.info(f"Deployment complete for user {user_id}")
+
+            else:
+                await status_msg.edit(
+                    f"""⚠️ **Partial Deployment**
+
+Files created but PM2 failed to start.
+
+**Error:** {str(pm2_result)[:200]}
+
+**Manual Fix:**
+```bash
+cd deployments/{user_id}
+pm2 start main.py --name vbot_{user_id} --interpreter python3
+```
+
+Contact: {config.FOUNDER_USERNAME}"""
+                )
+
+            # Clean up deployment state
+            if user_id in deployment_states:
+                del deployment_states[user_id]
+
+        except Exception as e:
+            logger.error(f"OTP verification failed: {e}", exc_info=True)
+            await status_msg.edit(
+                f"❌ **Verification Failed**\n\n"
+                f"Error: {str(e)[:200]}\n\n"
+                f"Please try again with /start"
+            )
+
+            # Clean up
+            try:
+                if state_data.get("temp_client"):
+                    await state_data["temp_client"].disconnect()
+            except:
+                pass
+
+            if user_id in deployment_states:
+                del deployment_states[user_id]
 
 
 # ============================================================================
