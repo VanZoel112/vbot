@@ -24,7 +24,6 @@ vz_emoji = None
 
 # Data file
 APPROVED_USERS_FILE = "data/approved_users.json"
-DEPLOYER_BOT_USERNAME = "deployer_vzbot"
 
 
 def load_approved_users():
@@ -155,7 +154,7 @@ User ini sekarang bisa deploy vbot.
         # Notify user via deployer bot
         try:
             # Send notification to deployer bot so it notifies the user
-            bot = await event.client.get_entity(DEPLOYER_BOT_USERNAME)
+            bot = await event.client.get_entity(config.DEPLOY_BOT_USERNAME)
             await event.client.send_message(
                 bot.id,
                 f"/notify {user_id} approved"
@@ -346,7 +345,7 @@ async def deploystatus_handler(event):
 
     # Check if deployer bot is online
     try:
-        bot = await event.client.get_entity(DEPLOYER_BOT_USERNAME)
+        bot = await event.client.get_entity(config.DEPLOY_BOT_USERNAME)
         bot_name = bot.first_name
         bot_id = bot.id
         status = "Online" if not bot.status or hasattr(bot.status, 'was_online') else "Offline"
@@ -362,7 +361,7 @@ async def deploystatus_handler(event):
     response = f"""{main_emoji} **DEPLOYER BOT STATUS**
 
 {robot_emoji} Bot: {bot_name}
-{petir_emoji} Username: @{DEPLOYER_BOT_USERNAME}
+{petir_emoji} Username: {config.DEPLOY_BOT_USERNAME}
 {hijau_emoji} Status: {status}
 {robot_emoji} Approved Users: {approved_count}
 

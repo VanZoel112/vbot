@@ -70,7 +70,7 @@ if not ASSISTANT_BOT_USERNAME:
         pass  # Ignore errors, will be None if not found
 
 # Deploy Bot Configuration
-DEPLOY_BOT_USERNAME = os.getenv("DEPLOY_BOT_USERNAME", "@VZDeployBot")  # Set in .env
+DEPLOY_BOT_USERNAME = os.getenv("DEPLOY_BOT_USERNAME", "@deployer_vzbot")  # Set in .env
 
 # ============================================================================
 # VZL2-STYLE RESPONSE FOOTERS
