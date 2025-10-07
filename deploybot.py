@@ -23,7 +23,7 @@ from helpers.pm2_manager import pm2_manager
 # ============================================================================
 
 BOT_TOKEN = config.DEPLOY_BOT_TOKEN
-auth_db = DeployAuthDB()  # Authorization database
+auth_db = None  # Will be initialized in main()
 
 if not BOT_TOKEN:
     print("❌ DEPLOY_BOT_TOKEN not set in config.py")
@@ -1193,6 +1193,12 @@ async def main():
 
 🤖 Starting Deploy Bot...
 """)
+
+    # Initialize database
+    global auth_db
+    print("📊 Initializing authorization database...")
+    auth_db = DeployAuthDB()
+    print("✅ Database ready")
 
     # Check PM2 availability
     print("⚡ Checking PM2 installation...")
