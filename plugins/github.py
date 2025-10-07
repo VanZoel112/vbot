@@ -273,9 +273,9 @@ CONTACT: @VZLfxs"""
 {kuning_emoji} Error: {message}
 
 {robot_emoji} Possible solutions:
-{centang_emoji} Check your GitHub token (.settoken)
 {centang_emoji} Resolve merge conflicts manually
-{centang_emoji} Check repository permissions
+{centang_emoji} Check internet connection
+{centang_emoji} Verify repository URL
 
 VZ ASSISTANT GitHub Integration
 CONTACT: @VZLfxs"""

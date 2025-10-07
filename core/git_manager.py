@@ -271,16 +271,12 @@ class GitManager:
     def pull(self) -> Tuple[bool, str]:
         """
         Pull latest changes from GitHub
+        No token required for public repos
 
         Returns:
             Tuple of (success, message)
         """
         try:
-            # Check token
-            token = self.get_token()
-            if not token:
-                return (False, "GitHub token not configured. Use .settoken first")
-
             # Get current branch
             success, branch, _ = self._run_command(['git', 'branch', '--show-current'])
             if not success:
@@ -296,24 +292,28 @@ class GitManager:
                 if not success:
                     return (False, f"Failed to stash changes: {stderr}")
 
-            # Get remote URL and add token
-            success, remote_url, _ = self._run_command(['git', 'remote', 'get-url', 'origin'])
-            if not success:
-                return (False, "Failed to get remote URL")
+            # Try pull without token first (works for public repos)
+            success, stdout, stderr = self._run_command(['git', 'pull', '--rebase', 'origin', branch])
 
-            if remote_url.startswith('https://'):
-                repo_path = remote_url.replace('https://github.com/', '')
-                auth_url = f"https://{token}@github.com/{repo_path}"
-            else:
-                return (False, "Only HTTPS remotes are supported")
+            # If failed due to auth, try with token
+            if not success and ('authentication' in stderr.lower() or 'permission denied' in stderr.lower()):
+                token = self.get_token()
+                if not token:
+                    return (False, "Private repo requires token. Use .settoken first")
 
-            # Fetch
-            success, _, stderr = self._run_command(['git', 'fetch', auth_url])
-            if not success:
-                return (False, f"Fetch failed: {stderr}")
+                # Get remote URL and add token
+                success, remote_url, _ = self._run_command(['git', 'remote', 'get-url', 'origin'])
+                if not success:
+                    return (False, "Failed to get remote URL")
 
-            # Pull with rebase
-            success, stdout, stderr = self._run_command(['git', 'pull', '--rebase', auth_url, branch])
+                if remote_url.startswith('https://'):
+                    repo_path = remote_url.replace('https://github.com/', '').replace(f'https://{token}@github.com/', '')
+                    auth_url = f"https://{token}@github.com/{repo_path}"
+                else:
+                    return (False, "Only HTTPS remotes are supported")
+
+                # Retry pull with token
+                success, stdout, stderr = self._run_command(['git', 'pull', '--rebase', auth_url, branch])
 
             if success:
                 # Pop stash if we stashed
