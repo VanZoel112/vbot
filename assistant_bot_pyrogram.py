@@ -31,16 +31,12 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # Import plugin loader
 from helpers.plugin_loader import load_plugins_info, chunk_list
 from helpers.vc_bridge import VCBridge
-from helpers.vz_emoji_manager import VZEmojiManager
 
 # Load environment
 load_dotenv()
 
 # Initialize VC Bridge
 vc_bridge = VCBridge()
-
-# Initialize Emoji Manager
-emoji_manager = VZEmojiManager()
 
 # ============================================================================
 # LOGGING SETUP (Trio-style structured logging)
@@ -190,13 +186,13 @@ def build_plugin_detail_keyboard():
 
 
 def build_help_text(user_id: int, total_plugins: int, page: int = 0, total_pages: int = 1) -> str:
-    """Build the help text message with premium emoji mapping."""
-    # Get emojis
-    main_emoji = emoji_manager.getemoji('utama')
-    petir_emoji = emoji_manager.getemoji('petir')
-    robot_emoji = emoji_manager.getemoji('robot')
-    dev_emoji = emoji_manager.getemoji('developer')
-    gear_emoji = emoji_manager.getemoji('gear')
+    """Build the help text message with regular emoji (Pyrogram compatible)."""
+    # Use regular Unicode emoji for Pyrogram bot
+    main_emoji = "🌟"
+    petir_emoji = "⚡"
+    robot_emoji = "🤖"
+    dev_emoji = "👨‍💻"
+    gear_emoji = "⚙️"
 
     # Determine role
     role = 'DEVELOPER' if user_id in DEVELOPER_IDS else 'SUDOER'
@@ -311,12 +307,12 @@ async def start_handler(client: Client, message: Message):
 
     await log_action(user_id, "start")
 
-    # Get emojis
-    main_emoji = emoji_manager.getemoji('utama')
-    robot_emoji = emoji_manager.getemoji('robot')
-    petir_emoji = emoji_manager.getemoji('petir')
-    gear_emoji = emoji_manager.getemoji('gear')
-    dev_emoji = emoji_manager.getemoji('developer')
+    # Use regular Unicode emoji (Pyrogram compatible)
+    main_emoji = "🌟"
+    robot_emoji = "🤖"
+    petir_emoji = "⚡"
+    gear_emoji = "⚙️"
+    dev_emoji = "👨‍💻"
 
     welcome_text = f"""
 {main_emoji} **VZ ASSISTANT BOT**
