@@ -24,7 +24,7 @@ vz_emoji = None
 
 # Data file
 APPROVED_USERS_FILE = "data/approved_users.json"
-DEPLOYER_BOT_USERNAME = "vzdeployertest_bot"  # Update with your deployer bot username
+DEPLOYER_BOT_USERNAME = "deployer_vzbot"
 
 
 def load_approved_users():
@@ -130,8 +130,18 @@ async def approve_deploy_handler(event):
         petir_emoji = vz_emoji.getemoji('petir')
         main_emoji = vz_emoji.getemoji('utama')
 
+        # Get user info
+        try:
+            user = await event.client.get_entity(user_id)
+            user_name = user.first_name
+            username = f"@{user.username}" if user.username else "No username"
+        except:
+            user_name = f"User {user_id}"
+            username = ""
+
         response = f"""{centang_emoji} **USER APPROVED FOR DEPLOYMENT**
 
+{hijau_emoji} User: {user_name} {username}
 {hijau_emoji} User ID: `{user_id}`
 {robot_emoji} Status: Approved
 
@@ -141,6 +151,17 @@ User ini sekarang bisa deploy vbot.
 {petir_emoji} by {main_emoji} Vzoel Fox's Lutpan"""
 
         await vz_client.edit_with_premium_emoji(event, response)
+
+        # Notify user via deployer bot
+        try:
+            # Send notification to deployer bot so it notifies the user
+            bot = await event.client.get_entity(DEPLOYER_BOT_USERNAME)
+            await event.client.send_message(
+                bot.id,
+                f"/notify {user_id} approved"
+            )
+        except Exception as e:
+            print(f"Failed to notify user: {e}")
 
     else:
         kuning_emoji = vz_emoji.getemoji('kuning')

@@ -191,12 +191,12 @@ Hello {message.from_user.first_name}!
 
             buttons = [
                 [
-                    InlineKeyboardButton("👥 List Users", callback_data="dev_list_users"),
-                    InlineKeyboardButton("📊 Deployments", callback_data="dev_deployments")
+                    InlineKeyboardButton("List Users", callback_data="dev_list_users"),
+                    InlineKeyboardButton("Deployments", callback_data="dev_deployments")
                 ],
                 [
-                    InlineKeyboardButton("ℹ️ Help", callback_data="help"),
-                    InlineKeyboardButton("👨‍💻 Developer", url="https://t.me/VZLfxs")
+                    InlineKeyboardButton("Help", callback_data="help"),
+                    InlineKeyboardButton("Developer", url="https://t.me/VZLfxs")
                 ]
             ]
         elif is_approved(user_id):
@@ -205,12 +205,12 @@ Hello {message.from_user.first_name}!
 
             buttons = [
                 [
-                    InlineKeyboardButton("🚀 Deploy", callback_data="user_deploy"),
-                    InlineKeyboardButton("📊 Status", callback_data="user_status")
+                    InlineKeyboardButton("Deploy", callback_data="user_deploy"),
+                    InlineKeyboardButton("Status", callback_data="user_status")
                 ],
                 [
-                    InlineKeyboardButton("ℹ️ Help", callback_data="help"),
-                    InlineKeyboardButton("👨‍💻 Developer", url="https://t.me/VZLfxs")
+                    InlineKeyboardButton("Help", callback_data="help"),
+                    InlineKeyboardButton("Developer", url="https://t.me/VZLfxs")
                 ]
             ]
         else:
@@ -219,8 +219,8 @@ Hello {message.from_user.first_name}!
 
             buttons = [
                 [
-                    InlineKeyboardButton("ℹ️ Help", callback_data="help"),
-                    InlineKeyboardButton("👨‍💻 Developer", url="https://t.me/VZLfxs")
+                    InlineKeyboardButton("Help", callback_data="help"),
+                    InlineKeyboardButton("Developer", url="https://t.me/VZLfxs")
                 ]
             ]
 
@@ -429,6 +429,33 @@ Hello {message.from_user.first_name}!
         else:
             await message.reply(f"❌ Failed: {error}")
 
+    @deployer_app.on_message(filters.command("notify") & filters.private)
+    async def notify_handler(client, message):
+        """Notify user when approved (called from userbot)"""
+        if message.from_user.id not in DEVELOPER_IDS:
+            return
+
+        args = message.text.split()
+        if len(args) < 3:
+            return
+
+        user_id = int(args[1])
+        status = args[2]
+
+        if status == "approved":
+            try:
+                await client.send_message(
+                    user_id,
+                    "✅ **APPROVED!**\n\n"
+                    "Kamu sekarang bisa deploy vbot!\n\n"
+                    "**Next Steps:**\n"
+                    "1. `/setsession <your_session>`\n"
+                    "2. Click **Deploy** button atau `/deploy`\n\n"
+                    "Send /start untuk lihat button baru!"
+                )
+            except:
+                pass
+
     # ========================================================================
     # CALLBACK HANDLERS
     # ========================================================================
@@ -491,7 +518,7 @@ Developer: @VZLfxs
 """
 
         back_button = InlineKeyboardMarkup([
-            [InlineKeyboardButton("◀️ Back", callback_data="back_to_start")]
+            [InlineKeyboardButton("Back", callback_data="back_to_start")]
         ])
 
         await callback.edit_message_text(help_text, reply_markup=back_button)
@@ -516,12 +543,12 @@ Hello {callback.from_user.first_name}!
 
             buttons = [
                 [
-                    InlineKeyboardButton("👥 List Users", callback_data="dev_list_users"),
-                    InlineKeyboardButton("📊 Deployments", callback_data="dev_deployments")
+                    InlineKeyboardButton("List Users", callback_data="dev_list_users"),
+                    InlineKeyboardButton("Deployments", callback_data="dev_deployments")
                 ],
                 [
-                    InlineKeyboardButton("ℹ️ Help", callback_data="help"),
-                    InlineKeyboardButton("👨‍💻 Developer", url="https://t.me/VZLfxs")
+                    InlineKeyboardButton("Help", callback_data="help"),
+                    InlineKeyboardButton("Developer", url="https://t.me/VZLfxs")
                 ]
             ]
         elif is_approved(user_id):
@@ -530,12 +557,12 @@ Hello {callback.from_user.first_name}!
 
             buttons = [
                 [
-                    InlineKeyboardButton("🚀 Deploy", callback_data="user_deploy"),
-                    InlineKeyboardButton("📊 Status", callback_data="user_status")
+                    InlineKeyboardButton("Deploy", callback_data="user_deploy"),
+                    InlineKeyboardButton("Status", callback_data="user_status")
                 ],
                 [
-                    InlineKeyboardButton("ℹ️ Help", callback_data="help"),
-                    InlineKeyboardButton("👨‍💻 Developer", url="https://t.me/VZLfxs")
+                    InlineKeyboardButton("Help", callback_data="help"),
+                    InlineKeyboardButton("Developer", url="https://t.me/VZLfxs")
                 ]
             ]
         else:
@@ -544,8 +571,8 @@ Hello {callback.from_user.first_name}!
 
             buttons = [
                 [
-                    InlineKeyboardButton("ℹ️ Help", callback_data="help"),
-                    InlineKeyboardButton("👨‍💻 Developer", url="https://t.me/VZLfxs")
+                    InlineKeyboardButton("Help", callback_data="help"),
+                    InlineKeyboardButton("Developer", url="https://t.me/VZLfxs")
                 ]
             ]
 
@@ -568,7 +595,7 @@ Hello {callback.from_user.first_name}!
             text += "User akan muncul disini setelah di-approve dengan `..ok`"
 
             back_button = InlineKeyboardMarkup([
-                [InlineKeyboardButton("◀️ Back", callback_data="back_to_start")]
+                [InlineKeyboardButton("Back", callback_data="back_to_start")]
             ])
 
             await callback.edit_message_text(text, reply_markup=back_button)
@@ -594,12 +621,12 @@ Hello {callback.from_user.first_name}!
 
             # Add approve/reject buttons for this user
             buttons.append([
-                InlineKeyboardButton(f"✅ {user_name[:15]}", callback_data=f"noop"),
-                InlineKeyboardButton("❌ Reject", callback_data=f"reject_{user_id}")
+                InlineKeyboardButton(f"Approved: {user_name[:15]}", callback_data=f"noop"),
+                InlineKeyboardButton("Reject", callback_data=f"reject_{user_id}")
             ])
 
         # Add back button
-        buttons.append([InlineKeyboardButton("◀️ Back", callback_data="back_to_start")])
+        buttons.append([InlineKeyboardButton("Back", callback_data="back_to_start")])
 
         keyboard = InlineKeyboardMarkup(buttons)
         await callback.edit_message_text(text, reply_markup=keyboard)
@@ -647,7 +674,7 @@ Hello {callback.from_user.first_name}!
             text += "User approved bisa deploy dengan `/deploy`"
 
             back_button = InlineKeyboardMarkup([
-                [InlineKeyboardButton("◀️ Back", callback_data="back_to_start")]
+                [InlineKeyboardButton("Back", callback_data="back_to_start")]
             ])
 
             await callback.edit_message_text(text, reply_markup=back_button)
@@ -664,7 +691,7 @@ Hello {callback.from_user.first_name}!
             text += f"• Started: {info.get('started_at', 'N/A')}\n\n"
 
         back_button = InlineKeyboardMarkup([
-            [InlineKeyboardButton("◀️ Back", callback_data="back_to_start")]
+            [InlineKeyboardButton("Back", callback_data="back_to_start")]
         ])
 
         await callback.edit_message_text(text, reply_markup=back_button)
@@ -754,7 +781,7 @@ Your vbot is running!
 """
 
             back_button = InlineKeyboardMarkup([
-                [InlineKeyboardButton("◀️ Back", callback_data="back_to_start")]
+                [InlineKeyboardButton("Back", callback_data="back_to_start")]
             ])
 
             await callback.edit_message_text(text, reply_markup=back_button)
