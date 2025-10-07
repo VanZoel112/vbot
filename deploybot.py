@@ -36,6 +36,132 @@ bot = TelegramClient('deploy_bot', config.API_ID, config.API_HASH)
 # User sessions in deployment process
 deploy_sessions = {}
 
+# Callback payload constants
+REQUEST_ACCESS_ACTION = b'request_access'
+START_DEPLOY_ACTION = b'start_deploy'
+CHECK_STATUS_ACTION = b'check_status'
+
+
+def build_user_portal_message(user, status_info):
+    """Create the main menu text and buttons for a user."""
+
+    status = status_info["status"]
+    data = status_info.get("data") or {}
+    first_name = getattr(user, "first_name", None) or getattr(user, "last_name", None) or getattr(user, "username", None) or "User"
+
+    if status == "approved":
+        text = f"""✅ **VZ ASSISTANT - Deploy Bot**
+
+Selamat datang kembali, {first_name}!
+
+**👤 Status Kamu:** ✅ Disetujui
+
+**🚀 Cara Deploy:**
+1️⃣ Tekan tombol **🚀 Mulai Deploy** di bawah
+2️⃣ Kirim nomor telepon kamu (format +62...)
+3️⃣ Masukkan kode OTP yang dikirim Telegram
+4️⃣ Bot akan menjalankan PM2 otomatis
+
+Kalau butuh bantuan, hubungi {config.FOUNDER_USERNAME}.
+
+{config.BRANDING_FOOTER}
+Founder & DEVELOPER : {config.FOUNDER_USERNAME}
+"""
+
+        buttons = [[Button.inline("🚀 Mulai Deploy", START_DEPLOY_ACTION)]]
+
+    elif status == "pending":
+        requested_at = data.get("requested_at", "Unknown")
+        text = f"""⏳ **Permintaan Akses Sedang Diproses**
+
+Hi {first_name}, kami sudah menerima permintaan akses deploy kamu.
+
+Seorang developer sedang meninjau permintaanmu. Kamu akan mendapat notifikasi begitu disetujui supaya bisa menekan tombol deploy lagi.
+
+**📊 Status Permintaan:**
+├ User ID: `{data.get('user_id', 'Unknown')}`
+├ Username: @{data.get('username') or 'None'}
+└ Diminta pada: {requested_at}
+
+{config.BRANDING_FOOTER}
+Founder & DEVELOPER : {config.FOUNDER_USERNAME}
+"""
+
+        buttons = [[Button.inline("🔄 Cek Status Persetujuan", CHECK_STATUS_ACTION)]]
+
+    elif status == "rejected":
+        reason = data.get("reason", "Tidak ada alasan yang diberikan")
+        text = f"""❌ **Permintaan Akses Ditolak**
+
+Hi {first_name}, permintaan akses deploy kamu pernah ditolak.
+
+**Alasan:** {reason}
+
+Kalau kamu sudah memperbaiki kebutuhanmu, tekan tombol di bawah untuk mengajukan ulang. Developer akan meninjaunya kembali.
+
+{config.BRANDING_FOOTER}
+Founder & DEVELOPER : {config.FOUNDER_USERNAME}
+"""
+
+        buttons = [[Button.inline("🔁 Ajukan Ulang Akses Deploy", REQUEST_ACCESS_ACTION)]]
+
+    else:
+        text = f"""🤖 **VZ ASSISTANT - Deploy Bot**
+
+Hi {first_name}!
+
+**Status Kamu:** 🔒 Belum Punya Akses Deploy
+
+Tekan tombol di bawah untuk mengajukan akses. Developer akan mendapat notifikasi dan kamu akan diberi tahu ketika sudah boleh menekan tombol deploy.
+
+{config.BRANDING_FOOTER}
+Founder & DEVELOPER : {config.FOUNDER_USERNAME}
+"""
+
+        buttons = [[Button.inline("🔔 Ajukan Akses Deploy", REQUEST_ACCESS_ACTION)]]
+
+    return text, buttons
+
+
+def resolve_status_for_menu(user_id, user, status_info):
+    """Treat developers as always approved for UI flows."""
+
+    if config.is_developer(user_id) and status_info["status"] != "approved":
+        return {
+            "status": "approved",
+            "data": {
+                "user_id": user_id,
+                "username": getattr(user, "username", None),
+                "first_name": getattr(user, "first_name", None),
+            },
+        }
+
+    return status_info
+
+
+async def notify_developers_of_request(user, reason):
+    """Inform developers about a new access request."""
+
+    for dev_id in config.DEVELOPER_IDS:
+        try:
+            await bot.send_message(dev_id, f"""🔔 **New Deploy Access Request**
+
+**👤 User Info:**
+├ Name: {user.first_name or 'Unknown'}
+├ Username: @{user.username if user.username else 'None'}
+├ User ID: `{user.id}`
+{'├ Reason: ' + reason if reason else ''}
+
+**🛠️ Actions:**
+• `/approve {user.id}` - Approve request
+• `/reject {user.id} [reason]` - Reject request
+• `/check {user.id}` - View details
+
+Gunakan `/pending` untuk melihat semua permintaan.
+""")
+        except Exception:
+            pass
+
 # ============================================================================
 # DEPLOYMENT STATE MACHINE
 # ============================================================================
@@ -249,91 +375,8 @@ Founder & DEVELOPER : {config.FOUNDER_USERNAME}
     # Check authorization status
     status_info = auth_db.get_user_status(user_id)
 
-    if status_info["status"] == "approved":
-        # User is approved - show deploy info
-        welcome_text = f"""
-✅ **VZ ASSISTANT - Deploy Bot**
-
-Welcome back, {user.first_name}!
-
-**👤 Your Status:** ✅ Approved
-
-**🚀 Ready to Deploy:**
-You are authorized to deploy VZ ASSISTANT.
-
-**📝 How it works:**
-1️⃣ Send your phone number
-2️⃣ Enter the OTP code
-3️⃣ Auto-deployment complete!
-
-**🎯 Send your phone number to start!**
-
-{config.BRANDING_FOOTER}
-Founder & DEVELOPER : {config.FOUNDER_USERNAME}
-"""
-        buttons = [[Button.text("📱 Send Phone Number", resize=True)]]
-        await event.respond(welcome_text, buttons=buttons)
-
-    elif status_info["status"] == "pending":
-        # User has pending request
-        await event.respond(f"""
-⏳ **Access Request Pending**
-
-Hi {user.first_name},
-
-Your access request is **pending approval**.
-A developer will review your request soon.
-
-**📊 Request Status:** ⏳ Waiting for approval
-**⏰ Requested:** {status_info["data"]["requested_at"]}
-
-Please wait for developer approval.
-
-{config.BRANDING_FOOTER}
-""")
-
-    elif status_info["status"] == "rejected":
-        # User was rejected
-        rejected_data = status_info["data"]
-        await event.respond(f"""
-❌ **Access Denied**
-
-Hi {user.first_name},
-
-Your access request was **rejected**.
-
-**Reason:** {rejected_data.get("reason", "Not specified")}
-
-If you believe this is a mistake, please contact:
-{config.FOUNDER_USERNAME}
-
-{config.BRANDING_FOOTER}
-""")
-
-    else:
-        # User not authorized - show request access
-        welcome_text = f"""
-🤖 **VZ ASSISTANT - Deploy Bot**
-
-Hi {user.first_name}!
-
-**👤 Your Status:** 🔒 Not Authorized
-
-**📝 Access Required:**
-To use this deploy bot, you need approval from a developer.
-
-**🎯 Request Access:**
-Use `/request [reason]` to request deploy access.
-
-**Example:**
-`/request I want to test VZ ASSISTANT`
-
-**Contact Developer:**
-{config.FOUNDER_USERNAME}
-
-{config.BRANDING_FOOTER}
-"""
-        await event.respond(welcome_text)
+    welcome_text, buttons = build_user_portal_message(user, status_info)
+    await event.respond(welcome_text, buttons=buttons)
 
 @bot.on(events.NewMessage(pattern='/cancel'))
 async def cancel_handler(event):
@@ -417,31 +460,122 @@ Your request has been submitted to the developers.
 **⏰ Next Steps:**
 A developer will review your request soon.
 You will be notified when approved.
+Setelah ada notifikasi approval, buka bot ini lagi dan tekan tombol **🚀 Mulai Deploy** untuk melanjutkan.
 
 {config.BRANDING_FOOTER}
 """)
 
     # Notify all developers
-    for dev_id in config.DEVELOPER_IDS:
-        try:
-            await bot.send_message(dev_id, f"""
-🔔 **New Deploy Access Request**
+    await notify_developers_of_request(user, reason)
 
-**👤 User Info:**
-├ Name: {user.first_name}
-├ Username: @{user.username if user.username else 'None'}
-├ User ID: `{user_id}`
-{'├ Reason: ' + reason if reason else ''}
 
-**🛠️ Actions:**
-• `/approve {user_id}` - Approve request
-• `/reject {user_id} [reason]` - Reject request
-• `/check {user_id}` - View details
+@bot.on(events.CallbackQuery(data=REQUEST_ACCESS_ACTION))
+async def request_access_callback(event):
+    """Handle inline button to request deploy access."""
 
-Use `/pending` to see all requests.
-""")
-        except:
-            pass
+    user_id = event.sender_id
+
+    if config.is_developer(user_id):
+        await event.answer("Developer punya akses otomatis. Kamu bisa langsung deploy.", alert=True)
+        return
+
+    user = await event.get_sender()
+    status_info = auth_db.get_user_status(user_id)
+    menu_status = resolve_status_for_menu(user_id, user, status_info)
+
+    if status_info["status"] == "approved":
+        text, buttons = build_user_portal_message(user, menu_status)
+        await event.edit(text, buttons=buttons)
+        await event.answer("Akses deploy kamu sudah disetujui! Tekan 🚀 Mulai Deploy untuk mulai.", alert=True)
+        return
+
+    if status_info["status"] == "pending":
+        text, buttons = build_user_portal_message(user, menu_status)
+        await event.edit(text, buttons=buttons)
+        await event.answer("Permintaan akses kamu masih diproses. Tunggu notifikasi ya!", alert=True)
+        return
+
+    reason = "Requested via deploy bot button"
+    auth_db.add_request(user_id, user.username, user.first_name, reason=reason)
+    await notify_developers_of_request(user, reason)
+
+    updated_status = auth_db.get_user_status(user_id)
+    menu_status = resolve_status_for_menu(user_id, user, updated_status)
+    text, buttons = build_user_portal_message(user, menu_status)
+    await event.edit(text, buttons=buttons)
+    await event.answer("Permintaan akses terkirim! Tunggu persetujuan developer.", alert=True)
+
+
+@bot.on(events.CallbackQuery(data=CHECK_STATUS_ACTION))
+async def check_status_callback(event):
+    """Handle inline button to re-check access status."""
+
+    user_id = event.sender_id
+    user = await event.get_sender()
+    status_info = auth_db.get_user_status(user_id)
+    menu_status = resolve_status_for_menu(user_id, user, status_info)
+
+    text, buttons = build_user_portal_message(user, menu_status)
+    await event.edit(text, buttons=buttons)
+
+    status = menu_status["status"]
+    if status == "approved":
+        message = "Akses deploy kamu sudah disetujui! Tekan 🚀 Mulai Deploy."
+    elif status == "pending":
+        message = "Permintaan kamu masih menunggu persetujuan developer."
+    elif status == "rejected":
+        message = "Permintaan kamu ditolak. Ajukan ulang jika perlu."
+    else:
+        message = "Kamu belum mengajukan akses deploy."
+
+    await event.answer(message, alert=True)
+
+
+@bot.on(events.CallbackQuery(data=START_DEPLOY_ACTION))
+async def start_deploy_callback(event):
+    """Handle inline button to kick off the deployment flow."""
+
+    user_id = event.sender_id
+    user = await event.get_sender()
+    status_info = auth_db.get_user_status(user_id)
+    is_dev = config.is_developer(user_id)
+
+    if not is_dev and status_info["status"] != "approved":
+        menu_status = resolve_status_for_menu(user_id, user, status_info)
+        text, buttons = build_user_portal_message(user, menu_status)
+        await event.edit(text, buttons=buttons)
+
+        if status_info["status"] == "pending":
+            await event.answer("Masih menunggu persetujuan developer. Tunggu notifikasi ya!", alert=True)
+        else:
+            await event.answer("Ajukan akses deploy dulu sebelum memulai.", alert=True)
+        return
+
+    session = deploy_sessions.get(user_id)
+    if not session:
+        session = DeploymentSession(user_id)
+        deploy_sessions[user_id] = session
+
+    await session.start_deployment()
+
+    instructions = f"""🚀 **Mulai Deploy Sekarang**
+
+Kirim nomor telepon kamu di chat ini dengan format `+62xxxx`.
+Setelah menerima kode OTP dari Telegram, balas dengan 5 digit kode tersebut.
+
+Gunakan /cancel kalau ingin membatalkan proses deploy.
+
+{config.BRANDING_FOOTER}
+Founder & DEVELOPER : {config.FOUNDER_USERNAME}
+"""
+
+    await bot.send_message(user_id, instructions)
+
+    menu_status = resolve_status_for_menu(user_id, user, status_info)
+    text, buttons = build_user_portal_message(user, menu_status)
+    await event.edit(text, buttons=buttons)
+
+    await event.answer("Kirim nomor telepon kamu sekarang untuk melanjutkan deploy.", alert=True)
 
 # ============================================================================
 # DEVELOPER COMMANDS
@@ -514,13 +648,15 @@ async def approve_handler(event):
             await bot.send_message(target_id, f"""
 🎉 **Deploy Access Approved!**
 
-Congratulations! Your deploy access has been approved.
+Selamat! Akses deploy kamu sudah disetujui oleh developer.
 
-**✅ You can now:**
-1. Use `/start` to begin deployment
-2. Send your phone number
-3. Enter OTP code
-4. Deploy your VZ ASSISTANT
+**✅ Langkah Berikutnya:**
+1. Buka bot deploy: {config.DEPLOY_BOT_USERNAME}
+2. Tekan tombol **🚀 Mulai Deploy**
+3. Kirim nomor telepon kamu (format +62...)
+4. Masukkan kode OTP dari Telegram
+
+Kalau kamu melihat pesan ini sebagai notifikasi, cukup kembali ke bot deploy dan tekan tombol deploy lagi untuk melanjutkan.
 
 {config.BRANDING_FOOTER}
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
@@ -730,23 +866,37 @@ async def message_handler(event):
         await event.respond("❌ **Access Denied**\n\nYou must be approved to deploy. Use /start for more info.")
         return
 
-    # Get or create session
-    if user_id not in deploy_sessions:
-        deploy_sessions[user_id] = DeploymentSession(user_id)
-        await deploy_sessions[user_id].start_deployment()
+    session = deploy_sessions.get(user_id)
 
-    session = deploy_sessions[user_id]
+    if not session or session.state == 'idle':
+        await event.respond(
+            "ℹ️ Belum ada proses deploy yang berjalan. Buka /start lalu tekan tombol 🚀 Mulai Deploy terlebih dahulu."
+        )
+        return
 
     # Handle based on state
+    if not event.raw_text and getattr(event, "message", None) and getattr(event.message, "contact", None):
+        # Extract phone from contact sharing
+        contact_phone = event.message.contact.phone_number
+        if contact_phone and not contact_phone.startswith('+'):
+            contact_phone = '+' + contact_phone
+        event_text = contact_phone
+    else:
+        event_text = (event.raw_text or "").strip()
+
     if session.state == 'waiting_phone':
         # Extract phone number
-        phone = event.text.strip()
+        phone = event_text
+
+        if not phone:
+            await event.respond("❌ Format nomor tidak valid. Ketik nomor kamu, contoh: +628123456789.")
+            return
 
         # Validate phone format
         if not phone.startswith('+'):
             phone = '+' + phone
 
-        await event.respond(f"📱 Sending code to {phone}...")
+        await event.respond(f"📱 Mengirim kode ke {phone}...")
 
         success, message = await session.set_phone(phone)
 
@@ -764,7 +914,7 @@ Use /cancel to cancel deployment
             del deploy_sessions[user_id]
 
     elif session.state == 'waiting_code':
-        code = event.text.strip()
+        code = event_text
 
         await event.respond("🔄 Verifying code...")
 
@@ -873,7 +1023,7 @@ async def main():
     await bot.start(bot_token=BOT_TOKEN)
 
     print("\n✅ Deploy Bot is running!")
-    print("📱 Users can now deploy via @YourBotUsername")
+    print(f"📱 Users can now deploy via {config.DEPLOY_BOT_USERNAME}")
     print("⚡ PM2 auto-deployment: ENABLED")
     print("\n🔄 Bot is active... (Press Ctrl+C to stop)\n")
 

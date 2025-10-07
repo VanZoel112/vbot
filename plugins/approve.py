@@ -145,10 +145,10 @@ Developers have automatic deploy access.
 
 {robot_emoji} **Next Steps:**
 User bisa langsung ke deploy bot untuk:
-1. /start
-2. Kirim nomor HP
-3. Masukkan OTP
-4. Deploy otomatis dengan PM2
+1. Tekan tombol **🚀 Mulai Deploy**
+2. Kirim nomor HP (format +62...)
+3. Masukkan OTP Telegram
+4. Deploy otomatis jalan via PM2
 
 {robot_emoji} Plugins Digunakan: **APPROVE**
 {petir_emoji} by {main_emoji} {config.RESULT_FOOTER}
@@ -169,10 +169,11 @@ Selamat! Anda telah diberi akses untuk deploy VZ ASSISTANT.
 
 {telegram_emoji} **Langkah Selanjutnya:**
 1. Buka deploy bot: {config.DEPLOY_BOT_USERNAME}
-2. Ketik /start
-3. Kirim nomor HP Anda
-4. Masukkan kode OTP yang diterima
-5. Deploy otomatis akan berjalan
+2. Tekan tombol **🚀 Mulai Deploy**
+3. Kirim nomor HP Anda (format +62...)
+4. Masukkan kode OTP yang diterima dari Telegram
+
+Kalau ini dikirim sebagai notifikasi, cukup kembali ke bot deploy dan tekan tombol deploy lagi untuk lanjut.
 
 {robot_emoji} **Info:**
 Deploy bot akan membuat PM2 process otomatis untuk Anda.
