@@ -37,7 +37,7 @@ bridge_monitor_task = None
 
 try:
     from pytgcalls import PyTgCalls
-    from pytgcalls.types import Stream, AudioQuality
+    from pytgcalls.types import MediaStream, AudioQuality, GroupCallConfig
     from pytgcalls.exceptions import NoActiveGroupCall, NotInCallError
 
     # Try to import yt-dlp from vzoelupgrade first, fallback to pip
@@ -220,14 +220,18 @@ async def join_vc_silent(chat_id: int) -> bool:
         if not calls.is_connected:
             await calls.start()
 
-        # Join VC with audio stream
-        await calls.play(
-            chat_id,
-            Stream(
-                "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-                audio_parameters=AudioQuality.STUDIO
-            )
+        # Create MediaStream for silent audio (listener mode)
+        media_stream = MediaStream(
+            "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+            audio_parameters=AudioQuality.STUDIO,
+            video_flags=MediaStream.Flags.IGNORE  # Audio only
         )
+
+        # GroupCallConfig with auto_start (no admin needed)
+        group_config = GroupCallConfig(auto_start=True)
+
+        # Join VC with silent stream
+        await calls.play(chat_id, media_stream, config=group_config)
 
         # Track session
         active_sessions[chat_id] = {
