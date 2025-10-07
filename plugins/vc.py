@@ -19,8 +19,9 @@ import config
 from helpers.vc_bridge import VCBridge
 
 # Global variables (set by main.py)
-vz_client = None
+vz_client = None  # Telethon client - for commands/messages
 vz_emoji = None
+vz_vc_client = None  # Pyrogram client - for pytgcalls
 
 # VC Bridge instance
 vc_bridge = VCBridge()
@@ -59,10 +60,10 @@ except ImportError as e:
 py_tgcalls = None
 
 def init_pytgcalls():
-    """Initialize pytgcalls client."""
+    """Initialize pytgcalls client with Pyrogram client."""
     global py_tgcalls
-    if py_tgcalls is None and PYTGCALLS_AVAILABLE and vz_client:
-        py_tgcalls = PyTgCalls(vz_client.client)
+    if py_tgcalls is None and PYTGCALLS_AVAILABLE and vz_vc_client:
+        py_tgcalls = PyTgCalls(vz_vc_client)
     return py_tgcalls
 
 # ============================================================================
@@ -205,20 +206,27 @@ async def monitor_bridge():
             await asyncio.sleep(5)
 
 async def join_vc_silent(chat_id: int) -> bool:
-    """Join VC silently (no admin required)."""
+    """Join VC silently (no admin required) using Pyrogram client."""
     global active_sessions
 
     if not PYTGCALLS_AVAILABLE:
+        print("pytgcalls not available")
+        return False
+
+    if not vz_vc_client:
+        print("Pyrogram VC client not available")
         return False
 
     try:
         calls = init_pytgcalls()
         if not calls:
+            print("Failed to init pytgcalls")
             return False
 
         # Start pytgcalls if not started
         if not calls.is_connected:
             await calls.start()
+            print(f"PyTgCalls started: {calls.is_connected}")
 
         # Create MediaStream for silent audio (listener mode)
         media_stream = MediaStream(
@@ -230,8 +238,12 @@ async def join_vc_silent(chat_id: int) -> bool:
         # GroupCallConfig with auto_start (no admin needed)
         group_config = GroupCallConfig(auto_start=True)
 
+        print(f"Attempting to join VC in chat {chat_id}")
+
         # Join VC with silent stream
         await calls.play(chat_id, media_stream, config=group_config)
+
+        print(f"Successfully called play() for chat {chat_id}")
 
         # Track session
         active_sessions[chat_id] = {
