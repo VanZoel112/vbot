@@ -247,6 +247,8 @@ async def join_vc_silent(chat_id: int) -> bool:
         if "already" in error_msg or "joined" in error_msg:
             return True  # Already joined
         print(f"Error joining VC: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 async def play_music(chat_id: int, song: str) -> dict:
@@ -363,9 +365,12 @@ async def joinvc_handler(event):
         )
     else:
         merah_emoji = vz_emoji.getemoji('merah')
+        kuning_emoji = vz_emoji.getemoji('kuning')
         await vz_client.edit_with_premium_emoji(
             status_msg,
-            f"{merah_emoji} **Failed to join VC**"
+            f"{merah_emoji} **Failed to join VC**\n\n"
+            f"{kuning_emoji} Check server logs for details\n"
+            f"📍 Chat: `{chat_id}`"
         )
 
 @events.register(events.NewMessage(pattern=r'^\.leavevc$', outgoing=True))
