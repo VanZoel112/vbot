@@ -107,8 +107,13 @@ _log_group_joined = False
 # ============================================================================
 
 def is_authorized(user_id: int) -> bool:
-    """Check if user is authorized."""
-    return user_id == OWNER_ID or user_id in DEVELOPER_IDS
+    """Check if user is authorized to use this assistant bot.
+
+    Since each user creates their own assistant bot via .dp command,
+    all users should have access to their own bot instance.
+    Deploy management commands are separately restricted via is_developer().
+    """
+    return True  # Allow all users (each has their own bot instance)
 
 def is_developer(user_id: int) -> bool:
     """Check if user is a developer."""
@@ -358,7 +363,23 @@ Hello {message.from_user.first_name}! I'm your personal assistant bot.
 {main_emoji} by VzBot | {dev_emoji} @VZLfxs
 """
     else:
-        # Regular user menu (NO deploy features)
+        # Regular user menu with deploy request option
+        # Check deploy status
+        global deploy_auth_db
+        if deploy_auth_db is None:
+            deploy_auth_db = DeployAuthDB()
+
+        status_info = deploy_auth_db.get_user_status(user_id)
+
+        if status_info["status"] == "approved":
+            deploy_text = f"\n**🚀 Deploy Access:** ✅ Approved\n💡 Contact developer for deployment\n"
+        elif status_info["status"] == "pending":
+            deploy_text = f"\n**🚀 Deploy Access:** ⏳ Pending approval\n💡 Use /status to check request status\n"
+        elif status_info["status"] == "rejected":
+            deploy_text = f"\n**🚀 Deploy Access:** ❌ Rejected\n💡 Use /request to request again\n"
+        else:
+            deploy_text = f"\n**🚀 Deploy Access:** 🔒 Not requested\n💡 Use /request to request deploy access\n"
+
         welcome_text = f"""
 {main_emoji} **VZ ASSISTANT BOT**
 
@@ -368,11 +389,13 @@ Hello {message.from_user.first_name}! I'm your personal assistant bot.
 {petir_emoji} Inline keyboards for plugin help
 {petir_emoji} Fast response with Pyrogram + Trio
 {gear_emoji} Secure & authorized access
-
+{deploy_text}
 **Available Commands:**
 {robot_emoji} /help - Interactive plugin help menu
 {robot_emoji} /alive - Bot status with buttons
 {robot_emoji} /ping - Check latency
+{rocket_emoji} /request [reason] - Request deploy access
+{rocket_emoji} /status - Check deploy status
 
 {main_emoji} by VzBot | {dev_emoji} @VZLfxs
 """
@@ -1203,6 +1226,121 @@ Deploy access has been revoked.
 
     await message.reply(response)
     logger.info(f"User {target_id} revoked by {user_id}")
+
+
+# ============================================================================
+# USER DEPLOY REQUEST (Non-Developer)
+# ============================================================================
+
+@app.on_message(filters.command("request") & filters.private)
+async def request_deploy_handler(client: Client, message: Message):
+    """Request deploy access (Non-developer users)."""
+    user_id = message.from_user.id
+
+    # Developers don't need to request
+    if is_developer(user_id):
+        await message.reply("🌟 Developers have automatic deploy access!")
+        return
+
+    # Initialize deploy auth DB if needed
+    global deploy_auth_db
+    if deploy_auth_db is None:
+        deploy_auth_db = DeployAuthDB()
+
+    # Check current status
+    status_info = deploy_auth_db.get_user_status(user_id)
+
+    if status_info["status"] == "approved":
+        await message.reply("✅ You are already approved for deployment!")
+        return
+
+    if status_info["status"] == "pending":
+        await message.reply("⏳ Your request is already pending approval!")
+        return
+
+    # Parse reason (optional)
+    parts = message.text.split(maxsplit=1)
+    reason = parts[1] if len(parts) > 1 else "Requested via assistant bot"
+
+    # Add request
+    deploy_auth_db.add_request(
+        user_id=user_id,
+        username=message.from_user.username,
+        first_name=message.from_user.first_name,
+        reason=reason
+    )
+
+    response = f"""✅ **Deploy Access Requested**
+
+Hi {message.from_user.first_name},
+
+Your deployment request has been submitted to the developers.
+
+**📊 Request Info:**
+├ User ID: `{user_id}`
+├ Username: @{message.from_user.username or 'None'}
+├ Reason: {reason}
+└ Status: ⏳ Pending
+
+**⏰ Next Steps:**
+A developer will review your request soon.
+You will be notified when approved.
+
+💡 Use /status to check your request status
+
+🤖 VZ Assistant Bot"""
+
+    await message.reply(response)
+    logger.info(f"Deploy request from user {user_id}")
+
+
+@app.on_message(filters.command("status") & filters.private)
+async def status_deploy_handler(client: Client, message: Message):
+    """Check deploy access status."""
+    user_id = message.from_user.id
+
+    # Initialize deploy auth DB if needed
+    global deploy_auth_db
+    if deploy_auth_db is None:
+        deploy_auth_db = DeployAuthDB()
+
+    # Get status
+    status_info = deploy_auth_db.get_user_status(user_id)
+
+    if is_developer(user_id):
+        status_emoji = "🌟"
+        status_text = "Developer (Full Access)"
+        detail = "You have automatic deploy access."
+    elif status_info["status"] == "approved":
+        status_emoji = "✅"
+        status_text = "Approved"
+        data = status_info["data"]
+        detail = f"Approved: {data.get('approved_at', 'Unknown')}"
+    elif status_info["status"] == "pending":
+        status_emoji = "⏳"
+        status_text = "Pending"
+        data = status_info["data"]
+        detail = f"Requested: {data.get('requested_at', 'Unknown')}"
+    elif status_info["status"] == "rejected":
+        status_emoji = "❌"
+        status_text = "Rejected"
+        data = status_info["data"]
+        detail = f"Reason: {data.get('reason', 'Not specified')}"
+    else:
+        status_emoji = "🔒"
+        status_text = "No Access"
+        detail = "Use /request to request deploy access"
+
+    response = f"""{status_emoji} **Deploy Status**
+
+**User:** {message.from_user.first_name}
+**Status:** {status_text}
+
+{detail}
+
+🤖 VZ Assistant Bot"""
+
+    await message.reply(response)
 
 
 # ============================================================================
