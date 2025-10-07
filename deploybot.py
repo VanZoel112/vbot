@@ -144,6 +144,15 @@ async def notify_developers_of_request(user, reason):
 
     for dev_id in config.DEVELOPER_IDS:
         try:
+            # Create inline buttons for quick approval/rejection
+            buttons = [
+                [
+                    Button.inline("✅ Approve", f"dev_approve_{user.id}".encode()),
+                    Button.inline("❌ Reject", f"dev_reject_{user.id}".encode())
+                ],
+                [Button.inline("🔍 Check Details", f"dev_check_{user.id}".encode())]
+            ]
+
             await bot.send_message(dev_id, f"""🔔 **New Deploy Access Request**
 
 **👤 User Info:**
@@ -152,13 +161,16 @@ async def notify_developers_of_request(user, reason):
 ├ User ID: `{user.id}`
 {'├ Reason: ' + reason if reason else ''}
 
-**🛠️ Actions:**
+**🛠️ Quick Actions:**
+Tekan tombol di bawah untuk approve/reject, atau:
 • `/approve {user.id}` - Approve request
 • `/reject {user.id} [reason]` - Reject request
 • `/check {user.id}` - View details
 
+💡 Bisa juga pakai `..ok @{user.username if user.username else user.id}` di main bot
+
 Gunakan `/pending` untuk melihat semua permintaan.
-""")
+""", buttons=buttons)
         except Exception:
             pass
 
@@ -347,13 +359,16 @@ async def start_handler(event):
     is_dev = config.is_developer(user_id)
 
     if is_dev:
-        # Developer message
+        # Developer message with deploy button
         welcome_text = f"""
 🌟 **VZ ASSISTANT - Deploy Bot**
 
 Welcome, Developer!
 
-**👤 Your Status:** 🌟 Developer (Full Access)
+**👤 Your Status:** 🌟 Developer (Full Access - Auto Approved)
+
+**🚀 Deploy Your Bot:**
+Tekan tombol **🚀 Mulai Deploy** di bawah untuk deploy bot kamu.
 
 **🛠️ Developer Commands:**
 • `/approve <user_id>` - Approve deploy access
@@ -363,13 +378,14 @@ Welcome, Developer!
 • `/approved` - View approved users
 • `/check <user_id>` - Check user status
 
-**ℹ️ For deployment:**
-Use `.dp` command in main bot
+**💡 Quick Approve:**
+Use `..ok @username` or `..ok` (reply) in main bot
 
 {config.BRANDING_FOOTER}
 Founder & DEVELOPER : {config.FOUNDER_USERNAME}
 """
-        await event.respond(welcome_text)
+        buttons = [[Button.inline("🚀 Mulai Deploy", START_DEPLOY_ACTION)]]
+        await event.respond(welcome_text, buttons=buttons)
         return
 
     # Check authorization status
@@ -529,6 +545,179 @@ async def check_status_callback(event):
         message = "Kamu belum mengajukan akses deploy."
 
     await event.answer(message, alert=True)
+
+
+# ============================================================================
+# DEVELOPER CALLBACK HANDLERS
+# ============================================================================
+
+@bot.on(events.CallbackQuery(pattern=rb"dev_approve_(\d+)"))
+async def dev_approve_callback(event):
+    """Handle developer approve button."""
+    if not config.is_developer(event.sender_id):
+        await event.answer("❌ Developer only!", alert=True)
+        return
+
+    target_id = int(event.pattern_match.group(1).decode())
+
+    # Try to get target user info
+    username = None
+    display_name = None
+    try:
+        target = await bot.get_entity(target_id)
+        username = target.username
+        name_parts = [target.first_name, target.last_name]
+        display_name = ' '.join(part for part in name_parts if part) or target.first_name or target.last_name
+    except Exception:
+        target = None
+
+    created, updated, record = auth_db.approve_user(
+        target_id,
+        event.sender_id,
+        "Approved via button",
+        username=username,
+        first_name=display_name,
+    )
+
+    if created:
+        status_text = "✅ **User Approved!**"
+        footer = "User can now deploy via bot."
+    elif updated:
+        status_text = "✅ **Approval Updated**"
+        footer = "User approval details updated."
+    else:
+        status_text = "ℹ️ **Already Approved**"
+        footer = "User already has deploy access."
+
+    # Edit the notification message
+    await event.edit(f"""{status_text}
+
+**👤 User Info:**
+├ Name: {record.get('first_name') or 'Unknown'}
+├ Username: @{record.get('username') or 'None'}
+├ User ID: `{record['user_id']}`
+├ Approved: {record.get('approved_at', 'Unknown')}
+└ Approved by: `{event.sender_id}`
+
+{footer}
+""")
+
+    # Notify user
+    if created:
+        try:
+            await bot.send_message(target_id, f"""
+🎉 **Deploy Access Approved!**
+
+Selamat! Akses deploy kamu sudah disetujui oleh developer.
+
+**✅ Langkah Berikutnya:**
+1. Buka bot deploy: {config.DEPLOY_BOT_USERNAME}
+2. Tekan tombol **🚀 Mulai Deploy**
+3. Kirim nomor telepon kamu (format +62...)
+4. Masukkan kode OTP dari Telegram
+
+{config.BRANDING_FOOTER}
+Founder & DEVELOPER : {config.FOUNDER_USERNAME}
+""")
+        except Exception:
+            pass
+
+    await event.answer("✅ User approved!", alert=False)
+
+
+@bot.on(events.CallbackQuery(pattern=rb"dev_reject_(\d+)"))
+async def dev_reject_callback(event):
+    """Handle developer reject button."""
+    if not config.is_developer(event.sender_id):
+        await event.answer("❌ Developer only!", alert=True)
+        return
+
+    target_id = int(event.pattern_match.group(1).decode())
+    reason = "Rejected by developer via button"
+
+    # Reject user
+    auth_db.reject_user(target_id, event.sender_id, reason)
+
+    # Edit the notification message
+    await event.edit(f"""
+❌ **User Rejected**
+
+**User ID:** `{target_id}`
+**Reason:** {reason}
+**Rejected by:** `{event.sender_id}`
+
+User has been notified.
+""")
+
+    # Notify user
+    try:
+        await bot.send_message(target_id, f"""
+❌ **Deploy Access Denied**
+
+Your deploy access request was rejected.
+
+**Reason:** {reason}
+
+If you have questions, please contact:
+{config.FOUNDER_USERNAME}
+
+{config.BRANDING_FOOTER}
+""")
+    except:
+        pass
+
+    await event.answer("❌ User rejected!", alert=False)
+
+
+@bot.on(events.CallbackQuery(pattern=rb"dev_check_(\d+)"))
+async def dev_check_callback(event):
+    """Handle developer check details button."""
+    if not config.is_developer(event.sender_id):
+        await event.answer("❌ Developer only!", alert=True)
+        return
+
+    target_id = int(event.pattern_match.group(1).decode())
+    status_info = auth_db.get_user_status(target_id)
+
+    if status_info["status"] == "none":
+        await event.answer(f"ℹ️ User {target_id} has no record.", alert=True)
+        return
+
+    data = status_info["data"]
+    status_emoji = {
+        "approved": "✅",
+        "pending": "⏳",
+        "rejected": "❌"
+    }.get(status_info["status"], "❓")
+
+    text = f"""{status_emoji} **User Status: {status_info["status"].upper()}**
+
+**👤 User Info:**
+├ User ID: `{target_id}`
+├ Username: @{data.get('username') or 'None'}
+├ Name: {data.get('first_name', 'Unknown')}
+"""
+
+    if status_info["status"] == "approved":
+        text += f"""
+**✅ Approved:**
+├ Approved at: {data['approved_at']}
+{'├ Notes: ' + data['notes'] if data.get('notes') else ''}
+"""
+    elif status_info["status"] == "pending":
+        text += f"""
+**⏳ Pending:**
+├ Requested: {data['requested_at']}
+{'├ Reason: ' + data['reason'] if data.get('reason') else ''}
+"""
+    elif status_info["status"] == "rejected":
+        text += f"""
+**❌ Rejected:**
+├ Rejected at: {data['rejected_at']}
+{'├ Reason: ' + data['reason'] if data.get('reason') else ''}
+"""
+
+    await event.answer(text, alert=True)
 
 
 @bot.on(events.CallbackQuery(data=START_DEPLOY_ACTION))

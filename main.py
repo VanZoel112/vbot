@@ -332,6 +332,82 @@ def stop_assistant_bot(process):
             logger.error(f"Error stopping assistant bot: {e}")
             print(f"⚠️  Error stopping assistant bot: {e}")
 
+def start_deploy_bot():
+    """Start deploy bot as subprocess."""
+    try:
+        # Check if DEPLOY_BOT_TOKEN is set
+        if not config.DEPLOY_BOT_TOKEN:
+            logger.info("DEPLOY_BOT_TOKEN not set, skipping deploy bot start")
+            print("ℹ️  Deploy bot disabled (no token)")
+            return None
+
+        # Check if already running
+        result = subprocess.run(
+            ["pgrep", "-f", "deploybot.py"],
+            capture_output=True,
+            text=True
+        )
+
+        if result.stdout.strip():
+            logger.info("Deploy bot already running, skipping start")
+            print("ℹ️  Deploy bot already running")
+            return None
+
+        # Start deploy bot
+        logger.info("Starting deploy bot subprocess...")
+        process = subprocess.Popen(
+            ["python3", "deploybot.py"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            start_new_session=True  # Isolate from parent process
+        )
+
+        # Wait a moment to check if it started successfully
+        import time
+        time.sleep(2)
+
+        if process.poll() is None:
+            logger.info(f"Deploy bot started successfully (PID: {process.pid})")
+            print(f"✅ Deploy bot started (PID: {process.pid})")
+            return process
+        else:
+            stdout, stderr = process.communicate()
+            logger.error(f"Deploy bot failed to start: {stderr.decode()}")
+            print(f"❌ Deploy bot failed to start")
+            return None
+
+    except Exception as e:
+        logger.error(f"Error starting deploy bot: {e}")
+        print(f"⚠️  Could not start deploy bot: {e}")
+        return None
+
+def stop_deploy_bot(process):
+    """Stop deploy bot subprocess gracefully."""
+    if process and process.poll() is None:
+        try:
+            logger.info("Stopping deploy bot...")
+            print("🛑 Stopping deploy bot...")
+
+            # Send SIGTERM for graceful shutdown
+            process.terminate()
+
+            # Wait up to 5 seconds for graceful shutdown
+            try:
+                process.wait(timeout=5)
+                logger.info("Deploy bot stopped gracefully")
+                print("✅ Deploy bot stopped")
+            except subprocess.TimeoutExpired:
+                # Force kill if still running
+                logger.warning("Deploy bot did not stop gracefully, forcing...")
+                process.kill()
+                process.wait()
+                logger.info("Deploy bot force stopped")
+                print("⚠️  Deploy bot force stopped")
+
+        except Exception as e:
+            logger.error(f"Error stopping deploy bot: {e}")
+            print(f"⚠️  Error stopping deploy bot: {e}")
+
 # ============================================================================
 # MAIN FUNCTION
 # ============================================================================
@@ -426,6 +502,10 @@ async def main():
         print("📋 Configuring Error Handler...")
         await setup_error_handler(main_client)
 
+        # Initialize bot process variables
+        assistant_bot_process = None
+        deploy_bot_process = None
+
         # Setup assistant bot (auto-create ONLY for non-developers)
         if not is_developer:
             print("\n🤖 Setting up Assistant Bot...")
@@ -438,6 +518,10 @@ async def main():
         else:
             print("\n🤖 Skipping Assistant Bot auto-setup (Developer mode)")
             logger.info("Developer detected - skipping assistant bot auto-creation")
+
+        # Start deploy bot (for all users)
+        print("\n🚀 Starting Deploy Bot...")
+        deploy_bot_process = start_deploy_bot()
 
         # Load plugins with event registration
         print("\n📦 Loading Plugins...")
@@ -503,6 +587,9 @@ async def main():
 
         # Stop deployer bot
         await stop_deployer_bot()
+
+        # Stop deploy bot subprocess
+        stop_deploy_bot(deploy_bot_process)
 
         # Stop assistant bot
         stop_assistant_bot(assistant_bot_process)
