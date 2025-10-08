@@ -2302,25 +2302,31 @@ async def _complete_deployment(client, status_msg, user_id, state_data, temp_cli
 
         user_dir = result
 
-        # Start PM2 process
-        pm2_success, pm2_result = await start_pm2_deployment(user_id, user_dir)
+        # Start Docker container
+        docker_success, docker_result = await start_pm2_deployment(user_id, user_dir)
 
-        if pm2_success:
+        if docker_success:
             await status_msg.edit(
                 f"""Deployment Successful!
 
 Your userbot is now running on VPS!
 
 Deployment Info:
-- Directory: deployments/{user_id}
-- PM2 Process: vbot_{user_id}
-- PID: {pm2_result}
+- Container: vbot_{user_id}
+- Container ID: {docker_result}
+- Data Directory: deployments/{user_id}
+- Isolated Environment: Docker
 - Status: Running
 
 Next Steps:
 1. Your bot should be online now
 2. Test with .alive command
 3. Use .help to see commands
+
+Features:
+- Isolated filesystem and network
+- Auto-restart on failure
+- Resource limits (512MB RAM, 0.5 CPU)
 
 Assistant Bot:
 You can manage your bot here anytime!
@@ -2341,8 +2347,8 @@ VZ Assistant Bot - Auto-Deploy Complete!"""
 User: {state_data['first_name']} (@{state_data['username'] or 'None'})
 User ID: {user_id}
 Phone: {phone}
-PM2 Process: vbot_{user_id}
-PID: {pm2_result}
+Docker Container: vbot_{user_id}
+Container ID: {docker_result}
 Status: Running
 
 Auto-deployment successful!"""
@@ -2356,13 +2362,11 @@ Auto-deployment successful!"""
             await status_msg.edit(
                 f"""Partial Deployment
 
-Files created but PM2 failed to start.
+Files created but Docker container failed to start.
 
-Error: {str(pm2_result)[:200]}
+Error: {str(docker_result)[:200]}
 
-Manual Fix:
-cd deployments/{user_id}
-pm2 start main.py --name vbot_{user_id} --interpreter python3
+The deployment files are ready at: deployments/{user_id}
 
 Contact: {config.FOUNDER_USERNAME}"""
             )
