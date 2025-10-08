@@ -1,0 +1,52 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info
+dist
+build
+
+# Virtual environments
+venv
+env
+.venv
+
+# Sessions (will be mounted per user)
+sessions/*.session
+sessions/*.session-journal
+sessions/temp/*
+
+# Downloads and logs
+downloads/*
+logs/*
+
+# Environment files (will be mounted per user)
+.env
+.env.local
+.env.*
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Deployment directories
+deployments/*
+data/*
+
+# Temporary files
+*.tmp
+*.log

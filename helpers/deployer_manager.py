@@ -76,84 +76,124 @@ def get_next_port():
     return port
 
 def create_user_deployment(user_id, session_string):
-    """Create git clone deployment for user"""
-    user_dir = os.path.join(DEPLOY_BASE_DIR, str(user_id))
+    """Create Docker-based deployment for user (new method)"""
+    # Use Docker deployment instead of git clone
+    return create_docker_deployment(user_id, session_string)
 
-    # Git clone if not exists
-    if not os.path.exists(user_dir):
-        result = subprocess.run(
-            ["git", "clone", VBOT_REPO, user_dir],
-            capture_output=True,
-            text=True
-        )
-        if result.returncode != 0:
-            return False, f"Git clone failed: {result.stderr}"
+def create_docker_deployment(user_id, session_string):
+    """Create Docker deployment for user with isolated .env"""
+    # Create user-specific directory for .env and data
+    user_data_dir = os.path.join(DEPLOY_BASE_DIR, str(user_id))
+    os.makedirs(user_data_dir, exist_ok=True)
 
-    # Create .env file
-    env_content = f"""API_ID={API_ID}
+    # Create .env file (fresh, not from repo)
+    env_content = f"""# Auto-generated .env for user {user_id}
+API_ID={API_ID}
 API_HASH={API_HASH}
 SESSION_STRING={session_string}
 DEVELOPER_IDS={','.join(map(str, DEVELOPER_IDS))}
 OWNER_ID={user_id}
+ASSISTANT_BOT_TOKEN=
+LOG_GROUP_ID=
 """
 
-    env_file = os.path.join(user_dir, '.env')
+    env_file = os.path.join(user_data_dir, '.env')
     with open(env_file, 'w') as f:
         f.write(env_content)
 
-    return True, user_dir
+    logger.info(f"Created .env file for user {user_id} at {env_file}")
+
+    # Create subdirectories for isolated data
+    os.makedirs(os.path.join(user_data_dir, 'sessions'), exist_ok=True)
+    os.makedirs(os.path.join(user_data_dir, 'downloads'), exist_ok=True)
+    os.makedirs(os.path.join(user_data_dir, 'logs'), exist_ok=True)
+    os.makedirs(os.path.join(user_data_dir, 'data'), exist_ok=True)
+
+    return True, user_data_dir
 
 async def start_deployment(user_id, user_dir):
-    """Start PM2 deployment for user"""
+    """Start Docker deployment for user (new method)"""
+    # Use Docker deployment instead of PM2
+    return await start_docker_deployment(user_id, user_dir)
+
+async def start_docker_deployment(user_id, user_dir):
+    """Start Docker container for user"""
     try:
-        pm2_name = f"vbot_{user_id}"
+        container_name = f"vbot_{user_id}"
 
-        # Check if already running
-        check = subprocess.run(["pm2", "id", pm2_name], capture_output=True)
+        # Check if container already exists
+        check_cmd = ["docker", "ps", "-a", "-q", "-f", f"name={container_name}"]
+        check = subprocess.run(check_cmd, capture_output=True, text=True)
 
-        if check.returncode == 0:
-            # Already running, restart
-            subprocess.run(["pm2", "restart", pm2_name], capture_output=True)
-            logger.info(f"Restarted deployment for {user_id}")
-        else:
-            # Start new
-            cmd = [
-                "pm2", "start", "main.py",
-                "--name", pm2_name,
-                "--interpreter", "python3",
-                "--cwd", os.path.abspath(user_dir)
-            ]
+        if check.stdout.strip():
+            # Container exists, remove it first
+            logger.info(f"Removing existing container for user {user_id}")
+            subprocess.run(["docker", "rm", "-f", container_name], capture_output=True)
 
-            result = subprocess.run(cmd, capture_output=True, text=True)
+        # Prepare volume mounts
+        env_file = os.path.join(os.path.abspath(user_dir), '.env')
+        sessions_dir = os.path.join(os.path.abspath(user_dir), 'sessions')
+        downloads_dir = os.path.join(os.path.abspath(user_dir), 'downloads')
+        logs_dir = os.path.join(os.path.abspath(user_dir), 'logs')
+        data_dir = os.path.join(os.path.abspath(user_dir), 'data')
 
-            if result.returncode != 0:
-                return False, result.stderr
+        # Run Docker container
+        cmd = [
+            "docker", "run", "-d",
+            "--name", container_name,
+            "--restart", "unless-stopped",
+            "--memory", "512m",
+            "--cpus", "0.5",
+            "-v", f"{env_file}:/app/.env:ro",  # Read-only .env
+            "-v", f"{sessions_dir}:/app/sessions",
+            "-v", f"{downloads_dir}:/app/downloads",
+            "-v", f"{logs_dir}:/app/logs",
+            "-v", f"{data_dir}:/app/data",
+            "vbot:latest"
+        ]
 
-            logger.info(f"Started new deployment for {user_id}")
+        logger.info(f"Starting Docker container for user {user_id}: {' '.join(cmd)}")
+        result = subprocess.run(cmd, capture_output=True, text=True)
 
-        # Get PID
-        pm2_list = subprocess.run(["pm2", "jlist"], capture_output=True, text=True)
-        if pm2_list.returncode == 0:
-            processes = json.loads(pm2_list.stdout)
-            for proc in processes:
-                if proc.get('name') == pm2_name:
-                    return True, proc.get('pid')
+        if result.returncode != 0:
+            logger.error(f"Docker start failed: {result.stderr}")
+            return False, f"Docker start failed: {result.stderr}"
 
-        return True, None
+        container_id = result.stdout.strip()[:12]  # Short container ID
+        logger.info(f"Started Docker container for user {user_id}: {container_id}")
+
+        # Wait a moment for container to initialize
+        await asyncio.sleep(2)
+
+        # Check if container is running
+        status_cmd = ["docker", "ps", "-q", "-f", f"name={container_name}"]
+        status = subprocess.run(status_cmd, capture_output=True, text=True)
+
+        if not status.stdout.strip():
+            # Container not running, get logs
+            logs_cmd = ["docker", "logs", "--tail", "50", container_name]
+            logs = subprocess.run(logs_cmd, capture_output=True, text=True)
+            return False, f"Container failed to start. Logs:\n{logs.stdout}\n{logs.stderr}"
+
+        return True, container_id
 
     except Exception as e:
-        logger.error(f"Deployment error: {e}", exc_info=True)
+        logger.error(f"Docker deployment error: {e}", exc_info=True)
         return False, str(e)
 
 async def stop_deployment(user_id):
-    """Stop PM2 deployment"""
+    """Stop Docker deployment"""
     try:
-        pm2_name = f"vbot_{user_id}"
-        subprocess.run(["pm2", "stop", pm2_name], capture_output=True)
-        subprocess.run(["pm2", "delete", pm2_name], capture_output=True)
-        logger.info(f"Stopped deployment for {user_id}")
+        container_name = f"vbot_{user_id}"
+
+        # Stop and remove container
+        subprocess.run(["docker", "stop", container_name], capture_output=True)
+        subprocess.run(["docker", "rm", container_name], capture_output=True)
+
+        logger.info(f"Stopped Docker container for user {user_id}")
         return True, None
     except Exception as e:
+        logger.error(f"Stop deployment error: {e}", exc_info=True)
         return False, str(e)
 
 # Pyrogram client
