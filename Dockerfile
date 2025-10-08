@@ -17,21 +17,9 @@ WORKDIR /app
 # Copy requirements first for better caching
 COPY requirements.txt .
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Install additional packages that might not be in requirements.txt
-RUN pip install --no-cache-dir \
-    pyrogram \
-    tgcrypto \
-    pytgcalls \
-    yt-dlp \
-    python-dotenv \
-    aiohttp \
-    aiofiles \
-    pillow \
-    requests \
-    psutil
+# Install Python dependencies from requirements.txt
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .
