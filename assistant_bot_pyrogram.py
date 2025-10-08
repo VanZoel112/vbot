@@ -365,16 +365,16 @@ Use buttons below for instant access!
         # Developer inline buttons with deploy + management
         buttons = InlineKeyboardMarkup([
             [
-                InlineKeyboardButton("🚀 Deploy My Bot", callback_data="dev_deploy"),
-                InlineKeyboardButton("📊 My Status", callback_data="deploy_status")
+                InlineKeyboardButton("Deploy My Bot", callback_data="dev_deploy"),
+                InlineKeyboardButton("My Status", callback_data="deploy_status")
             ],
             [
-                InlineKeyboardButton("⏳ Pending Requests", callback_data="deploy_pending"),
-                InlineKeyboardButton("✅ Approved Users", callback_data="deploy_approved")
+                InlineKeyboardButton("Pending Requests", callback_data="deploy_pending"),
+                InlineKeyboardButton("Approved Users", callback_data="deploy_approved")
             ],
             [
-                InlineKeyboardButton("📖 Help", callback_data="cmd_help"),
-                InlineKeyboardButton("💓 Alive", callback_data="alive_status")
+                InlineKeyboardButton("Help", callback_data="cmd_help"),
+                InlineKeyboardButton("Alive", callback_data="alive_status")
             ]
         ])
 
@@ -423,50 +423,50 @@ Hello {message.from_user.first_name}! I'm your personal assistant bot.
         if status_info["status"] == "approved":
             buttons = InlineKeyboardMarkup([
                 [
-                    InlineKeyboardButton("🚀 Deploy Now", callback_data="start_deployment"),
-                    InlineKeyboardButton("✅ Status", callback_data="deploy_status")
+                    InlineKeyboardButton("Deploy Now", callback_data="start_deployment"),
+                    InlineKeyboardButton("Status", callback_data="deploy_status")
                 ],
                 [
-                    InlineKeyboardButton("📋 Deploy Guide", callback_data="deploy_guide"),
-                    InlineKeyboardButton("💓 Alive", callback_data="alive_status")
+                    InlineKeyboardButton("Deploy Guide", callback_data="deploy_guide"),
+                    InlineKeyboardButton("Alive", callback_data="alive_status")
                 ],
                 [
-                    InlineKeyboardButton("📖 Help", callback_data="cmd_help"),
-                    InlineKeyboardButton("⚡ Ping", callback_data="ping_check")
+                    InlineKeyboardButton("Help", callback_data="cmd_help"),
+                    InlineKeyboardButton("Ping", callback_data="ping_check")
                 ]
             ])
         elif status_info["status"] == "pending":
             buttons = InlineKeyboardMarkup([
                 [
-                    InlineKeyboardButton("⏳ Check Status", callback_data="deploy_status"),
-                    InlineKeyboardButton("💓 Alive", callback_data="alive_status")
+                    InlineKeyboardButton("Check Status", callback_data="deploy_status"),
+                    InlineKeyboardButton("Alive", callback_data="alive_status")
                 ],
                 [
-                    InlineKeyboardButton("📖 Help", callback_data="cmd_help"),
-                    InlineKeyboardButton("⚡ Ping", callback_data="ping_check")
+                    InlineKeyboardButton("Help", callback_data="cmd_help"),
+                    InlineKeyboardButton("Ping", callback_data="ping_check")
                 ]
             ])
         elif status_info["status"] == "rejected":
             buttons = InlineKeyboardMarkup([
                 [
-                    InlineKeyboardButton("🔁 Request Again", callback_data="deploy_request"),
-                    InlineKeyboardButton("📊 Status", callback_data="deploy_status")
+                    InlineKeyboardButton("Request Again", callback_data="deploy_request"),
+                    InlineKeyboardButton("Status", callback_data="deploy_status")
                 ],
                 [
-                    InlineKeyboardButton("📖 Help", callback_data="cmd_help"),
-                    InlineKeyboardButton("💓 Alive", callback_data="alive_status")
+                    InlineKeyboardButton("Help", callback_data="cmd_help"),
+                    InlineKeyboardButton("Alive", callback_data="alive_status")
                 ]
             ])
         else:
             # No access - show request button
             buttons = InlineKeyboardMarkup([
                 [
-                    InlineKeyboardButton("🚀 Request Deploy Access", callback_data="deploy_request"),
-                    InlineKeyboardButton("📊 Status", callback_data="deploy_status")
+                    InlineKeyboardButton("Request Deploy Access", callback_data="deploy_request"),
+                    InlineKeyboardButton("Status", callback_data="deploy_status")
                 ],
                 [
-                    InlineKeyboardButton("📖 Help", callback_data="cmd_help"),
-                    InlineKeyboardButton("💓 Alive", callback_data="alive_status")
+                    InlineKeyboardButton("Help", callback_data="cmd_help"),
+                    InlineKeyboardButton("Alive", callback_data="alive_status")
                 ]
             ])
 
@@ -482,7 +482,7 @@ async def help_handler(client: Client, message: Message):
     user_id = message.from_user.id
 
     if not is_authorized(user_id):
-        await message.reply("❌ Access Denied")
+        await message.reply("Access Denied")
         return
 
     await log_action(user_id, "help")
@@ -663,7 +663,7 @@ async def alive_handler(client: Client, message: Message):
     user_id = message.from_user.id
 
     if not is_authorized(user_id):
-        await message.reply("❌ Access Denied")
+        await message.reply("Access Denied")
         return
 
     await log_action(user_id, "alive")
@@ -716,7 +716,7 @@ async def log_command_handler(client: Client, message: Message):
     user_id = message.from_user.id
 
     if not is_authorized(user_id):
-        await message.reply("❌ Access Denied")
+        await message.reply("Access Denied")
         return
 
     if not LOG_GROUP_ID:
@@ -762,7 +762,7 @@ async def logs_list_handler(client: Client, message: Message):
     user_id = message.from_user.id
 
     if not is_authorized(user_id):
-        await message.reply("❌ Access Denied")
+        await message.reply("Access Denied")
         return
 
     await log_action(user_id, "logs_info")
@@ -832,7 +832,7 @@ async def ping_handler(client: Client, message: Message):
     user_id = message.from_user.id
 
     if not is_authorized(user_id):
-        await message.reply("❌ Access Denied")
+        await message.reply("Access Denied")
         return
 
     await log_action(user_id, "ping")
@@ -860,7 +860,7 @@ async def joinvc_handler(client: Client, message: Message):
     user_id = message.from_user.id
 
     if not is_authorized(user_id):
-        await message.reply("❌ Access Denied")
+        await message.reply("Access Denied")
         return
 
     await log_action(user_id, "joinvc")
@@ -912,7 +912,7 @@ async def play_handler(client: Client, message: Message):
     user_id = message.from_user.id
 
     if not is_authorized(user_id):
-        await message.reply("❌ Access Denied")
+        await message.reply("Access Denied")
         return
 
     await log_action(user_id, "play")
@@ -971,7 +971,7 @@ async def leave_handler(client: Client, message: Message):
     user_id = message.from_user.id
 
     if not is_authorized(user_id):
-        await message.reply("❌ Access Denied")
+        await message.reply("Access Denied")
         return
 
     command = message.text.split()[0].replace("/", "")
@@ -1015,7 +1015,7 @@ async def vcstatus_handler(client: Client, message: Message):
     user_id = message.from_user.id
 
     if not is_authorized(user_id):
-        await message.reply("❌ Access Denied")
+        await message.reply("Access Denied")
         return
 
     await log_action(user_id, "vcstatus")
@@ -1436,7 +1436,7 @@ async def deploy_request_callback(client: Client, callback: CallbackQuery):
     status_info = deploy_auth_db.get_user_status(user_id)
 
     if status_info["status"] == "approved":
-        await callback.answer("✅ You are already approved!", show_alert=True)
+        await callback.answer("You are already approved!", show_alert=True)
         return
 
     if status_info["status"] == "pending":
@@ -1471,12 +1471,12 @@ You will be notified when approved.
 🤖 VZ Assistant Bot"""
 
     buttons = InlineKeyboardMarkup([
-        [InlineKeyboardButton("⏳ Check Status", callback_data="deploy_status")],
-        [InlineKeyboardButton("🔙 Back", callback_data="back_to_start")]
+        [InlineKeyboardButton("Check Status", callback_data="deploy_status")],
+        [InlineKeyboardButton("Back", callback_data="back_to_start")]
     ])
 
     await callback.edit_message_text(response, reply_markup=buttons)
-    await callback.answer("✅ Request sent!", show_alert=False)
+    await callback.answer("Request sent!", show_alert=False)
     logger.info(f"Deploy request from user {user_id} via button")
 
 
@@ -1527,7 +1527,7 @@ async def deploy_status_callback(client: Client, callback: CallbackQuery):
 🤖 VZ Assistant Bot"""
 
     buttons = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔙 Back", callback_data="back_to_start")]
+        [InlineKeyboardButton("Back", callback_data="back_to_start")]
     ])
 
     await callback.edit_message_text(response, reply_markup=buttons)
@@ -1541,7 +1541,7 @@ async def deploy_pending_callback(client: Client, callback: CallbackQuery):
 
     # Developer only
     if not is_developer(user_id):
-        await callback.answer("❌ Developer only!", show_alert=True)
+        await callback.answer("Developer only!", show_alert=True)
         return
 
     # Initialize deploy auth DB if needed
@@ -1574,7 +1574,7 @@ async def deploy_pending_callback(client: Client, callback: CallbackQuery):
     response += "\n🤖 VZ Assistant Bot"
 
     buttons = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔙 Back", callback_data="back_to_start")]
+        [InlineKeyboardButton("Back", callback_data="back_to_start")]
     ])
 
     await callback.edit_message_text(response, reply_markup=buttons)
@@ -1588,7 +1588,7 @@ async def deploy_approved_callback(client: Client, callback: CallbackQuery):
 
     # Developer only
     if not is_developer(user_id):
-        await callback.answer("❌ Developer only!", show_alert=True)
+        await callback.answer("Developer only!", show_alert=True)
         return
 
     # Initialize deploy auth DB if needed
@@ -1621,7 +1621,7 @@ async def deploy_approved_callback(client: Client, callback: CallbackQuery):
     response += f"\n🤖 VZ Assistant Bot\n📊 Total: {len(users)} approved users"
 
     buttons = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔙 Back", callback_data="back_to_start")]
+        [InlineKeyboardButton("Back", callback_data="back_to_start")]
     ])
 
     await callback.edit_message_text(response, reply_markup=buttons)
@@ -1669,16 +1669,16 @@ Use buttons below for instant access!
         # Developer inline buttons with deploy + management
         buttons = InlineKeyboardMarkup([
             [
-                InlineKeyboardButton("🚀 Deploy My Bot", callback_data="dev_deploy"),
-                InlineKeyboardButton("📊 My Status", callback_data="deploy_status")
+                InlineKeyboardButton("Deploy My Bot", callback_data="dev_deploy"),
+                InlineKeyboardButton("My Status", callback_data="deploy_status")
             ],
             [
-                InlineKeyboardButton("⏳ Pending Requests", callback_data="deploy_pending"),
-                InlineKeyboardButton("✅ Approved Users", callback_data="deploy_approved")
+                InlineKeyboardButton("Pending Requests", callback_data="deploy_pending"),
+                InlineKeyboardButton("Approved Users", callback_data="deploy_approved")
             ],
             [
-                InlineKeyboardButton("📖 Help", callback_data="cmd_help"),
-                InlineKeyboardButton("💓 Alive", callback_data="alive_status")
+                InlineKeyboardButton("Help", callback_data="cmd_help"),
+                InlineKeyboardButton("Alive", callback_data="alive_status")
             ]
         ])
     else:
@@ -1723,50 +1723,50 @@ Hello {callback.from_user.first_name}! I'm your personal assistant bot.
         if status_info["status"] == "approved":
             buttons = InlineKeyboardMarkup([
                 [
-                    InlineKeyboardButton("🚀 Deploy Now", callback_data="start_deployment"),
-                    InlineKeyboardButton("✅ Status", callback_data="deploy_status")
+                    InlineKeyboardButton("Deploy Now", callback_data="start_deployment"),
+                    InlineKeyboardButton("Status", callback_data="deploy_status")
                 ],
                 [
-                    InlineKeyboardButton("📋 Deploy Guide", callback_data="deploy_guide"),
-                    InlineKeyboardButton("💓 Alive", callback_data="alive_status")
+                    InlineKeyboardButton("Deploy Guide", callback_data="deploy_guide"),
+                    InlineKeyboardButton("Alive", callback_data="alive_status")
                 ],
                 [
-                    InlineKeyboardButton("📖 Help", callback_data="cmd_help"),
-                    InlineKeyboardButton("⚡ Ping", callback_data="ping_check")
+                    InlineKeyboardButton("Help", callback_data="cmd_help"),
+                    InlineKeyboardButton("Ping", callback_data="ping_check")
                 ]
             ])
         elif status_info["status"] == "pending":
             buttons = InlineKeyboardMarkup([
                 [
-                    InlineKeyboardButton("⏳ Check Status", callback_data="deploy_status"),
-                    InlineKeyboardButton("💓 Alive", callback_data="alive_status")
+                    InlineKeyboardButton("Check Status", callback_data="deploy_status"),
+                    InlineKeyboardButton("Alive", callback_data="alive_status")
                 ],
                 [
-                    InlineKeyboardButton("📖 Help", callback_data="cmd_help"),
-                    InlineKeyboardButton("⚡ Ping", callback_data="ping_check")
+                    InlineKeyboardButton("Help", callback_data="cmd_help"),
+                    InlineKeyboardButton("Ping", callback_data="ping_check")
                 ]
             ])
         elif status_info["status"] == "rejected":
             buttons = InlineKeyboardMarkup([
                 [
-                    InlineKeyboardButton("🔁 Request Again", callback_data="deploy_request"),
-                    InlineKeyboardButton("📊 Status", callback_data="deploy_status")
+                    InlineKeyboardButton("Request Again", callback_data="deploy_request"),
+                    InlineKeyboardButton("Status", callback_data="deploy_status")
                 ],
                 [
-                    InlineKeyboardButton("📖 Help", callback_data="cmd_help"),
-                    InlineKeyboardButton("💓 Alive", callback_data="alive_status")
+                    InlineKeyboardButton("Help", callback_data="cmd_help"),
+                    InlineKeyboardButton("Alive", callback_data="alive_status")
                 ]
             ])
         else:
             # No access - show request button
             buttons = InlineKeyboardMarkup([
                 [
-                    InlineKeyboardButton("🚀 Request Deploy Access", callback_data="deploy_request"),
-                    InlineKeyboardButton("📊 Status", callback_data="deploy_status")
+                    InlineKeyboardButton("Request Deploy Access", callback_data="deploy_request"),
+                    InlineKeyboardButton("Status", callback_data="deploy_status")
                 ],
                 [
-                    InlineKeyboardButton("📖 Help", callback_data="cmd_help"),
-                    InlineKeyboardButton("💓 Alive", callback_data="alive_status")
+                    InlineKeyboardButton("Help", callback_data="cmd_help"),
+                    InlineKeyboardButton("Alive", callback_data="alive_status")
                 ]
             ])
 
@@ -1781,7 +1781,7 @@ async def dev_deploy_callback(client: Client, callback: CallbackQuery):
 
     # Developer only
     if not is_developer(user_id):
-        await callback.answer("❌ Developer only!", show_alert=True)
+        await callback.answer("Developer only!", show_alert=True)
         return
 
     response = f"""🚀 **Developer Deployment**
@@ -1825,7 +1825,7 @@ Contact: {config.FOUNDER_USERNAME}
 🤖 VZ Assistant Bot"""
 
     buttons = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔙 Back", callback_data="back_to_start")]
+        [InlineKeyboardButton("Back", callback_data="back_to_start")]
     ])
 
     await callback.edit_message_text(response, reply_markup=buttons)
@@ -1858,7 +1858,7 @@ async def alive_status_callback(client: Client, callback: CallbackQuery):
 🤖 by VzBot | 👨‍💻 @VZLfxs"""
 
     buttons = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔙 Back", callback_data="back_to_start")]
+        [InlineKeyboardButton("Back", callback_data="back_to_start")]
     ])
 
     await callback.edit_message_text(response, reply_markup=buttons)
@@ -1887,13 +1887,13 @@ async def ping_check_callback(client: Client, callback: CallbackQuery):
 
     buttons = InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("🔄 Check Again", callback_data="ping_check"),
-            InlineKeyboardButton("🔙 Back", callback_data="back_to_start")
+            InlineKeyboardButton("Check Again", callback_data="ping_check"),
+            InlineKeyboardButton("Back", callback_data="back_to_start")
         ]
     ])
 
     await callback.edit_message_text(response, reply_markup=buttons)
-    await callback.answer(f"⚡ Ping: {ping}ms", show_alert=False)
+    await callback.answer(f"Ping: {ping}ms", show_alert=False)
 
 
 @app.on_callback_query(filters.regex("^start_deployment$"))
@@ -1909,41 +1909,41 @@ async def start_deployment_callback(client: Client, callback: CallbackQuery):
     status_info = deploy_auth_db.get_user_status(user_id)
 
     if status_info["status"] != "approved" and not is_developer(user_id):
-        await callback.answer("❌ Deploy access required!", show_alert=True)
+        await callback.answer("Deploy access required!", show_alert=True)
         return
 
     # Start deployment flow
-    response = f"""🚀 **Auto-Deployment Started**
+    response = f"""Auto-Deployment Started
 
 Hi {callback.from_user.first_name}!
 
-Welcome to **Automated VPS Deployment**!
+Welcome to Automated VPS Deployment!
 
 I'll deploy your userbot to VPS automatically. Just follow these steps:
 
-**📱 Step 1: Phone Number**
+Step 1: Phone Number
 Please send your phone number in international format.
 
-**Example:**
-`+6281234567890`
-`+1234567890`
+Example:
++6281234567890
++1234567890
 
-**⚠️ Important:**
-• Include country code with +
-• Use the account for your userbot
-• You'll receive OTP in next step
+Important:
+- Include country code with +
+- Use the account for your userbot
+- You'll receive OTP in next step
 
-**🔐 Privacy:**
+Privacy:
 Your credentials are secure and used only for deployment.
 
-**Ready?** Send your phone number now! 👇"""
+Ready? Send your phone number now!"""
 
     buttons = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔙 Cancel", callback_data="back_to_start")]
+        [InlineKeyboardButton("Cancel", callback_data="back_to_start")]
     ])
 
     await callback.edit_message_text(response, reply_markup=buttons)
-    await callback.answer("✅ Send your phone number!", show_alert=False)
+    await callback.answer("Send your phone number!", show_alert=False)
 
     # Set deployment state
     deployment_states[user_id] = {
@@ -1957,11 +1957,11 @@ Your credentials are secure and used only for deployment.
         for dev_id in config.DEVELOPER_IDS:
             await client.send_message(
                 dev_id,
-                f"""🔔 **Auto-Deployment Started**
+                f"""Auto-Deployment Started
 
-**User:** {callback.from_user.first_name} (@{callback.from_user.username or 'None'})
-**User ID:** `{user_id}`
-**Status:** Awaiting phone number
+User: {callback.from_user.first_name} (@{callback.from_user.username or 'None'})
+User ID: {user_id}
+Status: Awaiting phone number
 
 Auto-deployment flow initiated."""
             )
@@ -2023,7 +2023,7 @@ Contact: {config.FOUNDER_USERNAME}
 🤖 VZ Assistant Bot"""
 
     buttons = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔙 Back", callback_data="back_to_start")]
+        [InlineKeyboardButton("Back", callback_data="back_to_start")]
     ])
 
     await callback.edit_message_text(response, reply_markup=buttons)
@@ -2054,9 +2054,9 @@ async def deployment_message_handler(client: Client, message: Message):
         # Validate phone format
         if not phone.startswith("+") or len(phone) < 10:
             await message.reply(
-                "❌ **Invalid Format**\n\n"
+                "Invalid Format\n\n"
                 "Please send phone number with country code.\n\n"
-                "**Example:** `+6281234567890`"
+                "Example: +6281234567890"
             )
             return
 
@@ -2083,18 +2083,18 @@ async def deployment_message_handler(client: Client, message: Message):
             })
 
             await message.reply(
-                f"""✅ **OTP Sent!**
+                f"""OTP Sent!
 
-📱 Check your Telegram account: `{phone}`
+Check your Telegram account: {phone}
 
-**📝 Step 2: Enter OTP**
+Step 2: Enter OTP
 You should receive a verification code.
 
 Send the code here (just the numbers, no spaces).
 
-**Example:** `12345`
+Example: 12345
 
-⏱️ Code expires in a few minutes!"""
+Note: Code expires in a few minutes!"""
             )
 
             logger.info(f"OTP sent to {phone} for user {user_id}")
@@ -2102,12 +2102,12 @@ Send the code here (just the numbers, no spaces).
         except Exception as e:
             logger.error(f"Failed to send OTP: {e}", exc_info=True)
             await message.reply(
-                f"❌ **Failed to send OTP**\n\n"
+                f"Failed to send OTP\n\n"
                 f"Error: {str(e)[:200]}\n\n"
                 f"Please check:\n"
-                f"• Phone number is correct\n"
-                f"• You have Telegram on this number\n"
-                f"• Try again with /start"
+                f"- Phone number is correct\n"
+                f"- You have Telegram on this number\n"
+                f"- Try again with /start"
             )
             # Clean up
             if user_id in deployment_states:
@@ -2120,13 +2120,13 @@ Send the code here (just the numbers, no spaces).
         # Validate OTP format
         if not otp_code.isdigit():
             await message.reply(
-                "❌ **Invalid OTP**\n\n"
+                "Invalid OTP\n\n"
                 "Please send only the numbers.\n\n"
-                "**Example:** `12345`"
+                "Example: 12345"
             )
             return
 
-        status_msg = await message.reply("⏳ **Verifying OTP...**")
+        status_msg = await message.reply("Verifying OTP...")
 
         try:
             temp_client = state_data["temp_client"]
@@ -2134,116 +2134,84 @@ Send the code here (just the numbers, no spaces).
             phone_code_hash = state_data["phone_code_hash"]
 
             # Sign in with OTP
-            await temp_client.sign_in(phone, phone_code_hash, otp_code)
+            try:
+                await temp_client.sign_in(phone, phone_code_hash, otp_code)
+            except Exception as signin_error:
+                # Check if 2FA is enabled
+                if "SESSION_PASSWORD_NEEDED" in str(signin_error) or "Two-step" in str(signin_error):
+                    # Ask for 2FA password
+                    deployment_states[user_id]["state"] = "awaiting_2fa"
+                    await status_msg.edit(
+                        "2FA Detected\n\n"
+                        "Your account has 2-step verification enabled.\n\n"
+                        "Please send your 2FA password:"
+                    )
+                    return
+                else:
+                    # Other error, re-raise
+                    raise signin_error
 
-            await status_msg.edit("✅ **OTP Verified!**\n\n⏳ Generating session string...")
+            await status_msg.edit("OTP Verified!\n\nGenerating session string...")
 
-            # Export session string
-            session_string = await temp_client.export_session_string()
+            # Continue with deployment
+            await _complete_deployment(client, status_msg, user_id, state_data, temp_client, phone)
 
-            # Disconnect temp client
-            await temp_client.disconnect()
+        except Exception as e:
+            error_msg = str(e)
+            logger.error(f"OTP verification failed: {e}", exc_info=True)
 
-            await status_msg.edit(
-                "✅ **Session Generated!**\n\n"
-                "⏳ Deploying to VPS...\n\n"
-                "This may take 30-60 seconds..."
-            )
-
-            # ========== DEPLOY TO VPS ==========
-            logger.info(f"Starting VPS deployment for user {user_id}")
-
-            # Create deployment directory and files
-            success, result = create_user_deployment(user_id, session_string)
-
-            if not success:
+            # Handle specific errors
+            if "PHONE_CODE_EXPIRED" in error_msg:
                 await status_msg.edit(
-                    f"❌ **Deployment Failed**\n\n"
-                    f"Error: {result[:200]}\n\n"
-                    f"Contact: {config.FOUNDER_USERNAME}"
+                    "Verification Failed\n\n"
+                    "The OTP code has expired.\n\n"
+                    "Please click /start and try again.\n"
+                    "You'll receive a new OTP code."
                 )
-                # Clean up
-                if user_id in deployment_states:
-                    del deployment_states[user_id]
-                return
-
-            user_dir = result
-
-            # Start PM2 process
-            pm2_success, pm2_result = await start_pm2_deployment(user_id, user_dir)
-
-            if pm2_success:
+            elif "PHONE_CODE_INVALID" in error_msg:
                 await status_msg.edit(
-                    f"""🎉 **Deployment Successful!**
-
-✅ Your userbot is now running on VPS!
-
-**📊 Deployment Info:**
-├ Directory: `deployments/{user_id}`
-├ PM2 Process: `vbot_{user_id}`
-├ PID: {pm2_result}
-└ Status: ✅ Running
-
-**🚀 Next Steps:**
-1. Your bot should be online now
-2. Test with `.alive` command
-3. Use `.help` to see commands
-
-**📱 Assistant Bot:**
-You can manage your bot here anytime!
-
-**🆘 Need Help?**
-Contact: {config.FOUNDER_USERNAME}
-
-🤖 VZ Assistant Bot - Auto-Deploy Complete!"""
+                    "Invalid OTP Code\n\n"
+                    "The code you entered is incorrect.\n\n"
+                    "Please request a new code with /start"
                 )
-
-                # Notify admins
-                try:
-                    for dev_id in config.DEVELOPER_IDS:
-                        await client.send_message(
-                            dev_id,
-                            f"""🎉 **Deployment Complete**
-
-**User:** {state_data['first_name']} (@{state_data['username'] or 'None'})
-**User ID:** `{user_id}`
-**Phone:** `{phone}`
-**PM2 Process:** `vbot_{user_id}`
-**PID:** {pm2_result}
-**Status:** ✅ Running
-
-Auto-deployment successful!"""
-                        )
-                except Exception as e:
-                    logger.error(f"Failed to notify admin: {e}")
-
-                logger.info(f"Deployment complete for user {user_id}")
-
             else:
                 await status_msg.edit(
-                    f"""⚠️ **Partial Deployment**
-
-Files created but PM2 failed to start.
-
-**Error:** {str(pm2_result)[:200]}
-
-**Manual Fix:**
-```bash
-cd deployments/{user_id}
-pm2 start main.py --name vbot_{user_id} --interpreter python3
-```
-
-Contact: {config.FOUNDER_USERNAME}"""
+                    f"Verification Failed\n\n"
+                    f"Error: {error_msg[:200]}\n\n"
+                    f"Please try again with /start"
                 )
 
-            # Clean up deployment state
+            # Clean up
+            try:
+                if state_data.get("temp_client"):
+                    await state_data["temp_client"].disconnect()
+            except:
+                pass
+
             if user_id in deployment_states:
                 del deployment_states[user_id]
 
+    # ========== 2FA PASSWORD ==========
+    elif current_state == "awaiting_2fa":
+        password = message.text.strip()
+        status_msg = await message.reply("Verifying 2FA password...")
+
+        try:
+            temp_client = state_data["temp_client"]
+            phone = state_data["phone"]
+
+            # Check password
+            await temp_client.check_password(password)
+
+            await status_msg.edit("2FA Verified!\n\nGenerating session string...")
+
+            # Continue with deployment
+            await _complete_deployment(client, status_msg, user_id, state_data, temp_client, phone)
+
         except Exception as e:
-            logger.error(f"OTP verification failed: {e}", exc_info=True)
+            logger.error(f"2FA verification failed: {e}", exc_info=True)
             await status_msg.edit(
-                f"❌ **Verification Failed**\n\n"
+                f"2FA Verification Failed\n\n"
                 f"Error: {str(e)[:200]}\n\n"
                 f"Please try again with /start"
             )
@@ -2257,6 +2225,120 @@ Contact: {config.FOUNDER_USERNAME}"""
 
             if user_id in deployment_states:
                 del deployment_states[user_id]
+
+
+async def _complete_deployment(client, status_msg, user_id, state_data, temp_client, phone):
+    """Complete the deployment after successful authentication."""
+    try:
+        # Export session string
+        session_string = await temp_client.export_session_string()
+
+        # Disconnect temp client
+        await temp_client.disconnect()
+
+        await status_msg.edit(
+            "Session Generated!\n\n"
+            "Deploying to VPS...\n\n"
+            "This may take 30-60 seconds..."
+        )
+
+        # ========== DEPLOY TO VPS ==========
+        logger.info(f"Starting VPS deployment for user {user_id}")
+
+        # Create deployment directory and files
+        success, result = create_user_deployment(user_id, session_string)
+
+        if not success:
+            await status_msg.edit(
+                f"Deployment Failed\n\n"
+                f"Error: {result[:200]}\n\n"
+                f"Contact: {config.FOUNDER_USERNAME}"
+            )
+            # Clean up
+            if user_id in deployment_states:
+                del deployment_states[user_id]
+            return
+
+        user_dir = result
+
+        # Start PM2 process
+        pm2_success, pm2_result = await start_pm2_deployment(user_id, user_dir)
+
+        if pm2_success:
+            await status_msg.edit(
+                f"""Deployment Successful!
+
+Your userbot is now running on VPS!
+
+Deployment Info:
+- Directory: deployments/{user_id}
+- PM2 Process: vbot_{user_id}
+- PID: {pm2_result}
+- Status: Running
+
+Next Steps:
+1. Your bot should be online now
+2. Test with .alive command
+3. Use .help to see commands
+
+Assistant Bot:
+You can manage your bot here anytime!
+
+Need Help?
+Contact: {config.FOUNDER_USERNAME}
+
+VZ Assistant Bot - Auto-Deploy Complete!"""
+            )
+
+            # Notify admins
+            try:
+                for dev_id in config.DEVELOPER_IDS:
+                    await client.send_message(
+                        dev_id,
+                        f"""Deployment Complete
+
+User: {state_data['first_name']} (@{state_data['username'] or 'None'})
+User ID: {user_id}
+Phone: {phone}
+PM2 Process: vbot_{user_id}
+PID: {pm2_result}
+Status: Running
+
+Auto-deployment successful!"""
+                    )
+            except Exception as e:
+                logger.error(f"Failed to notify admin: {e}")
+
+            logger.info(f"Deployment complete for user {user_id}")
+
+        else:
+            await status_msg.edit(
+                f"""Partial Deployment
+
+Files created but PM2 failed to start.
+
+Error: {str(pm2_result)[:200]}
+
+Manual Fix:
+cd deployments/{user_id}
+pm2 start main.py --name vbot_{user_id} --interpreter python3
+
+Contact: {config.FOUNDER_USERNAME}"""
+            )
+
+        # Clean up deployment state
+        if user_id in deployment_states:
+            del deployment_states[user_id]
+
+    except Exception as e:
+        logger.error(f"Deployment failed: {e}", exc_info=True)
+        await status_msg.edit(
+            f"Deployment Failed\n\n"
+            f"Error: {str(e)[:200]}\n\n"
+            f"Contact: {config.FOUNDER_USERNAME}"
+        )
+        if user_id in deployment_states:
+            del deployment_states[user_id]
 
 
 # ============================================================================
