@@ -2106,6 +2106,12 @@ Check your Telegram account: {phone}
 Step 2: Enter OTP
 You should receive a verification code.
 
+IMPORTANT:
+- Send the code HERE immediately
+- DO NOT forward or share the code
+- DO NOT copy-paste from other chats
+- Telegram blocks login if code is shared
+
 Send the code here (just the numbers, no spaces).
 
 Example: 12345
@@ -2133,16 +2139,24 @@ Note: Code expires in a few minutes!"""
     elif current_state == "awaiting_otp":
         otp_code = message.text.strip()
 
+        # DELETE USER'S OTP MESSAGE IMMEDIATELY (prevent Telegram security block)
+        try:
+            await message.delete()
+            logger.info(f"Deleted OTP message from user {user_id} for security")
+        except Exception as e:
+            logger.warning(f"Could not delete OTP message: {e}")
+
         # Validate OTP format
         if not otp_code.isdigit():
-            await message.reply(
+            await client.send_message(
+                user_id,
                 "Invalid OTP\n\n"
                 "Please send only the numbers.\n\n"
                 "Example: 12345"
             )
             return
 
-        status_msg = await message.reply("Verifying OTP...")
+        status_msg = await client.send_message(user_id, "Verifying OTP...")
 
         try:
             temp_client = state_data["temp_client"]
@@ -2156,7 +2170,8 @@ Note: Code expires in a few minutes!"""
                 elapsed = (datetime.now() - code_sent_at).total_seconds()
                 logger.info(f"OTP entered after {elapsed:.1f} seconds")
 
-            logger.info(f"User {user_id} attempting sign_in with OTP: {otp_code}")
+            # DO NOT log actual OTP code for security
+            logger.info(f"User {user_id} attempting sign_in with OTP (length: {len(otp_code)})")
             logger.info(f"Client connected: {temp_client.is_connected}")
 
             # Ensure client is still connected
@@ -2210,11 +2225,25 @@ Note: Code expires in a few minutes!"""
                     "The code you entered is incorrect.\n\n"
                     "Please request a new code with /start"
                 )
+            elif "SESSION_PASSWORD_NEEDED" in error_msg:
+                # This is actually handled above, but just in case
+                deployment_states[user_id]["state"] = "awaiting_2fa"
+                await status_msg.edit(
+                    "2FA Detected\n\n"
+                    "Your account has 2-step verification enabled.\n\n"
+                    "Please send your 2FA password:"
+                )
             else:
+                # Generic error with helpful tip
                 await status_msg.edit(
                     f"Verification Failed\n\n"
                     f"Error: {error_msg[:200]}\n\n"
-                    f"Please try again with /start"
+                    f"IMPORTANT:\n"
+                    f"- DO NOT forward or share the OTP code\n"
+                    f"- Enter the code immediately after receiving\n"
+                    f"- Make sure you're using the correct phone number\n\n"
+                    f"Telegram may block login if code is shared.\n\n"
+                    f"Click /start to try again with a fresh code."
                 )
 
             # Clean up
@@ -2230,7 +2259,15 @@ Note: Code expires in a few minutes!"""
     # ========== 2FA PASSWORD ==========
     elif current_state == "awaiting_2fa":
         password = message.text.strip()
-        status_msg = await message.reply("Verifying 2FA password...")
+
+        # DELETE USER'S PASSWORD MESSAGE IMMEDIATELY (security)
+        try:
+            await message.delete()
+            logger.info(f"Deleted 2FA password message from user {user_id} for security")
+        except Exception as e:
+            logger.warning(f"Could not delete password message: {e}")
+
+        status_msg = await client.send_message(user_id, "Verifying 2FA password...")
 
         try:
             temp_client = state_data["temp_client"]
