@@ -10,6 +10,7 @@ import os
 import asyncio
 import tempfile
 import cv2
+import numpy as np
 import gzip
 import json
 from pathlib import Path
@@ -62,11 +63,11 @@ async def process_video_with_bg_removal(input_path: str, output_path: str, statu
         # Remove background
         output_image = remove(pil_image)
 
-        # Convert back to cv2 format
-        frame_processed = cv2.cvtColor(
-            cv2.cvtColor(cv2.cvtColor(output_image, cv2.COLOR_RGBA2RGB), cv2.COLOR_RGB2BGR),
-            cv2.COLOR_BGR2BGRA
-        )
+        # Convert PIL Image to numpy array
+        output_array = np.array(output_image)
+
+        # Convert RGBA to BGR for video (OpenCV uses BGR)
+        frame_processed = cv2.cvtColor(output_array, cv2.COLOR_RGBA2BGR)
 
         # Write frame
         out.write(frame_processed)
