@@ -45,7 +45,7 @@ def save_blacklist(user_id, blacklist):
 # BLACKLIST ADD COMMAND
 # ============================================================================
 
-@events.register(events.NewMessage(pattern=r'^\.bl(-?\d+)?$', outgoing=True))
+@events.register(events.NewMessage(pattern=r'^\.bl(\s+-?\d+)?$', outgoing=True))
 async def bl_handler(event):
     global vz_client, vz_emoji
 
@@ -55,21 +55,53 @@ async def bl_handler(event):
     Usage:
         .bl                    (add current chat)
         .bl -1001234567890     (add specific chat ID)
+        .bl (reply to message) (add replied message's chat)
 
     Blacklisted chats won't receive .gcast (saved to config.py)
     """
     # Get chat ID
-    chat_id = event.pattern_match.group(1)
+    chat_id = None
 
-    if chat_id:
+    # Check if user provided ID as argument
+    match = event.pattern_match.group(1)
+    if match:
         try:
-            chat_id = int(chat_id)
+            chat_id = int(match.strip())
         except:
             merah_emoji = vz_emoji.getemoji('merah')
             await vz_client.edit_with_premium_emoji(event, f"{merah_emoji} Invalid chat ID format")
             return
-    else:
-        chat_id = event.chat_id
+    # Check if replying to a message
+    elif event.is_reply:
+        reply_msg = await event.get_reply_message()
+        # Get chat ID from replied message
+        if hasattr(reply_msg, 'peer_id'):
+            peer = reply_msg.peer_id
+            if hasattr(peer, 'channel_id'):
+                # Channel/Supergroup - add -100 prefix
+                chat_id = int(f"-100{peer.channel_id}")
+            elif hasattr(peer, 'chat_id'):
+                # Regular group - use negative
+                chat_id = -peer.chat_id
+            elif hasattr(peer, 'user_id'):
+                # PM (shouldn't happen but handle it)
+                chat_id = reply_msg.peer_id.user_id
+
+        if not chat_id:
+            # Fallback: try to get from forward info
+            if reply_msg.fwd_from and reply_msg.fwd_from.from_id:
+                fwd_peer = reply_msg.fwd_from.from_id
+                if hasattr(fwd_peer, 'channel_id'):
+                    chat_id = int(f"-100{fwd_peer.channel_id}")
+
+    # Default: current chat
+    if not chat_id:
+        chat = await event.get_chat()
+        if hasattr(chat, 'id'):
+            # Already has proper format from get_chat()
+            chat_id = chat.id
+        else:
+            chat_id = event.chat_id
 
     # Validate chat ID (reject Telegram service chats)
     if chat_id == 777000:  # Telegram service notifications
@@ -119,7 +151,7 @@ async def bl_handler(event):
 # BLACKLIST REMOVE COMMAND
 # ============================================================================
 
-@events.register(events.NewMessage(pattern=r'^\.dbl(-?\d+)?$', outgoing=True))
+@events.register(events.NewMessage(pattern=r'^\.dbl(\s+-?\d+)?$', outgoing=True))
 async def dbl_handler(event):
     global vz_client, vz_emoji
 
@@ -129,21 +161,53 @@ async def dbl_handler(event):
     Usage:
         .dbl                   (remove current chat)
         .dbl -1001234567890    (remove specific chat ID)
+        .dbl (reply to message) (remove replied message's chat)
 
     Removed chats will receive .gcast again
     """
     # Get chat ID
-    chat_id = event.pattern_match.group(1)
+    chat_id = None
 
-    if chat_id:
+    # Check if user provided ID as argument
+    match = event.pattern_match.group(1)
+    if match:
         try:
-            chat_id = int(chat_id)
+            chat_id = int(match.strip())
         except:
             merah_emoji = vz_emoji.getemoji('merah')
             await vz_client.edit_with_premium_emoji(event, f"{merah_emoji} Invalid chat ID format")
             return
-    else:
-        chat_id = event.chat_id
+    # Check if replying to a message
+    elif event.is_reply:
+        reply_msg = await event.get_reply_message()
+        # Get chat ID from replied message
+        if hasattr(reply_msg, 'peer_id'):
+            peer = reply_msg.peer_id
+            if hasattr(peer, 'channel_id'):
+                # Channel/Supergroup - add -100 prefix
+                chat_id = int(f"-100{peer.channel_id}")
+            elif hasattr(peer, 'chat_id'):
+                # Regular group - use negative
+                chat_id = -peer.chat_id
+            elif hasattr(peer, 'user_id'):
+                # PM (shouldn't happen but handle it)
+                chat_id = reply_msg.peer_id.user_id
+
+        if not chat_id:
+            # Fallback: try to get from forward info
+            if reply_msg.fwd_from and reply_msg.fwd_from.from_id:
+                fwd_peer = reply_msg.fwd_from.from_id
+                if hasattr(fwd_peer, 'channel_id'):
+                    chat_id = int(f"-100{fwd_peer.channel_id}")
+
+    # Default: current chat
+    if not chat_id:
+        chat = await event.get_chat()
+        if hasattr(chat, 'id'):
+            # Already has proper format from get_chat()
+            chat_id = chat.id
+        else:
+            chat_id = event.chat_id
 
     # Remove from GLOBAL blacklist (config.py)
     removed = config.remove_from_gcast_blacklist(chat_id)
