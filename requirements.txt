@@ -45,3 +45,13 @@ trio>=0.27.0
 # MacOS: brew install ffmpeg
 
 # asyncio is built-in with Python 3.9+
+
+# ============================================================================
+# VIDEO CONVERTER PLUGIN (.mp4towebm, .webmtotgs, .webmtosvg, .tgstosvg)
+# ============================================================================
+opencv-python-headless>=4.8.0
+rembg[gpu]>=2.0.50
+Pillow>=10.0.0
+ffmpeg-python>=0.2.0
+lottie>=0.7.0
+cairosvg>=2.7.0
