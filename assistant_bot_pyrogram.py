@@ -2062,24 +2062,40 @@ async def deployment_message_handler(client: Client, message: Message):
 
         # Create temporary Pyrogram client for session generation
         try:
+            # Clean up any existing session for this user
+            import os
+            session_file = f"sessions/temp/deploy_temp_{user_id}.session"
+            if os.path.exists(session_file):
+                try:
+                    os.remove(session_file)
+                    logger.info(f"Removed old session file: {session_file}")
+                except:
+                    pass
+
             temp_client = Client(
                 f"deploy_temp_{user_id}",
                 api_id=API_ID,
                 api_hash=API_HASH,
-                phone_number=phone,
                 workdir="sessions/temp"
             )
 
-            # Start client and send code
+            # Start client (don't use phone_number param, we'll send code manually)
             await temp_client.connect()
-            sent_code = await temp_client.send_code(phone)
+            logger.info(f"Client connected for user {user_id}")
 
-            # Update state
+            # Send code request
+            sent_code = await temp_client.send_code(phone)
+            logger.info(f"OTP sent to {phone}, code_hash: {sent_code.phone_code_hash[:20]}...")
+
+            # Update state - keep client connected
+            from datetime import datetime
             deployment_states[user_id].update({
                 "state": "awaiting_otp",
                 "phone": phone,
                 "temp_client": temp_client,
-                "phone_code_hash": sent_code.phone_code_hash
+                "phone_code_hash": sent_code.phone_code_hash,
+                "sent_code_type": sent_code.type,
+                "code_sent_at": datetime.now()  # Track when code was sent
             })
 
             await message.reply(
@@ -2133,12 +2149,32 @@ Note: Code expires in a few minutes!"""
             phone = state_data["phone"]
             phone_code_hash = state_data["phone_code_hash"]
 
+            # Check how long since code was sent
+            from datetime import datetime
+            code_sent_at = state_data.get("code_sent_at")
+            if code_sent_at:
+                elapsed = (datetime.now() - code_sent_at).total_seconds()
+                logger.info(f"OTP entered after {elapsed:.1f} seconds")
+
+            logger.info(f"User {user_id} attempting sign_in with OTP: {otp_code}")
+            logger.info(f"Client connected: {temp_client.is_connected}")
+
+            # Ensure client is still connected
+            if not temp_client.is_connected:
+                logger.info(f"Client disconnected for user {user_id}, reconnecting...")
+                await temp_client.connect()
+
             # Sign in with OTP
             try:
+                logger.info(f"Calling sign_in for {phone}...")
                 await temp_client.sign_in(phone, phone_code_hash, otp_code)
+                logger.info(f"Sign in successful for user {user_id}")
             except Exception as signin_error:
+                error_str = str(signin_error)
+                logger.error(f"Sign in error: {error_str}")
+
                 # Check if 2FA is enabled
-                if "SESSION_PASSWORD_NEEDED" in str(signin_error) or "Two-step" in str(signin_error):
+                if "SESSION_PASSWORD_NEEDED" in error_str or "Two-step" in error_str:
                     # Ask for 2FA password
                     deployment_states[user_id]["state"] = "awaiting_2fa"
                     await status_msg.edit(
@@ -2199,6 +2235,11 @@ Note: Code expires in a few minutes!"""
         try:
             temp_client = state_data["temp_client"]
             phone = state_data["phone"]
+
+            # Ensure client is still connected
+            if not temp_client.is_connected:
+                logger.info(f"Client disconnected for user {user_id}, reconnecting...")
+                await temp_client.connect()
 
             # Check password
             await temp_client.check_password(password)
