@@ -216,21 +216,21 @@ async def mp4_to_webm_handler(event):
     global vz_client, vz_emoji
 
     if not event.reply_to_msg_id:
-        error_emoji = vz_emoji.getemoji('gagal')
-        video_emoji = vz_emoji.getemoji('video')
+        error_emoji = vz_emoji.getemoji('merah')
+        video_emoji = vz_emoji.getemoji('camera')
         await event.edit(f"{error_emoji} Balas ke video MP4 untuk mengkonversinya! {video_emoji}")
         return
 
     reply = await event.get_reply_message()
 
     if not reply.video and not reply.file:
-        error_emoji = vz_emoji.getemoji('gagal')
-        video_emoji = vz_emoji.getemoji('video')
+        error_emoji = vz_emoji.getemoji('merah')
+        video_emoji = vz_emoji.getemoji('camera')
         await event.edit(f"{error_emoji} Balas ke video MP4 untuk mengkonversinya! {video_emoji}")
         return
 
     loading_emoji = vz_emoji.getemoji('loading')
-    download_emoji = vz_emoji.getemoji('download')
+    download_emoji = vz_emoji.getemoji('loading')
     msg = await event.edit(f"{loading_emoji} {download_emoji} Mengunduh video...")
 
     # Download video
@@ -250,12 +250,12 @@ async def mp4_to_webm_handler(event):
         # Process video with background removal
         await process_video_with_bg_removal(input_path, output_path, status_update)
 
-        upload_emoji = vz_emoji.getemoji('upload')
+        upload_emoji = vz_emoji.getemoji('loading')
         await msg.edit(f"{loading_emoji} {upload_emoji} Mengupload hasil konversi...")
 
         # Upload hasil
-        success_emoji = vz_emoji.getemoji('success')
-        video_emoji = vz_emoji.getemoji('video')
+        success_emoji = vz_emoji.getemoji('centang')
+        video_emoji = vz_emoji.getemoji('camera')
         await vz_client.send_file(
             event.chat_id,
             output_path,
@@ -266,7 +266,7 @@ async def mp4_to_webm_handler(event):
         await msg.delete()
 
     except Exception as e:
-        error_emoji = vz_emoji.getemoji('gagal')
+        error_emoji = vz_emoji.getemoji('merah')
         await msg.edit(f"{error_emoji} Error: {str(e)}")
     finally:
         # Cleanup
@@ -288,21 +288,21 @@ async def webm_to_tgs_handler(event):
     global vz_client, vz_emoji
 
     if not event.reply_to_msg_id:
-        error_emoji = vz_emoji.getemoji('gagal')
-        video_emoji = vz_emoji.getemoji('video')
+        error_emoji = vz_emoji.getemoji('merah')
+        video_emoji = vz_emoji.getemoji('camera')
         await event.edit(f"{error_emoji} Balas ke video WEBM untuk mengkonversinya! {video_emoji}")
         return
 
     reply = await event.get_reply_message()
 
     if not reply.video and not reply.file:
-        error_emoji = vz_emoji.getemoji('gagal')
-        video_emoji = vz_emoji.getemoji('video')
+        error_emoji = vz_emoji.getemoji('merah')
+        video_emoji = vz_emoji.getemoji('camera')
         await event.edit(f"{error_emoji} Balas ke video WEBM untuk mengkonversinya! {video_emoji}")
         return
 
     loading_emoji = vz_emoji.getemoji('loading')
-    download_emoji = vz_emoji.getemoji('download')
+    download_emoji = vz_emoji.getemoji('loading')
     msg = await event.edit(f"{loading_emoji} {download_emoji} Mengunduh video...")
 
     temp_dir = tempfile.mkdtemp()
@@ -313,16 +313,16 @@ async def webm_to_tgs_handler(event):
         await reply.download_media(input_path)
 
         gear_emoji = vz_emoji.getemoji('gear')
-        sticker_emoji = vz_emoji.getemoji('sticker')
+        sticker_emoji = vz_emoji.getemoji('robot')
         await msg.edit(f"{loading_emoji} {gear_emoji} Mengkonversi ke TGS {sticker_emoji}...")
 
         success = await convert_webm_to_tgs(input_path, output_path)
 
         if success:
-            upload_emoji = vz_emoji.getemoji('upload')
+            upload_emoji = vz_emoji.getemoji('loading')
             await msg.edit(f"{loading_emoji} {upload_emoji} Mengupload sticker TGS...")
 
-            success_emoji = vz_emoji.getemoji('success')
+            success_emoji = vz_emoji.getemoji('centang')
             await vz_client.send_file(
                 event.chat_id,
                 output_path,
@@ -332,7 +332,7 @@ async def webm_to_tgs_handler(event):
 
             await msg.delete()
         else:
-            error_emoji = vz_emoji.getemoji('gagal')
+            error_emoji = vz_emoji.getemoji('merah')
             await msg.edit(f"{error_emoji} Gagal mengkonversi ke TGS")
 
     except Exception as e:
@@ -358,16 +358,16 @@ async def webm_to_svg_handler(event):
     global vz_client, vz_emoji
 
     if not event.reply_to_msg_id:
-        error_emoji = vz_emoji.getemoji('gagal')
-        video_emoji = vz_emoji.getemoji('video')
+        error_emoji = vz_emoji.getemoji('merah')
+        video_emoji = vz_emoji.getemoji('camera')
         await event.edit(f"{error_emoji} Balas ke video WEBM untuk mengkonversinya! {video_emoji}")
         return
 
     reply = await event.get_reply_message()
 
     if not reply.video and not reply.file:
-        error_emoji = vz_emoji.getemoji('gagal')
-        video_emoji = vz_emoji.getemoji('video')
+        error_emoji = vz_emoji.getemoji('merah')
+        video_emoji = vz_emoji.getemoji('camera')
         await event.edit(f"{error_emoji} Balas ke video WEBM untuk mengkonversinya! {video_emoji}")
         return
 
@@ -377,12 +377,12 @@ async def webm_to_svg_handler(event):
         try:
             frame_number = int(event.pattern_match.group(1))
         except ValueError:
-            error_emoji = vz_emoji.getemoji('gagal')
+            error_emoji = vz_emoji.getemoji('merah')
             await event.edit(f"{error_emoji} Frame number harus berupa angka!")
             return
 
     loading_emoji = vz_emoji.getemoji('loading')
-    download_emoji = vz_emoji.getemoji('download')
+    download_emoji = vz_emoji.getemoji('loading')
     msg = await event.edit(f"{loading_emoji} {download_emoji} Mengunduh video...")
 
     temp_dir = tempfile.mkdtemp()
@@ -393,16 +393,16 @@ async def webm_to_svg_handler(event):
         await reply.download_media(input_path)
 
         gear_emoji = vz_emoji.getemoji('gear')
-        frame_emoji = vz_emoji.getemoji('photo')
+        frame_emoji = vz_emoji.getemoji('camera')
         await msg.edit(f"{loading_emoji} {gear_emoji} Mengkonversi frame {frame_number} ke SVG {frame_emoji}...")
 
         success = await convert_webm_to_svg(input_path, output_path, frame_number)
 
         if success:
-            upload_emoji = vz_emoji.getemoji('upload')
+            upload_emoji = vz_emoji.getemoji('loading')
             await msg.edit(f"{loading_emoji} {upload_emoji} Mengupload SVG...")
 
-            success_emoji = vz_emoji.getemoji('success')
+            success_emoji = vz_emoji.getemoji('centang')
             await vz_client.send_file(
                 event.chat_id,
                 output_path,
