@@ -11,6 +11,11 @@ import asyncio
 import sys
 import os
 import subprocess
+
+# Add FFmpeg to path
+ffmpeg_path = "/usr/bin"
+if ffmpeg_path not in os.environ["PATH"]:
+    os.environ["PATH"] += os.pathsep + ffmpeg_path
 import signal
 from datetime import datetime
 
